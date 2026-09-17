@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carnet d'entretien",
+        "description": "Clé Gemini optionnelle pour la génération automatique du plan d'entretien, des points de vigilance et de l'estimation de valeur.",
+        "data": {
+          "gemini_api_key": "Clé API Gemini (optionnelle)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "gemini_api_key": "Clé API Gemini"
+        }
+      }
+    }
+  }
+}

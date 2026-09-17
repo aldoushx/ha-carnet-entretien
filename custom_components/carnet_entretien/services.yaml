@@ -1,0 +1,201 @@
+add_vehicle:
+  name: Ajouter un véhicule
+  description: >
+    Ajoute un véhicule et génère automatiquement son plan d'entretien et ses
+    points de vigilance via Gemini (si une clé est configurée).
+  fields:
+    brand:
+      name: Marque
+      required: true
+      selector:
+        text:
+    model:
+      name: Modèle
+      required: true
+      selector:
+        text:
+    motorisation:
+      name: Motorisation
+      required: false
+      selector:
+        text:
+    year:
+      name: Année
+      required: true
+      selector:
+        number:
+          min: 1970
+          max: 2100
+          mode: box
+    mileage:
+      name: Kilométrage actuel
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 2000000
+          mode: box
+    plate:
+      name: Immatriculation
+      required: false
+      selector:
+        text:
+
+update_mileage:
+  name: Mettre à jour le kilométrage
+  description: Met à jour le kilométrage d'un véhicule et recalcule les échéances.
+  fields:
+    vehicle_id:
+      name: Véhicule
+      required: true
+      selector:
+        text:
+    mileage:
+      name: Nouveau kilométrage
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 2000000
+          mode: box
+
+set_mileage_source:
+  name: Définir la source du kilométrage
+  description: >
+    Bascule un véhicule en saisie manuelle ou lie son kilométrage à un
+    capteur existant (odomètre constructeur, traceur OBD, input_number...).
+  fields:
+    vehicle_id:
+      name: Véhicule
+      required: true
+      selector:
+        text:
+    source:
+      name: Source
+      required: true
+      selector:
+        select:
+          options:
+            - manual
+            - sensor
+    entity_id:
+      name: Capteur de kilométrage
+      description: Requis si source = sensor.
+      required: false
+      selector:
+        entity:
+          domain: sensor
+
+log_maintenance:
+  name: Enregistrer une intervention
+  description: Ajoute une intervention au journal d'entretien d'un véhicule.
+  fields:
+    vehicle_id:
+      name: Véhicule
+      required: true
+      selector:
+        text:
+    item_id:
+      name: Échéance concernée
+      required: false
+      selector:
+        text:
+    item_name:
+      name: Nom de l'intervention
+      required: true
+      selector:
+        text:
+    km:
+      name: Kilométrage lors de l'intervention
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 2000000
+          mode: box
+    date:
+      name: Date de l'intervention
+      description: Par défaut, aujourd'hui si non renseigné.
+      required: false
+      selector:
+        date:
+    cost:
+      name: Coût
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    garage:
+      name: Garage
+      required: false
+      selector:
+        text:
+    notes:
+      name: Notes
+      required: false
+      selector:
+        text:
+          multiline: true
+
+refresh_plan:
+  name: Regénérer le plan d'entretien
+  description: Relance la génération du plan d'entretien via Gemini.
+  fields:
+    vehicle_id:
+      name: Véhicule
+      required: true
+      selector:
+        text:
+
+refresh_known_issues:
+  name: Regénérer les points de vigilance
+  description: Relance la recherche des pannes et points de vigilance connus.
+  fields:
+    vehicle_id:
+      name: Véhicule
+      required: true
+      selector:
+        text:
+
+refresh_recalls:
+  name: Vérifier les rappels constructeur
+  description: >
+    Relance la recherche des campagnes de rappel constructeur actives pour
+    ce véhicule (synthèse IA, à vérifier sur les sources officielles).
+  fields:
+    vehicle_id:
+      name: Véhicule
+      required: true
+      selector:
+        text:
+
+value_snapshot:
+  name: Estimer la valeur de revente
+  description: Demande à Gemini une estimation de valeur de revente actuelle et l'archive.
+  fields:
+    vehicle_id:
+      name: Véhicule
+      required: true
+      selector:
+        text:
+    condition:
+      name: État général
+      required: false
+      selector:
+        select:
+          options:
+            - excellent
+            - correct
+            - moyen
+            - mauvais
+
+remove_vehicle:
+  name: Supprimer un véhicule
+  description: Supprime un véhicule et toutes ses données.
+  fields:
+    vehicle_id:
+      name: Véhicule
+      required: true
+      selector:
+        text:

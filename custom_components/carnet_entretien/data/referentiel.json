@@ -1,0 +1,22 @@
+{
+  "Peugeot": ["208", "2008", "308", "3008", "508", "5008", "108", "Partner"],
+  "Renault": ["Clio", "Captur", "Megane", "Scenic", "Kadjar", "Talisman", "Twingo", "Austral", "Espace"],
+  "Citroën": ["C3", "C4", "C5 Aircross", "C3 Aircross", "Berlingo", "C1"],
+  "Volkswagen": ["Golf", "Polo", "Tiguan", "Passat", "T-Roc", "T-Cross", "Touran", "Up!"],
+  "Toyota": ["Yaris", "Corolla", "RAV4", "C-HR", "Aygo", "Camry", "Proace"],
+  "Dacia": ["Sandero", "Duster", "Spring", "Jogger", "Logan"],
+  "BMW": ["Série 1", "Série 3", "Série 5", "X1", "X3", "X5", "i3"],
+  "Mercedes-Benz": ["Classe A", "Classe B", "Classe C", "Classe E", "GLA", "GLC", "Vito"],
+  "Audi": ["A1", "A3", "A4", "A6", "Q2", "Q3", "Q5"],
+  "Ford": ["Fiesta", "Focus", "Puma", "Kuga", "Transit"],
+  "Opel": ["Corsa", "Astra", "Crossland", "Grandland", "Mokka"],
+  "Nissan": ["Micra", "Qashqai", "Juke", "X-Trail", "Leaf"],
+  "Fiat": ["500", "Panda", "Tipo", "500X"],
+  "Skoda": ["Fabia", "Octavia", "Kamiq", "Karoq", "Superb"],
+  "Seat": ["Ibiza", "Leon", "Arona", "Ateca"],
+  "Hyundai": ["i10", "i20", "i30", "Tucson", "Kona"],
+  "Kia": ["Picanto", "Rio", "Ceed", "Sportage", "Niro"],
+  "Volvo": ["XC40", "XC60", "V60", "S60"],
+  "Mini": ["Cooper", "Countryman", "Clubman"],
+  "Tesla": ["Model 3", "Model Y", "Model S", "Model X"]
+}
