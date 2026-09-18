@@ -148,5 +148,43 @@ plan d'entretien et chaque estimation affichent maintenant :
   multimodaux (texte + image), réutilisable pour de futures fonctions
   vision (`gemini_client._call_vision`).
 
+## 🆕 Nouveautés v0.9
+
+Passe de correctifs suite à un usage réel intensif :
+
+- **`hacs.json` déplacé à la racine du dépôt** — il était par erreur dans
+  `custom_components/carnet_entretien/`, ce qui empêchait purement et
+  simplement HACS de détecter l'intégration à l'installation.
+- **Nom de l'intégration** changé en "CARnet - Garage Log" (`manifest.json`,
+  `hacs.json`), icône ajoutée (`icon.png` à la racine, + gabarits 256/512 px
+  dans `brands/` pour une future soumission à `home-assistant/brands`).
+- **Bug de cascade Gemini corrigé** : une erreur sur un modèle (timeout,
+  réponse mal formée...) empêchait d'essayer les modèles suivants sauf pour
+  les erreurs HTTP. Corrigé : tous les modèles candidats sont désormais
+  systématiquement essayés, avec un message d'erreur agrégé en cas d'échec
+  total. `gemini-1.5-flash` (déprécié chez Google) retiré de la liste des
+  modèles essayés, remplacé par `gemini-2.5-flash-lite`.
+- **Contrôle technique et révision constructeur garantis** dans le plan
+  d'entretien : injectés automatiquement si l'IA les a omis
+  (`utils.ensure_default_items`), avec la règle française réaliste pour le
+  contrôle technique (1ère visite à 4 ans, puis tous les 2 ans — voir
+  `first_interval_months` dans `utils.compute_item_status`).
+- **Prompt renforcé** pour limiter les contradictions d'une génération à
+  l'autre sur les caractéristiques factuelles du véhicule (ex : disques vs
+  tambours à l'arrière) — un croisement multi-sources plus poussé (appels
+  multiples réconciliés) reste une piste si cela ne suffit pas.
+- **Notifications persistantes Home Assistant** créées/retirées
+  automatiquement quand une échéance passe en statut "échue" (vérification
+  au démarrage, après chaque mutation pertinente, et une fois par jour).
+- **Bug d'affichage corrigé** : sur les échéances basées sur une durée
+  (sans kilométrage), le prix s'affichait par erreur au bout de la jauge à
+  la place du temps restant/dépassé.
+- **VIN saisissable manuellement** (en plus de la photo), et **copie
+  automatique dans le champ Immatriculation** si une plaque de circulation
+  est détectée sur la photo ou saisie en même temps que le VIN.
+- **Capture caméra directe** (`capture="environment"`) sur tous les champs
+  photo — ouvre l'appareil photo directement depuis l'app Companion HA sur
+  mobile plutôt qu'un sélecteur de fichiers générique.
+
 ---
 

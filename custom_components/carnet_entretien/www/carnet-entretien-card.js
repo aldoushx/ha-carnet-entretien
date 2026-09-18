@@ -12,7 +12,7 @@ const SEVERITY_LABEL = { mineur: "Mineur", majeur: "Majeur", securite: "Sécurit
 const CATEGORY_EMOJI = {
   moteur: "🛢️", freinage: "🛑", pneumatiques: "🛞", distribution: "⚙️",
   filtration: "🌬️", carrosserie: "🚗", electronique: "🔌",
-  controle_technique: "📋", autre: "🔩", boite_de_vitesses: "⚙️",
+  controle_technique: "📋", revision: "🛠️", autre: "🔩", boite_de_vitesses: "⚙️",
   suspension: "🔩", climatisation: "❄️",
 };
 const THEMES_META = [
@@ -132,6 +132,38 @@ class CarnetEntretienCard extends HTMLElement {
       this._loading = false;
       this._render();
     }
+  }
+
+  // Préremplit le formulaire d'ajout à partir d'un résultat de décodage VIN
+  // (photo ou texte). Si une immatriculation a été lue/détectée en même
+  // temps (ex: photo montrant aussi la plaque de circulation), elle est
+  // copiée dans le champ Immatriculation au même titre que les autres infos.
+  _applyVinResult(res, statusEl) {
+    const root = this.shadowRoot;
+    if (res.brand) {
+      this._addForm.brand = res.brand;
+      root.getElementById("f-brand").value = res.brand;
+    }
+    if (res.model) {
+      this._addForm.model = res.model;
+      root.getElementById("f-model").value = res.model;
+    }
+    if (res.year) {
+      this._addForm.year = String(res.year);
+      root.getElementById("f-year").value = res.year;
+    }
+    if (res.motorisation) {
+      this._addForm.motorisation = res.motorisation;
+      root.getElementById("f-motorisation").value = res.motorisation;
+    }
+    if (res.plate) {
+      this._addForm.plate = res.plate;
+      root.getElementById("f-plate").value = res.plate;
+    }
+    const filled = [res.brand, res.model, res.year, res.motorisation, res.plate].some(Boolean);
+    statusEl.textContent = filled
+      ? `✓ Champs préremplis (confiance ${res.confidence || "?"}) — à vérifier avant de valider`
+      : "Aucune information exploitable détectée, à remplir manuellement.";
   }
 
   async _searchBrand(query) {
@@ -417,10 +449,14 @@ class CarnetEntretienCard extends HTMLElement {
     const f = this._addForm;
     return `
       <form id="add-form" class="form">
-        <label>🪪 Scanner une plaque VIN <span class="muted">(optionnel — préremplit les champs)</span>
-          <input type="file" id="f-vin-photo" accept="image/*" />
-          <span class="muted small" id="vin-scan-status"></span>
+        <label>🪪 Scanner une plaque (VIN ou immatriculation) <span class="muted">(optionnel — préremplit les champs)</span>
+          <input type="file" id="f-vin-photo" accept="image/*" capture="environment" />
         </label>
+        <div class="row-2">
+          <input id="f-vin-text" placeholder="Ou saisir le VIN manuellement (17 caractères)" maxlength="17" style="flex:2;" />
+          <button type="button" class="btn small" id="decode-vin-text-btn">🔎 Décoder</button>
+        </div>
+        <span class="muted small" id="vin-scan-status"></span>
         <div class="edit-divider"><span>ou remplir manuellement</span></div>
         <label>Marque
           <div class="autocomplete">
@@ -452,7 +488,7 @@ class CarnetEntretienCard extends HTMLElement {
           </label>
         </div>
         <label>Photo <span class="muted">(optionnel)</span>
-          <input type="file" id="f-photo" accept="image/*" />
+          <input type="file" id="f-photo" accept="image/*" capture="environment" />
         </label>
         <img id="add-photo-preview" class="photo-preview" style="display:${f.photo ? "block" : "none"};" src="${f.photo || ""}" />
         <button type="submit" class="btn primary full">Générer le carnet d'entretien</button>
@@ -480,7 +516,7 @@ class CarnetEntretienCard extends HTMLElement {
             <div class="photo-controls">
               <label class="link-btn">
                 📷 ${v.photo ? "Changer" : "Ajouter"} une photo
-                <input type="file" id="photo-input" accept="image/*" style="display:none;" />
+                <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none;" />
               </label>
               ${v.photo ? `<button class="link-btn" id="remove-photo-btn">Retirer</button>` : ""}
             </div>
@@ -695,21 +731,38 @@ class CarnetEntretienCard extends HTMLElement {
               </div>`;
             }
             const color = statusVar(it.statut);
-            const pct =
+            const overdue =
+              (it.km_restants != null && it.km_restants <= 0) || (it.jours_restants != null && it.jours_restants <= 0);
+            const pctFromKm =
               it.km_restants != null && it.interval_km
-                ? Math.max(0, Math.min(100, 100 - (it.km_restants / it.interval_km) * 100))
-                : it.km_restants != null && it.km_restants <= 0
-                ? 100
-                : 30;
-            const overdue = it.km_restants != null && it.km_restants <= 0;
+                ? 100 - (it.km_restants / it.interval_km) * 100
+                : null;
+            const pctFromDays =
+              it.jours_restants != null && it.interval_months
+                ? 100 - (it.jours_restants / (it.interval_months * 30)) * 100
+                : null;
+            const pct = overdue ? 100 : Math.max(0, Math.min(100, pctFromKm ?? pctFromDays ?? 30));
+            // Au bout de la jauge : le kilométrage restant/dépassé si l'échéance
+            // en dépend, sinon la durée restante/dépassée (jamais le prix, déjà
+            // affiché juste en dessous — c'était le bug remonté).
+            let rightLabel = "";
+            if (overdue) {
+              rightLabel = it.depasse_de_km != null
+                ? `-${fmtKm(it.depasse_de_km)}`
+                : it.jours_restants != null
+                ? `-${Math.abs(it.jours_restants)} j`
+                : "⚠️";
+            } else if (it.km_restants != null) {
+              rightLabel = fmtKm(it.km_restants);
+            } else if (it.jours_restants != null) {
+              rightLabel = `${it.jours_restants} j`;
+            }
             return `
             <details class="plan-row">
               <summary class="plan-row-summary">
                 <div class="plan-row-head">
                   <span>${CATEGORY_EMOJI[it.category] || "🔩"} ${esc(it.name)}</span>
-                  <span class="mono small" style="color:${overdue ? "var(--ce-danger-text)" : "var(--ce-text-muted)"}">
-                    ${overdue ? `-${fmtKm(it.depasse_de_km ?? Math.abs(it.km_restants))}` : it.km_restants != null ? fmtKm(it.km_restants) : it.cost_estimate_eur != null ? fmtEur(it.cost_estimate_eur) : ""}
-                  </span>
+                  <span class="mono small" style="color:${overdue ? "var(--ce-danger-text)" : "var(--ce-text-muted)"}">${rightLabel}</span>
                 </div>
                 <div class="bar"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
                 <div class="plan-row-meta muted small">
@@ -819,29 +872,27 @@ class CarnetEntretienCard extends HTMLElement {
         try {
           const dataUrl = await fileToCompressedDataUrl(file, 900, 0.82);
           const res = await this._ws({ type: "decode_vin_photo", data: { photo: dataUrl } });
-          if (res.brand) {
-            this._addForm.brand = res.brand;
-            root.getElementById("f-brand").value = res.brand;
-          }
-          if (res.model) {
-            this._addForm.model = res.model;
-            root.getElementById("f-model").value = res.model;
-          }
-          if (res.year) {
-            this._addForm.year = String(res.year);
-            root.getElementById("f-year").value = res.year;
-          }
-          if (res.motorisation) {
-            this._addForm.motorisation = res.motorisation;
-            root.getElementById("f-motorisation").value = res.motorisation;
-          }
-          status.textContent =
-            res.brand || res.model
-              ? `✓ Champs préremplis (confiance ${res.confidence || "?"}) — à vérifier avant de valider`
-              : "Aucune information exploitable détectée, à remplir manuellement.";
+          this._applyVinResult(res, status);
         } catch (err) {
           console.error("carnet_entretien: échec de lecture du VIN", err);
-          status.textContent = "Échec de la lecture, remplissez manuellement.";
+          status.textContent = "Échec : " + (err.message || err.code || "erreur inconnue") + " — remplissez manuellement.";
+        }
+      });
+
+      root.getElementById("decode-vin-text-btn")?.addEventListener("click", async () => {
+        const vin = root.getElementById("f-vin-text").value.trim();
+        const status = root.getElementById("vin-scan-status");
+        if (!vin) {
+          status.textContent = "Saisissez un VIN avant de décoder.";
+          return;
+        }
+        status.textContent = "🔎 Décodage en cours…";
+        try {
+          const res = await this._ws({ type: "decode_vin_text", data: { vin } });
+          this._applyVinResult(res, status);
+        } catch (err) {
+          console.error("carnet_entretien: échec de décodage du VIN", err);
+          status.textContent = "Échec : " + (err.message || err.code || "erreur inconnue") + " — remplissez manuellement.";
         }
       });
       const brandInput = root.getElementById("f-brand");

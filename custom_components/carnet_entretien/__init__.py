@@ -10,12 +10,12 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import voluptuous as vol
 
-from homeassistant.components import websocket_api
+from homeassistant.components import persistent_notification, websocket_api
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
@@ -24,12 +24,12 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.entity_registry import async_entries_for_config_entry, async_get as async_get_entity_registry
-from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.event import async_track_state_change_event, async_track_time_interval
 
-from .const import CONF_GEMINI_API_KEY, DOMAIN, SIGNAL_VEHICLES_UPDATED
+from .const import CONF_GEMINI_API_KEY, DOMAIN, SIGNAL_VEHICLES_UPDATED, STATUS_DUE
 from .gemini_client import GeminiClient, GeminiError
 from .storage import CarnetStore
-from .utils import compute_plan_status, estimate_annual_km
+from .utils import compute_plan_status, ensure_default_items, estimate_annual_km
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["sensor"]
@@ -76,6 +76,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     for vehicle_id in list(store.vehicles.keys()):
         _async_sync_mileage_listener(hass, entry, vehicle_id)
 
+    await _async_check_overdue_notifications(hass, entry)
+    entry.async_on_unload(
+        async_track_time_interval(hass, lambda now: _schedule_overdue_check(hass, entry), timedelta(hours=24))
+    )
+
     return True
 
 
@@ -90,6 +95,44 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def _async_reload_on_options_update(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+# ---------------------------------------------------------------------------
+# Notifications persistantes sur échéance dépassée
+# ---------------------------------------------------------------------------
+
+
+def _schedule_overdue_check(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Lance la vérification en tâche de fond (à appeler après toute
+    mutation susceptible de faire passer une échéance en statut "échue" :
+    mise à jour de kilométrage, enregistrement d'une intervention, création
+    d'un véhicule, changement de capteur lié)."""
+    hass.async_create_task(_async_check_overdue_notifications(hass, entry))
+
+
+async def _async_check_overdue_notifications(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    store: CarnetStore = hass.data[DOMAIN][entry.entry_id]["store"]
+    for vehicle_id, vehicle in list(store.vehicles.items()):
+        label = f"{vehicle.get('brand', '')} {vehicle.get('model', '')}".strip() or "Véhicule"
+        for item in compute_plan_status(vehicle):
+            notif_id = f"{DOMAIN}_{vehicle_id}_{item.get('id')}"
+            if item.get("statut") != STATUS_DUE:
+                persistent_notification.async_dismiss(hass, notif_id)
+                continue
+            details = []
+            if item.get("depasse_de_km") is not None:
+                details.append(f"{round(item['depasse_de_km']):,} km de dépassement".replace(",", " "))
+            jours = item.get("jours_restants")
+            if jours is not None and jours < 0:
+                details.append(f"{abs(jours)} j de retard")
+            detail_text = " · ".join(details) if details else "échéance dépassée"
+            persistent_notification.async_create(
+                hass,
+                f"**{label}** — {item.get('name')}\n\n{detail_text}. Ouvrez la carte "
+                "Carnet d'entretien pour enregistrer l'intervention une fois réalisée.",
+                title="🔧 Entretien à faire",
+                notification_id=notif_id,
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -129,6 +172,7 @@ def _async_sync_mileage_listener(hass: HomeAssistant, entry: ConfigEntry, vehicl
             return
         await store.async_update_mileage(vehicle_id, mileage)
         async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        _schedule_overdue_check(hass, entry)
 
     unsubs[vehicle_id] = async_track_state_change_event(hass, [entity_id], _on_state_change)
 
@@ -179,6 +223,7 @@ def _async_register_services(hass: HomeAssistant, entry: ConfigEntry) -> None:
     async def update_mileage(call: ServiceCall) -> None:
         await store.async_update_mileage(call.data["vehicle_id"], call.data["mileage"])
         async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        _schedule_overdue_check(hass, entry)
 
     async def set_mileage_source(call: ServiceCall) -> None:
         await _set_mileage_source(
@@ -201,6 +246,7 @@ def _async_register_services(hass: HomeAssistant, entry: ConfigEntry) -> None:
     async def refresh_recalls(call: ServiceCall) -> None:
         await _refresh_recalls(store, gemini, call.data["vehicle_id"])
         async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        _schedule_overdue_check(hass, entry)
 
     async def value_snapshot(call: ServiceCall) -> None:
         await _snapshot_value(store, gemini, call.data["vehicle_id"], call.data.get("condition", "correct"))
@@ -257,6 +303,7 @@ async def _create_vehicle(hass: HomeAssistant, entry: ConfigEntry, store: Carnet
         errors["recalls"] = err.code
 
     async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+    _schedule_overdue_check(hass, entry)
     result = dict(store.get_vehicle(vehicle_id))
     if errors:
         result["_ai_errors"] = errors
@@ -271,7 +318,9 @@ async def _refresh_plan(store: CarnetStore, gemini: GeminiClient, vehicle_id: st
         vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""),
         vehicle["year"], vehicle.get("mileage", 0),
     )
-    plan = [{"id": f"item_{i}", **item} for i, item in enumerate(result.data)]
+    raw_items = result.data.get("items", []) if isinstance(result.data, dict) else result.data
+    plan = [{"id": f"item_{i}", **item} for i, item in enumerate(raw_items)]
+    plan = ensure_default_items(plan)  # garantit contrôle technique + révision constructeur
     await store.async_set_plan(vehicle_id, plan)
     await store.async_add_token_usage(result.tokens)
 
@@ -477,6 +526,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
     async def ws_update_mileage(hass, connection, msg):
         vehicle = await store.async_update_mileage(msg["vehicle_id"], msg["mileage"])
         async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        _schedule_overdue_check(hass, entry)
         connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(vehicle) if vehicle else None})
 
     @websocket_api.websocket_command(
@@ -574,6 +624,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         vehicle_id = msg.pop("vehicle_id")
         entry_data = await store.async_log_maintenance(vehicle_id, msg)
         async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        _schedule_overdue_check(hass, entry)
         connection.send_result(msg_id, {"entry": entry_data})
 
     @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/ai_usage"})

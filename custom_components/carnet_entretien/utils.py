@@ -15,7 +15,19 @@ import calendar
 import datetime
 from typing import Any
 
-from .const import SOON_DAYS_THRESHOLD, SOON_KM_THRESHOLD, STATUS_DUE, STATUS_OK, STATUS_SOON
+from .const import (
+    DEFAULT_CONTROLE_TECHNIQUE_COST_EUR,
+    DEFAULT_CONTROLE_TECHNIQUE_FIRST_INTERVAL_MONTHS,
+    DEFAULT_CONTROLE_TECHNIQUE_INTERVAL_MONTHS,
+    DEFAULT_REVISION_COST_EUR,
+    DEFAULT_REVISION_INTERVAL_KM,
+    DEFAULT_REVISION_INTERVAL_MONTHS,
+    SOON_DAYS_THRESHOLD,
+    SOON_KM_THRESHOLD,
+    STATUS_DUE,
+    STATUS_OK,
+    STATUS_SOON,
+)
 
 DEFAULT_ANNUAL_KM = 12000
 STATUS_NOT_APPLICABLE = "non_applicable"
@@ -65,7 +77,14 @@ def compute_item_status(vehicle: dict[str, Any], item: dict[str, Any]) -> dict[s
     last_done_date_ts = item.get("last_done_date")
 
     interval_km = item.get("interval_km") or 0
-    interval_months = item.get("interval_months") or 0
+    # Certaines échéances ont un premier intervalle différent des suivants
+    # (ex : contrôle technique, 1ère visite à 4 ans puis tous les 2 ans).
+    # "first_interval_months" ne s'applique que tant qu'aucune intervention
+    # n'a encore été enregistrée pour cet item.
+    if last_done_date_ts is None and item.get("first_interval_months"):
+        interval_months = item["first_interval_months"]
+    else:
+        interval_months = item.get("interval_months") or 0
 
     base_km = last_done_km if last_done_km is not None else 0
     base_date = (
@@ -132,3 +151,54 @@ def compute_plan_status(vehicle: dict[str, Any]) -> list[dict[str, Any]]:
 def next_due_item(vehicle: dict[str, Any]) -> dict[str, Any] | None:
     items = [i for i in compute_plan_status(vehicle) if i["statut"] != STATUS_NOT_APPLICABLE]
     return items[0] if items else None
+
+
+def ensure_default_items(plan: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Garantit la présence du contrôle technique et de la révision
+    constructeur dans le plan, même si l'IA les a omis ou mal nommés —
+    ce sont des échéances trop importantes pour dépendre entièrement de
+    la génération IA. N'écrase jamais un item déjà présent dans la même
+    catégorie : l'IA reste prioritaire si elle a fourni une valeur.
+    """
+    categories = {item.get("category") for item in plan}
+    result = list(plan)
+
+    if "controle_technique" not in categories:
+        result.append(
+            {
+                "id": "ct_auto",
+                "name": "Contrôle technique",
+                "category": "controle_technique",
+                "interval_km": 0,
+                "interval_months": DEFAULT_CONTROLE_TECHNIQUE_INTERVAL_MONTHS,
+                "first_interval_months": DEFAULT_CONTROLE_TECHNIQUE_FIRST_INTERVAL_MONTHS,
+                "cost_estimate_eur": DEFAULT_CONTROLE_TECHNIQUE_COST_EUR,
+                "applicable": True,
+                "notes": (
+                    "Ajouté automatiquement (règle française : 1ère visite "
+                    "obligatoire 4 ans après la mise en circulation, puis tous "
+                    "les 2 ans). Véhicules utilitaires/anciens : règles "
+                    "différentes, à vérifier."
+                ),
+            }
+        )
+
+    if "revision" not in categories:
+        result.append(
+            {
+                "id": "revision_auto",
+                "name": "Révision constructeur périodique",
+                "category": "revision",
+                "interval_km": DEFAULT_REVISION_INTERVAL_KM,
+                "interval_months": DEFAULT_REVISION_INTERVAL_MONTHS,
+                "cost_estimate_eur": DEFAULT_REVISION_COST_EUR,
+                "applicable": True,
+                "notes": (
+                    "Ajouté automatiquement avec un intervalle générique "
+                    "(15 000 km / 12 mois) — vérifiez le carnet constructeur "
+                    "pour l'intervalle exact de ce modèle."
+                ),
+            }
+        )
+
+    return result

@@ -8,11 +8,16 @@ CONF_GEMINI_API_KEY = "gemini_api_key"
 
 SIGNAL_VEHICLES_UPDATED = f"{DOMAIN}_vehicles_updated"
 
-# Modèles Gemini essayés dans l'ordre (repli automatique comme ha-millesime)
+# Modèles Gemini essayés dans l'ordre (repli automatique comme ha-millesime).
+# gemini-1.5-flash a été retiré : Google a sunset la lignée 1.5 sur de
+# nombreuses clés, ce qui provoquait une erreur "modèle indisponible"
+# systématique en fin de cascade (masquant l'erreur réelle des modèles
+# précédents). gemini-2.5-flash-lite ajouté comme repli plus économe, donc
+# moins sujet aux quotas journaliers que 2.5-flash/2.0-flash.
 GEMINI_MODEL_CANDIDATES = [
     "gemini-2.5-flash",
     "gemini-2.0-flash",
-    "gemini-1.5-flash",
+    "gemini-2.5-flash-lite",
 ]
 GEMINI_TIMEOUT = 45  # secondes
 GEMINI_FREE_TIER_DAILY_BUDGET = 1_000_000  # tokens, ajustable
@@ -27,8 +32,21 @@ CATEGORY_ICONS = {
     "carrosserie": "mdi:car",
     "electronique": "mdi:chip",
     "controle_technique": "mdi:clipboard-check",
+    "revision": "mdi:car-wrench",
     "autre": "mdi:wrench",
 }
+
+# Échéances garanties, injectées si l'IA ne les a pas proposées (voir
+# utils.ensure_default_items) : le contrôle technique suit une règle
+# réglementaire fixe en France (1ère visite à 4 ans, puis tous les 2 ans),
+# et la révision constructeur est un minimum de bon sens même si l'IA
+# l'oublie ou la nomme différemment.
+DEFAULT_CONTROLE_TECHNIQUE_INTERVAL_MONTHS = 24
+DEFAULT_CONTROLE_TECHNIQUE_FIRST_INTERVAL_MONTHS = 48
+DEFAULT_CONTROLE_TECHNIQUE_COST_EUR = 78
+DEFAULT_REVISION_INTERVAL_KM = 15000
+DEFAULT_REVISION_INTERVAL_MONTHS = 12
+DEFAULT_REVISION_COST_EUR = 200
 
 SEVERITY_ORDER = {"securite": 3, "majeur": 2, "mineur": 1}
 

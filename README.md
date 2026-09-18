@@ -1,4 +1,6 @@
-# 🚗 Carnet d'entretien — Home Assistant
+<p align="center"><img src="icon.png" width="96" height="96" alt="Icône CARnet - Garage Log" /></p>
+
+# 🚗 CARnet - Garage Log — Home Assistant
 
 **Carnet d'entretien automobile intelligent pour Home Assistant**, généré et
 tenu à jour par **Google Gemini** : plan d'entretien constructeur, points de
@@ -8,7 +10,7 @@ dédiée avec quatre thèmes visuels au choix.
 ![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5?logo=homeassistantcommunitystore&logoColor=white)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-41BDF5?logo=home-assistant&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Version](https://img.shields.io/badge/version-0.8.0-orange)
+![Version](https://img.shields.io/badge/version-0.9.0-orange)
 
 Architecture inspirée de [ha-millesime](https://github.com/Redsklns/ha-millesime)
 (cave à vin gérée par IA) : stockage 100 % local, carte Lovelace auto-servie
@@ -75,6 +77,7 @@ reste utilisable en saisie 100 % manuelle.
 - [Guide d'installation et d'utilisation détaillé](docs/INSTALL.md)
 - [Changelog](CHANGELOG.md)
 - [Idées de fonctionnalités à venir](docs/IDEAS.md)
+- [Publier des mises à jour via GitHub + HACS](docs/RELEASING.md)
 
 ## 🤝 Contribuer
 

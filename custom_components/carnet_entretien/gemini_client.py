@@ -87,7 +87,15 @@ class GeminiClient:
         models_to_try = [self._working_model] if self._working_model else []
         models_to_try += [m for m in GEMINI_MODEL_CANDIDATES if m != self._working_model]
 
-        last_error: Exception | None = None
+        # Contrairement à la version précédente, on essaie TOUS les modèles
+        # candidats quel que soit le type d'erreur rencontré (y compris
+        # timeout/truncated/parse_error) : un incident sur un modèle donné
+        # (quota, réponse mal formée sur ce cas précis...) ne doit jamais
+        # empêcher d'essayer les suivants. On agrège les erreurs pour un
+        # message final exploitable plutôt que de ne montrer que la
+        # dernière (souvent trompeuse, ex: un modèle retiré en fin de liste
+        # masquant un vrai dépassement de quota sur le premier).
+        errors: list[str] = []
         for model in models_to_try:
             if not model:
                 continue
@@ -96,11 +104,11 @@ class GeminiClient:
                 self._working_model = model  # mémorise le modèle qui fonctionne
                 return result
             except GeminiError as err:
-                last_error = err
-                if err.code in ("http_error", "no_model"):
-                    continue  # on essaie le modèle suivant
-                raise  # timeout / truncated / parse_error : pas la peine de changer de modèle
-        raise last_error or GeminiError("no_model", "Aucun modèle Gemini disponible pour cette clé")
+                errors.append(f"{model} [{err.code}]: {err}")
+                continue
+
+        detail = " ; ".join(errors) if errors else "aucun modèle configuré"
+        raise GeminiError("no_model", f"Tous les modèles Gemini ont échoué — {detail}")
 
     async def _call_model(
         self, model: str, parts: list[dict[str, Any]], schema: dict[str, Any], max_output_tokens: int
@@ -165,35 +173,44 @@ class GeminiClient:
         self, brand: str, model: str, motorisation: str, year: int, mileage: int
     ) -> GeminiResult:
         schema = {
-            "type": "ARRAY",
-            "items": {
-                "type": "OBJECT",
-                "properties": {
-                    "name": {"type": "STRING"},
-                    "category": {
-                        "type": "STRING",
-                        "enum": [
-                            "moteur", "freinage", "pneumatiques", "distribution",
-                            "filtration", "carrosserie", "electronique",
-                            "controle_technique", "autre",
+            "type": "OBJECT",
+            "properties": {
+                "items": {
+                    "type": "ARRAY",
+                    "items": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "name": {"type": "STRING"},
+                            "category": {
+                                "type": "STRING",
+                                "enum": [
+                                    "moteur", "freinage", "pneumatiques", "distribution",
+                                    "filtration", "carrosserie", "electronique",
+                                    "controle_technique", "revision", "autre",
+                                ],
+                            },
+                            "interval_km": {"type": "INTEGER"},
+                            "interval_months": {"type": "INTEGER"},
+                            "cost_estimate_eur": {"type": "NUMBER"},
+                            "applicable": {"type": "BOOLEAN"},
+                            "not_applicable_reason": {"type": "STRING"},
+                            "notes": {"type": "STRING"},
+                        },
+                        "required": [
+                            "name", "category", "interval_km", "interval_months",
+                            "cost_estimate_eur", "applicable",
                         ],
                     },
-                    "interval_km": {"type": "INTEGER"},
-                    "interval_months": {"type": "INTEGER"},
-                    "cost_estimate_eur": {"type": "NUMBER"},
-                    "applicable": {"type": "BOOLEAN"},
-                    "not_applicable_reason": {"type": "STRING"},
-                    "notes": {"type": "STRING"},
                 },
-                "required": [
-                    "name", "category", "interval_km", "interval_months",
-                    "cost_estimate_eur", "applicable",
-                ],
+                "sources": {"type": "ARRAY", "items": {"type": "STRING"}},
             },
+            "required": ["items"],
         }
         prompt = f"""Tu es un expert en entretien automobile. Sur la base de la documentation
-constructeur officielle (carnet/plan de maintenance) et des revues techniques
-usuelles pour ce véhicule précis :
+constructeur officielle (carnet/plan de maintenance) ET des revues techniques
+indépendantes (type Revue Technique Automobile) pour ce véhicule précis —
+croise mentalement ces deux types de sources et privilégie ce qui est
+confirmé par les deux plutôt qu'une information isolée :
 
 Marque : {brand}
 Modèle : {model}
@@ -202,8 +219,13 @@ Année : {year}
 Kilométrage actuel : {mileage} km
 
 Génère le carnet d'entretien type de ce véhicule : la liste des opérations
-périodiques (vidange, filtres, distribution/chaîne, freins, contrôle technique,
-pneumatiques, liquide de refroidissement, bougies, etc.) avec pour chacune :
+périodiques (vidange, filtres, distribution/chaîne, freins, pneumatiques,
+liquide de refroidissement, bougies, etc.), ET OBLIGATOIREMENT ces deux
+échéances administratives/génériques :
+- une entrée de catégorie "controle_technique" ("Contrôle technique") ;
+- une entrée de catégorie "revision" ("Révision constructeur périodique").
+
+Pour chaque opération, précise :
 - son intervalle en kilomètres ET en mois (le plus contraignant des deux
   s'applique en pratique ; mets 0 pour celui qui ne s'applique pas, par
   exemple un remplacement de pneus n'a généralement pas d'intervalle en mois) ;
@@ -212,15 +234,26 @@ pneumatiques, liquide de refroidissement, bougies, etc.) avec pour chacune :
 - "applicable" : false si cette opération concerne un équipement que CE
   véhicule précis n'a PAS (exemple typique : "Remplacement disques de frein
   arrière" doit être applicable=false si ce modèle/motorisation est équipé de
-  freins à TAMBOURS à l'arrière et non de disques — vérifie ce point
-  systématiquement pour les petites citadines/compactes d'entrée de gamme).
-  Dans ce cas, renseigne "not_applicable_reason" en une phrase courte
-  expliquant l'équipement réel du véhicule.
+  freins à TAMBOURS à l'arrière et non de disques). Dans ce cas, renseigne
+  "not_applicable_reason" en une phrase courte expliquant l'équipement réel.
+
+IMPORTANT — cohérence factuelle : les caractéristiques techniques objectives
+de ce véhicule (type de frein arrière disque/tambour, présence ou non d'une
+courroie vs chaîne de distribution, etc.) sont des FAITS qui ne doivent pas
+varier si on te repose la question pour le même véhicule. Si tu n'es pas
+certain à 100% d'une caractéristique d'équipement précise, dis-le dans
+"notes" ("non vérifié avec certitude") plutôt que d'affirmer tour à tour une
+chose puis son contraire. Ne mentionne jamais un remplacement de disques ET
+la présence de tambours pour le même essieu.
+
 N'invente pas de valeurs si tu n'es pas raisonnablement confiant : utilise les
 intervalles et coûts usuels de la catégorie de véhicule dans ce cas et
-indique-le dans "notes". Limite-toi à 12 opérations maximum, les plus
-pertinentes (inclus les opérations non applicables identifiées, elles comptent
-dans les 12). Réponds uniquement avec le JSON demandé, sans texte autour."""
+indique-le dans "notes". Limite-toi à 13 opérations maximum, les plus
+pertinentes (inclus les opérations non applicables identifiées, ainsi que le
+contrôle technique et la révision, qui comptent dans les 13). Renseigne
+aussi "sources" : les types de documents sur lesquels tu t'es appuyé (ex :
+"Programme d'entretien officiel {brand}", "Revue Technique Automobile (RTA)").
+Réponds uniquement avec le JSON demandé, sans texte autour."""
         return await self._call(prompt, schema, max_output_tokens=4096)
 
     async def generate_known_issues(self, brand: str, model: str, motorisation: str, year: int) -> GeminiResult:
@@ -351,21 +384,51 @@ uniquement avec le JSON demandé, sans texte autour."""
                 "model": {"type": "STRING"},
                 "year": {"type": "INTEGER"},
                 "motorisation": {"type": "STRING"},
+                "plate": {"type": "STRING"},
                 "confidence": {"type": "STRING", "enum": ["haute", "moyenne", "faible"]},
             },
             "required": ["confidence"],
         }
-        prompt = """Tu analyses la photo d'une plaque VIN / plaque constructeur d'un
-véhicule (généralement sous le capot, dans le coffre, ou sur le montant de
-porte côté conducteur). Lis directement les informations visibles sur
-l'étiquette si présentes (marque, type/modèle, motorisation, date de
-première mise en circulation), et/ou décode le numéro VIN (17 caractères)
-s'il est lisible : le WMI (3 premiers caractères) identifie le
-constructeur, le 10e caractère encode l'année-modèle. Ne renseigne un
-champ que si tu es raisonnablement confiant de sa valeur ; laisse-le vide
-sinon. Indique ton niveau de confiance global dans "confidence". Réponds
-uniquement avec le JSON demandé, sans texte autour."""
+        prompt = """Tu analyses une photo qui montre soit la plaque VIN / plaque
+constructeur d'un véhicule (généralement sous le capot, dans le coffre, ou
+sur le montant de porte côté conducteur), soit sa plaque d'immatriculation
+(arrière ou avant), soit les deux. Lis directement les informations
+visibles si présentes (marque, type/modèle, motorisation, date de première
+mise en circulation, immatriculation au format plaque française ou
+étrangère), et/ou décode le numéro VIN (17 caractères) s'il est lisible :
+le WMI (3 premiers caractères) identifie le constructeur, le 10e caractère
+encode l'année-modèle. Si une immatriculation (plaque de circulation, PAS
+le VIN) est visible sur la photo, renseigne-la dans "plate". Ne renseigne
+un champ que si tu es raisonnablement confiant de sa valeur ; laisse-le
+vide sinon. Indique ton niveau de confiance global dans "confidence".
+Réponds uniquement avec le JSON demandé, sans texte autour."""
         return await self._call_vision(prompt, image_b64, mime_type, schema, max_output_tokens=512)
+
+    async def decode_vin_text(self, vin: str) -> GeminiResult:
+        schema = {
+            "type": "OBJECT",
+            "properties": {
+                "brand": {"type": "STRING"},
+                "model": {"type": "STRING"},
+                "year": {"type": "INTEGER"},
+                "motorisation": {"type": "STRING"},
+                "confidence": {"type": "STRING", "enum": ["haute", "moyenne", "faible"]},
+            },
+            "required": ["confidence"],
+        }
+        prompt = f"""Décode ce numéro VIN (numéro d'identification du véhicule) :
+{vin.strip().upper()}
+
+Le WMI (3 premiers caractères) identifie le constructeur et souvent le
+pays/l'usine. Le 10e caractère encode généralement l'année-modèle (norme
+historique, avec un cycle qui se répète tous les 30 ans — utilise le
+contexte, par exemple si le VIN semble ancien ou récent, pour choisir le
+bon cycle). Le modèle précis et la motorisation ne sont pas toujours
+déductibles avec certitude d'un simple VIN sans base constructeur dédiée :
+ne renseigne "model"/"motorisation" que si tu es raisonnablement confiant,
+laisse vide sinon. Indique ton niveau de confiance global dans
+"confidence". Réponds uniquement avec le JSON demandé, sans texte autour."""
+        return await self._call(prompt, schema, max_output_tokens=256)
 
     async def estimate_resale_value(
         self,
