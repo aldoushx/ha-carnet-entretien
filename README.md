@@ -77,7 +77,6 @@ reste utilisable en saisie 100 % manuelle.
 - [Guide d'installation et d'utilisation détaillé](docs/INSTALL.md)
 - [Changelog](CHANGELOG.md)
 - [Idées de fonctionnalités à venir](docs/IDEAS.md)
-- [Publier des mises à jour via GitHub + HACS](docs/RELEASING.md)
 
 ## 🤝 Contribuer
 
