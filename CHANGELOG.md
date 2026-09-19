@@ -307,5 +307,27 @@ uniquement du polish autour de l'identité du projet et de son intégration
   dans les logs HA (`carnet_entretien`) au lieu d'un simple "Custom
   element doesn't exist" côté navigateur, sans indication de cause.
 
+## 🛠️ v1.0.2 — correctifs
+
+- **Appareils fantômes non supprimables corrigés.** La suppression d'un
+  véhicule ne retirait que ses entités, jamais l'appareil (device) associé
+  — celui-ci restait visible dans Paramètres → Appareils, uniquement
+  désactivable, jamais supprimable depuis l'UI. `_remove_vehicle` retire
+  désormais explicitement le device en plus des entités. Un callback
+  `async_remove_config_entry_device` a aussi été ajouté pour permettre de
+  supprimer manuellement les appareils fantômes déjà créés par des
+  versions antérieures (bouton "Supprimer" maintenant disponible dans
+  Paramètres → Appareils → l'appareil concerné).
+  Cela explique aussi les erreurs IA remontées sur un véhicule "déjà
+  supprimé" : l'appareil fantôme restait référencé quelque part côté UI,
+  et les requêtes générées pour son id de véhicule (qui n'existait plus
+  côté stockage) échouaient normalement côté serveur.
+- **Suppression d'un véhicule plus robuste côté carte** : une erreur lors
+  de la suppression échouait silencieusement (aucun message, rendu figé) ;
+  elle affiche maintenant une alerte explicite et resynchronise l'état.
+- **Réglages** : retrait du texte "D'autres réglages arriveront ici".
+  Ajout d'un réglage de **taille du texte** (boutons A−/A+, 80% à 140%
+  par pas de 10%), qui redimensionne toute la carte proportionnellement.
+
 ---
 

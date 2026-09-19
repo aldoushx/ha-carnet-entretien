@@ -28,6 +28,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "theme": "gt_cuir",
     "hide_not_applicable": False,
     "notifications_enabled": False,
+    "font_scale": 1.0,
 }
 
 DEFAULT_DATA: dict[str, Any] = {

@@ -1,4 +1,4 @@
-<p align="center"><img src="badge.svg" width="360" height="360" alt="CARnet - Garage Log" /></p>
+<p align="center"><img src="badge.svg" width="180" height="180" alt="CARnet - Garage Log" /></p>
 
 <h1 align="center">CARnet - Garage Log</h1>
 <p align="center">Carnet d'entretien automobile intelligent pour Home Assistant</p>
@@ -7,7 +7,7 @@
 <img alt="HACS Custom" src="https://img.shields.io/badge/HACS-Custom-41BDF5?logo=homeassistantcommunitystore&logoColor=white">
 <img alt="Home Assistant" src="https://img.shields.io/badge/Home%20Assistant-2024.1%2B-41BDF5?logo=home-assistant&logoColor=white">
 <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
-<img alt="Version" src="https://img.shields.io/badge/version-1.0.1-orange">
+<img alt="Version" src="https://img.shields.io/badge/version-1.0.2-orange">
 </p>
 
 **Carnet d'entretien automobile intelligent pour Home Assistant**, généré et
@@ -27,8 +27,9 @@ Stockage 100 % local, carte Lovelace auto-servie (rien à copier dans
   avec autocomplétion intelligente (référentiel local + suggestions Gemini
   mises en cache), année, kilométrage, plaque, photo.
 - 🛠️ **Plan d'entretien basé sur un catalogue fixe** (~28 opérations codées
-  en dur : vidange, tous les filtres, courroie de distribution et
-  d'accessoires, disques et plaquettes avant/arrière, batterie, climatisation, FAP/EGR, contrôle
+  en dur : vidange, tous les filtres, courroie de distribution **et**
+  d'accessoires séparément, disques **et** plaquettes avant/arrière comme
+  entrées distinctes, batterie, climatisation, FAP/EGR, contrôle
   technique, révision constructeur...). L'IA ne décide que de
   l'applicabilité et des intervalles pour chaque entrée — rien ne peut
   plus être oublié d'une génération à l'autre. Chaque échéance : intervalle
@@ -72,6 +73,11 @@ Optionnelle mais recommandée pour la génération automatique (plan, points de
 vigilance, valeur, autocomplétion motorisation). Clé gratuite sur
 [aistudio.google.com](https://aistudio.google.com). Sans clé, l'intégration
 reste utilisable en saisie 100 % manuelle.
+
+## 📄 Documentation
+
+- [Guide d'installation et d'utilisation détaillé](docs/INSTALL.md)
+- [Changelog](CHANGELOG.md)
 
 ## 🤝 Contribuer
 

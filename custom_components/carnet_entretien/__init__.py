@@ -23,6 +23,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.device_registry import async_get as async_get_device_registry
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.entity_registry import async_entries_for_config_entry, async_get as async_get_entity_registry
 from homeassistant.helpers.event import async_track_state_change_event, async_track_time_interval
@@ -93,6 +94,22 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             unsub()
         hass.data[DOMAIN].pop(entry.entry_id, None)
     return ok
+
+
+async def async_remove_config_entry_device(hass: HomeAssistant, entry: ConfigEntry, device) -> bool:
+    """Callback recherché par Home Assistant pour autoriser le bouton
+    "Supprimer" d'un appareil depuis l'UI (Paramètres → Appareils).
+
+    Sans cette fonction, un appareil rattaché à une config entry active ne
+    peut être que désactivé, jamais supprimé manuellement — exactement le
+    symptôme remonté. Les versions antérieures à 1.0.2 ne retiraient que les
+    entités à la suppression d'un véhicule, jamais le device lui-même, ce
+    qui laissait des appareils fantômes ; ce callback permet de nettoyer
+    ceux déjà créés avant ce correctif. Toujours autorisé : un appareil de
+    cette intégration n'est jamais indispensable au bon fonctionnement du
+    reste (chaque véhicule est indépendant).
+    """
+    return True
 
 
 async def _async_reload_on_options_update(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -476,10 +493,20 @@ async def _snapshot_value(store: CarnetStore, gemini: GeminiClient, vehicle_id: 
 
 
 async def _remove_vehicle(hass: HomeAssistant, entry: ConfigEntry, store: CarnetStore, vehicle_id: str) -> None:
-    registry = async_get_entity_registry(hass)
-    for reg_entry in async_entries_for_config_entry(registry, entry.entry_id):
+    entity_registry = async_get_entity_registry(hass)
+    for reg_entry in async_entries_for_config_entry(entity_registry, entry.entry_id):
         if reg_entry.unique_id.startswith(f"{DOMAIN}_{vehicle_id}_"):
-            registry.async_remove(reg_entry.entity_id)
+            entity_registry.async_remove(reg_entry.entity_id)
+
+    # Les entités ne suffisent pas : sans retrait explicite du device, celui-ci
+    # reste orphelin dans le registre (visible mais uniquement désactivable,
+    # jamais supprimable depuis l'UI puisqu'il est encore rattaché à cette
+    # config entry).
+    device_registry = async_get_device_registry(hass)
+    device = device_registry.async_get_device(identifiers={(DOMAIN, vehicle_id)})
+    if device is not None:
+        device_registry.async_remove_device(device.id)
+
     unsubs: dict = hass.data[DOMAIN][entry.entry_id]["mileage_unsubs"]
     unsub = unsubs.pop(vehicle_id, None)
     if unsub:

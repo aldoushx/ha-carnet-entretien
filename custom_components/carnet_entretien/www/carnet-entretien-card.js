@@ -49,7 +49,7 @@ class CarnetEntretienCard extends HTMLElement {
     this._mileageSourceEditing = false;
     this._pendingSensorEntity = "";
     this._theme = "gt_cuir";
-    this._settings = { hide_not_applicable: false, notifications_enabled: true };
+    this._settings = { hide_not_applicable: false, notifications_enabled: true, font_scale: 1 };
     this._motorisationKey = null;
     this._motorisationFullList = null;
     this._diyLoading = {}; // { [itemId]: bool } — état de chargement de l'explication DIY
@@ -351,10 +351,15 @@ class CarnetEntretienCard extends HTMLElement {
 
   async _removeVehicle(vehicleId) {
     if (!confirm("Supprimer ce véhicule et toutes ses données ?")) return;
-    await this._ws({ type: "remove_vehicle", data: { vehicle_id: vehicleId } });
-    this._view = "list";
-    this._selectedId = null;
-    await this._fetchVehicles();
+    try {
+      await this._ws({ type: "remove_vehicle", data: { vehicle_id: vehicleId } });
+      this._view = "list";
+      this._selectedId = null;
+      await this._fetchVehicles();
+    } catch (err) {
+      alert("Erreur lors de la suppression : " + (err.message || err.code || err));
+      await this._fetchVehicles();
+    }
   }
 
   async _setPhoto(vehicleId, photo) {
@@ -406,7 +411,7 @@ class CarnetEntretienCard extends HTMLElement {
 
     this.shadowRoot.innerHTML = `
       <style>${STYLE}</style>
-      <ha-card data-theme="${this._theme}">
+      <ha-card data-theme="${this._theme}" style="font-size:${this._settings.font_scale || 1}em;">
         <div class="header">
           <div class="title"><img class="title-icon" src="${CARNET_ICON_DATA_URL}" alt="" /> CARnet - Garage Log</div>
           <div class="header-actions">
@@ -473,7 +478,12 @@ class CarnetEntretienCard extends HTMLElement {
         <input type="checkbox" id="setting-hide-na" ${this._settings.hide_not_applicable ? "checked" : ""} />
         Masquer les entretiens non applicables dans la liste
       </label>
-      <p class="muted small" style="margin-top:14px;">D'autres réglages arriveront ici (unités, devise…).</p>
+      <p class="section-label">Taille du texte</p>
+      <div class="font-size-row">
+        <button class="btn small ghost" id="font-decrease-btn" ${this._settings.font_scale <= 0.8 ? "disabled" : ""}>A−</button>
+        <span class="mono small">${Math.round((this._settings.font_scale || 1) * 100)}%</span>
+        <button class="btn small ghost" id="font-increase-btn" ${this._settings.font_scale >= 1.4 ? "disabled" : ""}>A+</button>
+      </div>
     `;
   }
 
@@ -915,6 +925,14 @@ class CarnetEntretienCard extends HTMLElement {
     );
     root.getElementById("setting-notifications")?.addEventListener("change", (e) => this._updateSetting("notifications_enabled", e.target.checked));
     root.getElementById("setting-hide-na")?.addEventListener("change", (e) => this._updateSetting("hide_not_applicable", e.target.checked));
+    root.getElementById("font-decrease-btn")?.addEventListener("click", () => {
+      const next = Math.max(0.8, Math.round(((this._settings.font_scale || 1) - 0.1) * 10) / 10);
+      this._updateSetting("font_scale", next);
+    });
+    root.getElementById("font-increase-btn")?.addEventListener("click", () => {
+      const next = Math.min(1.4, Math.round(((this._settings.font_scale || 1) + 0.1) * 10) / 10);
+      this._updateSetting("font_scale", next);
+    });
 
     root.querySelectorAll(".tile").forEach((el) =>
       el.addEventListener("click", () => {
@@ -1278,6 +1296,8 @@ const STYLE = `
   .theme-card-head { display:flex; justify-content:space-between; align-items:center; font-size:0.88em; margin-bottom:8px; }
   .swatches { display:flex; gap:6px; }
   .swatches span { width:16px; height:16px; border-radius:4px; display:inline-block; }
+  .font-size-row { display:flex; align-items:center; gap:12px; }
+  .font-size-row .btn:disabled { opacity:0.4; cursor:default; }
 
   .form { display:flex; flex-direction:column; gap: 10px; }
   .form label { display:flex; flex-direction:column; gap:4px; font-size:0.85em; color: var(--ce-text-muted); }
