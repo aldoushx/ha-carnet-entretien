@@ -27,7 +27,7 @@ def now_ts() -> float:
 DEFAULT_SETTINGS: dict[str, Any] = {
     "theme": "gt_cuir",
     "hide_not_applicable": False,
-    "notifications_enabled": True,
+    "notifications_enabled": False,
 }
 
 DEFAULT_DATA: dict[str, Any] = {

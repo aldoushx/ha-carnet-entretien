@@ -198,17 +198,41 @@ async def _async_register_static_path(hass: HomeAssistant) -> None:
     a été retiré au profit de `async_register_static_paths`, et l'accès via
     `hass.components.frontend` est également déprécié au profit d'un import
     direct.
+
+    Volontairement défensif : si l'enregistrement échoue pour une raison ou
+    une autre (fichier manquant, chemin déjà pris...), on journalise
+    clairement l'erreur plutôt que de laisser l'exception remonter et faire
+    échouer TOUT le chargement de l'intégration (services, capteurs,
+    notifications...) à cause du seul échec d'affichage de la carte.
     """
     if hass.data[DOMAIN].get("_static_registered"):
         return
+
+    if not CARD_JS_PATH.exists():
+        _LOGGER.error(
+            "Fichier de la carte Lovelace introuvable : %s — la carte ne pourra pas "
+            "se charger tant que ce fichier n'est pas présent. Vérifiez que le dossier "
+            "custom_components/carnet_entretien/www/ a bien été déployé en entier "
+            "(réinstallation complète via HACS conseillée si besoin).",
+            CARD_JS_PATH,
+        )
+        return
+
+    try:
+        await hass.http.async_register_static_paths(
+            [StaticPathConfig(CARD_URL, str(CARD_JS_PATH), cache_headers=False)]
+        )
+        version = CARD_JS_PATH.stat().st_mtime_ns  # cache-busting à chaque modification du fichier
+        add_extra_js_url(hass, f"{CARD_URL}?v={version}")
+    except Exception:  # noqa: BLE001 - on veut vraiment tout attraper ici
+        _LOGGER.exception(
+            "Échec de l'enregistrement de la carte Lovelace carnet_entretien "
+            "(le reste de l'intégration — services, capteurs, notifications — "
+            "continue de fonctionner normalement)."
+        )
+        return
+
     hass.data[DOMAIN]["_static_registered"] = True
-
-    await hass.http.async_register_static_paths(
-        [StaticPathConfig(CARD_URL, str(CARD_JS_PATH), cache_headers=False)]
-    )
-
-    version = CARD_JS_PATH.stat().st_mtime_ns  # cache-busting à chaque modification du fichier
-    add_extra_js_url(hass, f"{CARD_URL}?v={version}")
 
 
 # ---------------------------------------------------------------------------

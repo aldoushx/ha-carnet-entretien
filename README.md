@@ -1,4 +1,4 @@
-<p align="center"><img src="badge.svg" width="360" height="360" alt="CARnet - Garage Log" /></p>
+<p align="center"><img src="badge.svg" width="180" height="180" alt="CARnet - Garage Log" /></p>
 
 <h1 align="center">CARnet - Garage Log</h1>
 <p align="center">Carnet d'entretien automobile intelligent pour Home Assistant</p>
@@ -7,7 +7,7 @@
 <img alt="HACS Custom" src="https://img.shields.io/badge/HACS-Custom-41BDF5?logo=homeassistantcommunitystore&logoColor=white">
 <img alt="Home Assistant" src="https://img.shields.io/badge/Home%20Assistant-2024.1%2B-41BDF5?logo=home-assistant&logoColor=white">
 <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
-<img alt="Version" src="https://img.shields.io/badge/version-1.0.0-orange">
+<img alt="Version" src="https://img.shields.io/badge/version-1.0.1-orange">
 </p>
 
 **Carnet d'entretien automobile intelligent pour Home Assistant**, généré et
