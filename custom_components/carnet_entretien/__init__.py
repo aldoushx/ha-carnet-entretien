@@ -12,6 +12,7 @@ import json
 import logging
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import voluptuous as vol
 
@@ -28,8 +29,9 @@ from homeassistant.helpers.event import async_track_state_change_event, async_tr
 
 from .const import CONF_GEMINI_API_KEY, DOMAIN, SIGNAL_VEHICLES_UPDATED, STATUS_DUE
 from .gemini_client import GeminiClient, GeminiError
+from .maintenance_catalog import CATALOG_BY_ID, MAINTENANCE_CATALOG
 from .storage import CarnetStore
-from .utils import compute_plan_status, ensure_default_items, estimate_annual_km
+from .utils import compute_plan_status, estimate_annual_km
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["sensor"]
@@ -112,11 +114,12 @@ def _schedule_overdue_check(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 async def _async_check_overdue_notifications(hass: HomeAssistant, entry: ConfigEntry) -> None:
     store: CarnetStore = hass.data[DOMAIN][entry.entry_id]["store"]
+    notifications_enabled = store.get_settings().get("notifications_enabled", True)
     for vehicle_id, vehicle in list(store.vehicles.items()):
         label = f"{vehicle.get('brand', '')} {vehicle.get('model', '')}".strip() or "Véhicule"
         for item in compute_plan_status(vehicle):
             notif_id = f"{DOMAIN}_{vehicle_id}_{item.get('id')}"
-            if item.get("statut") != STATUS_DUE:
+            if not notifications_enabled or item.get("statut") != STATUS_DUE:
                 persistent_notification.async_dismiss(hass, notif_id)
                 continue
             details = []
@@ -319,9 +322,62 @@ async def _refresh_plan(store: CarnetStore, gemini: GeminiClient, vehicle_id: st
         vehicle["year"], vehicle.get("mileage", 0),
     )
     raw_items = result.data.get("items", []) if isinstance(result.data, dict) else result.data
-    plan = [{"id": f"item_{i}", **item} for i, item in enumerate(raw_items)]
-    plan = ensure_default_items(plan)  # garantit contrôle technique + révision constructeur
-    await store.async_set_plan(vehicle_id, plan)
+    sources = result.data.get("sources", []) if isinstance(result.data, dict) else []
+    sources_summary = ", ".join(str(s) for s in sources) if isinstance(sources, list) else str(sources)
+
+    ai_by_id = {it.get("catalog_id"): it for it in raw_items if it.get("catalog_id") in CATALOG_BY_ID}
+
+    # Items existants (identifiés par id stable = catalog_id) : on préserve
+    # tout ce qui est propre à CE véhicule et ne doit jamais être écrasé par
+    # une régénération — dernière intervention connue, bascule manuelle
+    # applicable/non-applicable, ajustement manuel d'échéance, explication
+    # DIY déjà générée. Les items personnalisés (ajoutés à la main, id
+    # préfixé "custom_") sont conservés tels quels, une régénération ne les
+    # touche jamais.
+    existing_by_id = {it.get("id"): it for it in vehicle.get("maintenance_plan", [])}
+    preserved_keys = (
+        "last_done_km", "last_done_date", "applicable_override", "due_km_override",
+        "due_date_override", "diy_explanation", "diy_tools_needed",
+        "diy_estimated_time_minutes", "diy_safety_warning",
+    )
+
+    new_plan: list[dict[str, Any]] = []
+    for catalog_item in MAINTENANCE_CATALOG:
+        cid = catalog_item["id"]
+        ai_item = ai_by_id.get(cid, {})
+        existing = existing_by_id.get(cid, {})
+
+        applicable = ai_item.get("applicable", True)
+        # Une correction manuelle de l'utilisateur (case à cocher) prime
+        # toujours sur ce que l'IA propose lors d'une régénération.
+        if "applicable_override" in existing:
+            applicable = existing["applicable_override"]
+
+        item = {
+            "id": cid,
+            "name": catalog_item["name"],
+            "category": catalog_item["category"],
+            "interval_km": ai_item.get("interval_km", catalog_item["default_interval_km"]),
+            "interval_months": ai_item.get("interval_months", catalog_item["default_interval_months"]),
+            "cost_estimate_eur": ai_item.get("cost_estimate_eur"),
+            "diy_difficulty": ai_item.get("diy_difficulty"),
+            "diy_cost_estimate_eur": ai_item.get("diy_cost_estimate_eur"),
+            "applicable": applicable,
+            "not_applicable_reason": ai_item.get("not_applicable_reason"),
+            "notes": ai_item.get("notes") or ("Non couvert par la génération IA — valeurs génériques du catalogue."
+                                               if cid not in ai_by_id else None),
+        }
+        if "first_interval_months" in catalog_item:
+            item["first_interval_months"] = catalog_item["first_interval_months"]
+        for key in preserved_keys:
+            if key in existing:
+                item[key] = existing[key]
+        new_plan.append(item)
+
+    # Items personnalisés ajoutés à la main : conservés intégralement.
+    new_plan += [it for it in vehicle.get("maintenance_plan", []) if it.get("custom")]
+
+    await store.async_set_plan(vehicle_id, new_plan, sources_summary)
     await store.async_add_token_usage(result.tokens)
 
 
@@ -578,18 +634,6 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
             connection.send_error(msg["id"], err.code, str(err))
 
     @websocket_api.websocket_command(
-        {vol.Required("type"): f"{DOMAIN}/decode_vin_photo", vol.Required("photo"): str}
-    )
-    @websocket_api.async_response
-    async def ws_decode_vin_photo(hass, connection, msg):
-        try:
-            result = await gemini.decode_vin_plate(msg["photo"])
-            await store.async_add_token_usage(result.tokens)
-            connection.send_result(msg["id"], result.data)
-        except GeminiError as err:
-            connection.send_error(msg["id"], err.code, str(err))
-
-    @websocket_api.websocket_command(
         {
             vol.Required("type"): f"{DOMAIN}/value_snapshot",
             vol.Required("vehicle_id"): str,
@@ -627,6 +671,120 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         _schedule_overdue_check(hass, entry)
         connection.send_result(msg_id, {"entry": entry_data})
 
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): f"{DOMAIN}/set_item_applicable",
+            vol.Required("vehicle_id"): str,
+            vol.Required("item_id"): str,
+            vol.Required("applicable"): bool,
+        }
+    )
+    @websocket_api.async_response
+    async def ws_set_item_applicable(hass, connection, msg):
+        item = await store.async_update_plan_item(
+            msg["vehicle_id"], msg["item_id"], {"applicable_override": msg["applicable"], "applicable": msg["applicable"]}
+        )
+        async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        _schedule_overdue_check(hass, entry)
+        connection.send_result(msg["id"], {"item": item})
+
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): f"{DOMAIN}/set_item_override",
+            vol.Required("vehicle_id"): str,
+            vol.Required("item_id"): str,
+            vol.Optional("due_km"): vol.Any(int, None),
+            vol.Optional("due_date"): vol.Any(vol.Coerce(float), None),
+        }
+    )
+    @websocket_api.async_response
+    async def ws_set_item_override(hass, connection, msg):
+        patch = {}
+        if "due_km" in msg:
+            patch["due_km_override"] = msg["due_km"]
+        if "due_date" in msg:
+            patch["due_date_override"] = msg["due_date"]
+        item = await store.async_update_plan_item(msg["vehicle_id"], msg["item_id"], patch)
+        async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        _schedule_overdue_check(hass, entry)
+        connection.send_result(msg["id"], {"item": item})
+
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): f"{DOMAIN}/add_plan_item",
+            vol.Required("vehicle_id"): str,
+            vol.Required("name"): str,
+            vol.Optional("category", default="autre"): str,
+            vol.Optional("interval_km", default=0): int,
+            vol.Optional("interval_months", default=0): int,
+            vol.Optional("cost_estimate_eur"): vol.Coerce(float),
+        }
+    )
+    @websocket_api.async_response
+    async def ws_add_plan_item(hass, connection, msg):
+        item = await store.async_add_plan_item(
+            msg["vehicle_id"],
+            {
+                "name": msg["name"],
+                "category": msg["category"],
+                "interval_km": msg["interval_km"],
+                "interval_months": msg["interval_months"],
+                "cost_estimate_eur": msg.get("cost_estimate_eur"),
+                "notes": "Ajouté manuellement.",
+            },
+        )
+        async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        _schedule_overdue_check(hass, entry)
+        connection.send_result(msg["id"], {"item": item})
+
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): f"{DOMAIN}/remove_plan_item",
+            vol.Required("vehicle_id"): str,
+            vol.Required("item_id"): str,
+        }
+    )
+    @websocket_api.async_response
+    async def ws_remove_plan_item(hass, connection, msg):
+        ok = await store.async_remove_plan_item(msg["vehicle_id"], msg["item_id"])
+        async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        connection.send_result(msg["id"], {"ok": ok})
+
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): f"{DOMAIN}/generate_diy_explanation",
+            vol.Required("vehicle_id"): str,
+            vol.Required("item_id"): str,
+        }
+    )
+    @websocket_api.async_response
+    async def ws_generate_diy_explanation(hass, connection, msg):
+        vehicle = store.get_vehicle(msg["vehicle_id"])
+        if not vehicle:
+            connection.send_error(msg["id"], "not_found", "Véhicule inconnu")
+            return
+        item = next((i for i in vehicle.get("maintenance_plan", []) if i.get("id") == msg["item_id"]), None)
+        if not item:
+            connection.send_error(msg["id"], "not_found", "Échéance inconnue")
+            return
+        try:
+            result = await gemini.explain_diy_operation(
+                item.get("name", ""), item.get("category", "autre"),
+                vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""), vehicle["year"],
+            )
+            await store.async_add_token_usage(result.tokens)
+            patch = {
+                "diy_explanation": result.data.get("explanation"),
+                "diy_tools_needed": result.data.get("tools_needed", []),
+                "diy_estimated_time_minutes": result.data.get("estimated_time_minutes"),
+                "diy_safety_warning": result.data.get("safety_warning"),
+            }
+            updated_item = await store.async_update_plan_item(msg["vehicle_id"], msg["item_id"], patch)
+            async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+            connection.send_result(msg["id"], {"item": updated_item})
+        except GeminiError as err:
+            connection.send_error(msg["id"], err.code, str(err))
+
     @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/ai_usage"})
     @websocket_api.async_response
     async def ws_ai_usage(hass, connection, msg):
@@ -648,6 +806,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         patch = {k: v for k, v in msg.items() if k not in ("id", "type")}
         settings = await store.async_set_settings(patch)
         async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        _schedule_overdue_check(hass, entry)
         connection.send_result(msg["id"], {"settings": settings})
 
     @websocket_api.websocket_command(
@@ -666,7 +825,9 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
     for handler in (
         ws_get_vehicles, ws_search_referentiel, ws_search_motorisations, ws_add_vehicle, ws_remove_vehicle,
         ws_update_mileage, ws_set_mileage_source, ws_refresh_plan, ws_refresh_known_issues,
-        ws_refresh_recalls, ws_decode_vin_photo,
+        ws_refresh_recalls,
+        ws_set_item_applicable, ws_set_item_override, ws_add_plan_item, ws_remove_plan_item,
+        ws_generate_diy_explanation,
         ws_value_snapshot, ws_log_maintenance, ws_ai_usage, ws_get_settings, ws_set_settings,
         ws_set_photo,
     ):

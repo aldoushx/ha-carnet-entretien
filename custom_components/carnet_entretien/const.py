@@ -36,18 +36,6 @@ CATEGORY_ICONS = {
     "autre": "mdi:wrench",
 }
 
-# Échéances garanties, injectées si l'IA ne les a pas proposées (voir
-# utils.ensure_default_items) : le contrôle technique suit une règle
-# réglementaire fixe en France (1ère visite à 4 ans, puis tous les 2 ans),
-# et la révision constructeur est un minimum de bon sens même si l'IA
-# l'oublie ou la nomme différemment.
-DEFAULT_CONTROLE_TECHNIQUE_INTERVAL_MONTHS = 24
-DEFAULT_CONTROLE_TECHNIQUE_FIRST_INTERVAL_MONTHS = 48
-DEFAULT_CONTROLE_TECHNIQUE_COST_EUR = 78
-DEFAULT_REVISION_INTERVAL_KM = 15000
-DEFAULT_REVISION_INTERVAL_MONTHS = 12
-DEFAULT_REVISION_COST_EUR = 200
-
 SEVERITY_ORDER = {"securite": 3, "majeur": 2, "mineur": 1}
 
 # Statut d'une échéance calculée

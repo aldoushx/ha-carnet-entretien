@@ -186,5 +186,78 @@ Passe de correctifs suite à un usage réel intensif :
   photo — ouvre l'appareil photo directement depuis l'app Companion HA sur
   mobile plutôt qu'un sélecteur de fichiers générique.
 
+## 🆕 Nouveautés v0.9.1
+
+- **Re-tentative automatique sur quota Gemini (429)** : un dépassement de
+  quota sur un modèle déclenche désormais jusqu'à 2 re-tentatives sur ce
+  même modèle (délai croissant 5s/15s) avant de passer au modèle suivant —
+  un dépassement de quota par minute se résorbe souvent tout seul en
+  quelques secondes, inutile de basculer immédiatement vers un modèle
+  potentiellement indisponible pour la clé. Nouveau code d'erreur dédié
+  `rate_limited`.
+- **Reconnaissance véhicule repensée** : le scan photo à la création vise
+  maintenant une photo de la voiture (carrosserie, logos, plaque visibles),
+  pas uniquement un gros plan de plaque — une plaque seule ne permet
+  objectivement pas de déduire marque/modèle (aucune base publique ne fait
+  cette correspondance), la fonction le signale désormais clairement au
+  lieu de laisser les champs vides sans explication. La saisie manuelle du
+  VIN a été retirée (trop contraignante à l'usage) ; la photo reste la
+  seule voie assistée par IA, avec un texte d'aide invitant à cadrer plus
+  large que la seule plaque.
+- **Précision sur l'icône HACS** : `icon.png` à la racine du dépôt améliore
+  l'affichage sur la page GitHub et dans le rendu du README, mais **HACS
+  source l'icône affichée dans son interface depuis le dépôt
+  `home-assistant/brands`**, pas depuis le dépôt lui-même — c'est normal
+  qu'elle n'apparaisse pas encore dans HACS tant que cette PR séparée n'est
+  pas soumise/mergée (voir `docs/RELEASING.md §7`, fichiers déjà préparés
+  dans `brands/`).
+
+## 🆕 Nouveautés v0.10 — refonte du plan d'entretien
+
+Changement d'architecture majeur suite aux retours d'usage sur les oublis et
+incohérences constatés (courroie d'accessoires manquante, disques/plaquettes
+fusionnés, listes différentes à chaque régénération...) :
+
+- **Reconnaissance photo/VIN/plaque entièrement retirée**. Retour au
+  remplissage manuel marque/modèle/année, avec l'autocomplétion Gemini de
+  la motorisation (déjà en place depuis la v0.7) comme seule assistance IA
+  à la création.
+- **Catalogue d'entretien codé en dur** (`maintenance_catalog.py`, ~28
+  opérations) : vidange, tous les filtres, courroie de distribution **et**
+  courroie d'accessoires séparément, disques **et** plaquettes avant/arrière
+  comme entrées distinctes, batterie 12V, climatisation, FAP/EGR,
+  embrayage, liquide de boîte, amortisseurs, rotules, cardans,
+  échappement, essuie-glaces, contrôle technique, révision constructeur…
+  L'IA ne décide plus QUELLES opérations existent (source des oublis) mais
+  seulement, pour CHAQUE entrée fixe, si elle est applicable à ce véhicule
+  précis et avec quel intervalle — rien ne peut plus disparaître d'une
+  génération à l'autre.
+- **Régénération non destructive** : les items ont désormais un id stable
+  (celui du catalogue), donc régénérer le plan préserve les dates de
+  dernière intervention, les bascules manuelles applicable/non-applicable,
+  les ajustements d'échéance et les explications DIY déjà générées — ce
+  qui disparaissait avant à chaque régénération.
+- **Case à cocher applicable/non-applicable** sur chaque échéance,
+  éditable manuellement à tout moment (contre les erreurs de génération
+  IA, inévitables).
+- **Ajustement manuel direct de l'échéance** (km et/ou date), en plus du
+  calcul habituel basé sur la dernière intervention + intervalle.
+- **Ajout d'un entretien manquant sans régénérer tout le plan** — bouton
+  "+ Ajouter un entretien" en bas de la liste, formulaire nom/intervalles/
+  coût, n'affecte aucun autre item.
+- **Réglage "masquer les entretiens non applicables"** et **réglage
+  "notifications d'échéances dépassées" (on/off)**, dans l'écran Réglages.
+- **Difficulté DIY en deux temps** : dès la génération initiale, chaque
+  échéance applicable reçoit un niveau de difficulté (facile/moyen/
+  difficile/déconseillé) et un coût pièces estimé en DIY (peu de tokens
+  supplémentaires). Un bouton "🔧 Comment le faire soi-même ?" génère à la
+  demande — et met en cache — l'explication détaillée, l'outillage
+  spécifique et le temps estimé (appel Gemini séparé, pour ne pas alourdir
+  la génération initiale).
+- Prompt de génération du plan encore renforcé : croisement mental
+  documentation constructeur / revue technique indépendante, consigne
+  explicite de cohérence factuelle (ex : ne jamais annoncer un
+  remplacement de disques ET la présence de tambours sur le même essieu).
+
 ---
 

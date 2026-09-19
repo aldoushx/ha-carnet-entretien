@@ -10,7 +10,7 @@ dédiée avec quatre thèmes visuels au choix.
 ![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5?logo=homeassistantcommunitystore&logoColor=white)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-41BDF5?logo=home-assistant&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Version](https://img.shields.io/badge/version-0.9.0-orange)
+![Version](https://img.shields.io/badge/version-0.10.0-orange)
 
 Architecture inspirée de [ha-millesime](https://github.com/Redsklns/ha-millesime)
 (cave à vin gérée par IA) : stockage 100 % local, carte Lovelace auto-servie
@@ -29,18 +29,23 @@ n'est configurée.
 - 🔍 **Ajout d'un véhicule en 30 secondes** : marque, modèle et motorisation
   avec autocomplétion intelligente (référentiel local + suggestions Gemini
   mises en cache), année, kilométrage, plaque, photo.
-- 🛠️ **Plan d'entretien généré par IA** à partir de la documentation
-  constructeur : chaque échéance avec intervalle km/mois, coût estimé,
-  date prévisionnelle réelle (calculée sur le rythme kilométrique annuel du
-  véhicule), et détection automatique des opérations non applicables
-  (ex : pas de disques de frein arrière sur un véhicule à tambours).
+- 🛠️ **Plan d'entretien basé sur un catalogue fixe** (~28 opérations codées
+  en dur : vidange, tous les filtres, courroie de distribution **et**
+  d'accessoires séparément, disques **et** plaquettes avant/arrière comme
+  entrées distinctes, batterie, climatisation, FAP/EGR, contrôle
+  technique, révision constructeur...). L'IA ne décide que de
+  l'applicabilité et des intervalles pour chaque entrée — rien ne peut
+  plus être oublié d'une génération à l'autre. Chaque échéance : intervalle
+  km/mois, coût estimé, date prévisionnelle réelle, difficulté DIY et coût
+  pièces si fait soi-même, avec explication détaillée générée à la demande.
+- ✏️ **Corrections manuelles à tout moment** : case applicable/non
+  applicable par échéance, ajustement direct de la date ou du kilométrage
+  d'échéance, ajout d'un entretien manquant sans régénérer tout le plan.
 - ⚠️ **Points de vigilance & pannes connues** spécifiques au modèle, avec
   gravité, coût indicatif et sources citées.
 - 🚨 **Rappels constructeur actifs** recherchés par IA à la création,
   mutualisés par modèle et rafraîchissables, avec sources et avertissement
   à vérifier sur les canaux officiels.
-- 🪪 **Reconnaissance de plaque VIN** à la création : une photo suffit à
-  préremplir marque/modèle/année/motorisation (Gemini Vision).
 - 💶 **Suivi de la valeur de revente** dans le temps, avec fourchette et
   raisonnement détaillé (tendance marché, décote, kilométrage).
 - 📆 **Historique d'entretien horodaté** : chaque échéance se déplie pour
@@ -77,6 +82,7 @@ reste utilisable en saisie 100 % manuelle.
 - [Guide d'installation et d'utilisation détaillé](docs/INSTALL.md)
 - [Changelog](CHANGELOG.md)
 - [Idées de fonctionnalités à venir](docs/IDEAS.md)
+- [Publier des mises à jour via GitHub + HACS](docs/RELEASING.md)
 
 ## 🤝 Contribuer
 

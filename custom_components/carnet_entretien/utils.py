@@ -2,12 +2,12 @@
 en dates/km d'échéance concrets, en tenant compte du kilométrage actuel et
 d'un kilométrage annuel moyen estimé à partir de l'historique du véhicule.
 
-Ajouts v0.2 (retour d'usage) :
-- date prévisionnelle "MM/YYYY" calculée même pour les échéances purement
-  kilométriques, en convertissant le km restant via le rythme annuel réel
-- distinction claire "reste" vs "dépassé de" (valeur toujours positive côté UI)
-- statut "non_applicable" pour les opérations qui ne concernent pas ce
-  véhicule précis (ex : disques de frein arrière sur un véhicule à tambours)
+v0.10 : le plan est désormais toujours construit à partir du catalogue fixe
+(voir maintenance_catalog.py + __init__.py::_refresh_plan) — la présence du
+contrôle technique et de la révision constructeur est garantie par le
+catalogue lui-même, plus besoin d'une fonction dédiée pour les injecter.
+Ajout du support d'un ajustement manuel de l'échéance ("due_km_override" /
+"due_date_override"), qui prime sur le calcul base+intervalle habituel.
 """
 from __future__ import annotations
 
@@ -15,19 +15,7 @@ import calendar
 import datetime
 from typing import Any
 
-from .const import (
-    DEFAULT_CONTROLE_TECHNIQUE_COST_EUR,
-    DEFAULT_CONTROLE_TECHNIQUE_FIRST_INTERVAL_MONTHS,
-    DEFAULT_CONTROLE_TECHNIQUE_INTERVAL_MONTHS,
-    DEFAULT_REVISION_COST_EUR,
-    DEFAULT_REVISION_INTERVAL_KM,
-    DEFAULT_REVISION_INTERVAL_MONTHS,
-    SOON_DAYS_THRESHOLD,
-    SOON_KM_THRESHOLD,
-    STATUS_DUE,
-    STATUS_OK,
-    STATUS_SOON,
-)
+from .const import SOON_DAYS_THRESHOLD, SOON_KM_THRESHOLD, STATUS_DUE, STATUS_OK, STATUS_SOON
 
 DEFAULT_ANNUAL_KM = 12000
 STATUS_NOT_APPLICABLE = "non_applicable"
@@ -94,6 +82,16 @@ def compute_item_status(vehicle: dict[str, Any], item: dict[str, Any]) -> dict[s
     due_km = base_km + interval_km if interval_km else None
     due_date_from_months = _add_months(base_date, interval_months) if interval_months else None
 
+    # Ajustement manuel de l'échéance (l'utilisateur peut corriger une
+    # échéance générée qu'il sait erronée, sans attendre une régénération) :
+    # prime sur le calcul base+intervalle ci-dessus s'il est renseigné.
+    if item.get("due_km_override") is not None:
+        due_km = item["due_km_override"]
+    override_date_ts = item.get("due_date_override")
+    due_date_from_months = (
+        datetime.date.fromtimestamp(override_date_ts) if override_date_ts else due_date_from_months
+    )
+
     km_restants = (due_km - current_km) if due_km is not None else None
     jours_restants_calendaires = (due_date_from_months - today).days if due_date_from_months else None
 
@@ -151,54 +149,3 @@ def compute_plan_status(vehicle: dict[str, Any]) -> list[dict[str, Any]]:
 def next_due_item(vehicle: dict[str, Any]) -> dict[str, Any] | None:
     items = [i for i in compute_plan_status(vehicle) if i["statut"] != STATUS_NOT_APPLICABLE]
     return items[0] if items else None
-
-
-def ensure_default_items(plan: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Garantit la présence du contrôle technique et de la révision
-    constructeur dans le plan, même si l'IA les a omis ou mal nommés —
-    ce sont des échéances trop importantes pour dépendre entièrement de
-    la génération IA. N'écrase jamais un item déjà présent dans la même
-    catégorie : l'IA reste prioritaire si elle a fourni une valeur.
-    """
-    categories = {item.get("category") for item in plan}
-    result = list(plan)
-
-    if "controle_technique" not in categories:
-        result.append(
-            {
-                "id": "ct_auto",
-                "name": "Contrôle technique",
-                "category": "controle_technique",
-                "interval_km": 0,
-                "interval_months": DEFAULT_CONTROLE_TECHNIQUE_INTERVAL_MONTHS,
-                "first_interval_months": DEFAULT_CONTROLE_TECHNIQUE_FIRST_INTERVAL_MONTHS,
-                "cost_estimate_eur": DEFAULT_CONTROLE_TECHNIQUE_COST_EUR,
-                "applicable": True,
-                "notes": (
-                    "Ajouté automatiquement (règle française : 1ère visite "
-                    "obligatoire 4 ans après la mise en circulation, puis tous "
-                    "les 2 ans). Véhicules utilitaires/anciens : règles "
-                    "différentes, à vérifier."
-                ),
-            }
-        )
-
-    if "revision" not in categories:
-        result.append(
-            {
-                "id": "revision_auto",
-                "name": "Révision constructeur périodique",
-                "category": "revision",
-                "interval_km": DEFAULT_REVISION_INTERVAL_KM,
-                "interval_months": DEFAULT_REVISION_INTERVAL_MONTHS,
-                "cost_estimate_eur": DEFAULT_REVISION_COST_EUR,
-                "applicable": True,
-                "notes": (
-                    "Ajouté automatiquement avec un intervalle générique "
-                    "(15 000 km / 12 mois) — vérifiez le carnet constructeur "
-                    "pour l'intervalle exact de ce modèle."
-                ),
-            }
-        )
-
-    return result

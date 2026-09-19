@@ -9,6 +9,7 @@ const DOMAIN = "carnet_entretien";
 
 const STATUS_LABEL = { ok: "OK", bientot: "Bientôt", echue: "Échue", non_applicable: "Non applicable" };
 const SEVERITY_LABEL = { mineur: "Mineur", majeur: "Majeur", securite: "Sécurité" };
+const DIY_LABEL = { facile: "🟢 Facile en DIY", moyen: "🟠 Moyen en DIY", difficile: "🔴 Difficile en DIY", non_recommande: "⛔ Déconseillé en DIY" };
 const CATEGORY_EMOJI = {
   moteur: "🛢️", freinage: "🛑", pneumatiques: "🛞", distribution: "⚙️",
   filtration: "🌬️", carrosserie: "🚗", electronique: "🔌",
@@ -47,8 +48,10 @@ class CarnetEntretienCard extends HTMLElement {
     this._mileageSourceEditing = false;
     this._pendingSensorEntity = "";
     this._theme = "gt_cuir";
+    this._settings = { hide_not_applicable: false, notifications_enabled: true };
     this._motorisationKey = null;
     this._motorisationFullList = null;
+    this._diyLoading = {}; // { [itemId]: bool } — état de chargement de l'explication DIY
   }
 
   setConfig(config) {
@@ -73,8 +76,11 @@ class CarnetEntretienCard extends HTMLElement {
     try {
       const res = await this._ws({ type: "get_vehicles" });
       this._vehicles = res.vehicles || [];
-      if (res.settings?.theme && VALID_THEME_IDS.includes(res.settings.theme)) {
-        this._theme = res.settings.theme;
+      if (res.settings) {
+        this._settings = { ...this._settings, ...res.settings };
+        if (res.settings.theme && VALID_THEME_IDS.includes(res.settings.theme)) {
+          this._theme = res.settings.theme;
+        }
       }
     } catch (e) {
       console.error("carnet_entretien: échec du chargement", e);
@@ -132,38 +138,6 @@ class CarnetEntretienCard extends HTMLElement {
       this._loading = false;
       this._render();
     }
-  }
-
-  // Préremplit le formulaire d'ajout à partir d'un résultat de décodage VIN
-  // (photo ou texte). Si une immatriculation a été lue/détectée en même
-  // temps (ex: photo montrant aussi la plaque de circulation), elle est
-  // copiée dans le champ Immatriculation au même titre que les autres infos.
-  _applyVinResult(res, statusEl) {
-    const root = this.shadowRoot;
-    if (res.brand) {
-      this._addForm.brand = res.brand;
-      root.getElementById("f-brand").value = res.brand;
-    }
-    if (res.model) {
-      this._addForm.model = res.model;
-      root.getElementById("f-model").value = res.model;
-    }
-    if (res.year) {
-      this._addForm.year = String(res.year);
-      root.getElementById("f-year").value = res.year;
-    }
-    if (res.motorisation) {
-      this._addForm.motorisation = res.motorisation;
-      root.getElementById("f-motorisation").value = res.motorisation;
-    }
-    if (res.plate) {
-      this._addForm.plate = res.plate;
-      root.getElementById("f-plate").value = res.plate;
-    }
-    const filled = [res.brand, res.model, res.year, res.motorisation, res.plate].some(Boolean);
-    statusEl.textContent = filled
-      ? `✓ Champs préremplis (confiance ${res.confidence || "?"}) — à vérifier avant de valider`
-      : "Aucune information exploitable détectée, à remplir manuellement.";
   }
 
   async _searchBrand(query) {
@@ -286,6 +260,44 @@ class CarnetEntretienCard extends HTMLElement {
     }
   }
 
+  async _setItemApplicable(vehicleId, itemId, applicable) {
+    await this._ws({ type: "set_item_applicable", data: { vehicle_id: vehicleId, item_id: itemId, applicable } });
+    await this._fetchVehicles();
+  }
+
+  async _setItemOverride(vehicleId, itemId, dueKm, dueDate) {
+    const data = { vehicle_id: vehicleId, item_id: itemId };
+    if (dueKm !== undefined) data.due_km = dueKm;
+    if (dueDate !== undefined) data.due_date = dueDate;
+    await this._ws({ type: "set_item_override", data });
+    await this._fetchVehicles();
+  }
+
+  async _addPlanItem(vehicleId, item) {
+    await this._ws({ type: "add_plan_item", data: { vehicle_id: vehicleId, ...item } });
+    await this._fetchVehicles();
+  }
+
+  async _removePlanItem(vehicleId, itemId) {
+    if (!confirm("Retirer cet entretien du plan ?")) return;
+    await this._ws({ type: "remove_plan_item", data: { vehicle_id: vehicleId, item_id: itemId } });
+    await this._fetchVehicles();
+  }
+
+  async _generateDiyExplanation(vehicleId, itemId) {
+    this._diyLoading[itemId] = true;
+    this._render();
+    try {
+      await this._ws({ type: "generate_diy_explanation", data: { vehicle_id: vehicleId, item_id: itemId } });
+      await this._fetchVehicles();
+    } catch (err) {
+      alert("Erreur : " + (err.message || err.code || err));
+    } finally {
+      delete this._diyLoading[itemId];
+      this._render();
+    }
+  }
+
   async _refreshKnownIssues(vehicleId) {
     this._loading = true;
     this._loadingMsg = "Analyse des retours d'expérience…";
@@ -357,6 +369,16 @@ class CarnetEntretienCard extends HTMLElement {
       await this._ws({ type: "set_settings", data: { theme: themeId } });
     } catch (e) {
       console.error("carnet_entretien: échec de l'enregistrement du thème", e);
+    }
+  }
+
+  async _updateSetting(key, value) {
+    this._settings = { ...this._settings, [key]: value };
+    this._render();
+    try {
+      await this._ws({ type: "set_settings", data: { [key]: value } });
+    } catch (e) {
+      console.error("carnet_entretien: échec de l'enregistrement du réglage", e);
     }
   }
 
@@ -441,7 +463,16 @@ class CarnetEntretienCard extends HTMLElement {
           </div>`
         ).join("")}
       </div>
-      <p class="muted small" style="margin-top:14px;">D'autres réglages arriveront ici (unités, seuils d'alerte, devise…).</p>
+      <p class="section-label">Notifications &amp; affichage</p>
+      <label class="checkbox-row" style="margin-bottom:10px;">
+        <input type="checkbox" id="setting-notifications" ${this._settings.notifications_enabled ? "checked" : ""} />
+        Notification persistante HA quand une échéance est dépassée
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="setting-hide-na" ${this._settings.hide_not_applicable ? "checked" : ""} />
+        Masquer les entretiens non applicables dans la liste
+      </label>
+      <p class="muted small" style="margin-top:14px;">D'autres réglages arriveront ici (unités, devise…).</p>
     `;
   }
 
@@ -449,15 +480,6 @@ class CarnetEntretienCard extends HTMLElement {
     const f = this._addForm;
     return `
       <form id="add-form" class="form">
-        <label>🪪 Scanner une plaque (VIN ou immatriculation) <span class="muted">(optionnel — préremplit les champs)</span>
-          <input type="file" id="f-vin-photo" accept="image/*" capture="environment" />
-        </label>
-        <div class="row-2">
-          <input id="f-vin-text" placeholder="Ou saisir le VIN manuellement (17 caractères)" maxlength="17" style="flex:2;" />
-          <button type="button" class="btn small" id="decode-vin-text-btn">🔎 Décoder</button>
-        </div>
-        <span class="muted small" id="vin-scan-status"></span>
-        <div class="edit-divider"><span>ou remplir manuellement</span></div>
         <label>Marque
           <div class="autocomplete">
             <input id="f-brand" value="${esc(f.brand)}" placeholder="Ex : Peugeot" autocomplete="off" />
@@ -707,91 +729,138 @@ class CarnetEntretienCard extends HTMLElement {
   }
 
   _renderPlanList(v) {
-    const items = v.maintenance_plan || [];
-    if (!items.length) {
+    const allItems = v.maintenance_plan || [];
+    if (!allItems.length) {
       return `<div class="empty">Aucun plan généré. <button class="btn small" id="refresh-plan-btn">Générer</button></div>`;
     }
-    const annualKm = items.find((it) => it.annual_km)?.annual_km;
+    const items = this._settings.hide_not_applicable
+      ? allItems.filter((it) => it.statut !== "non_applicable")
+      : allItems;
+    const annualKm = allItems.find((it) => it.annual_km)?.annual_km;
+    const hiddenCount = allItems.length - items.length;
     return `
       <div class="toolbar">
         <button class="btn small ghost" id="refresh-plan-btn">↻ Regénérer le plan</button>
         ${annualKm ? `<span class="muted small">📊 ~${fmtKm(annualKm)}/an</span>` : ""}
       </div>
+      ${hiddenCount ? `<div class="muted small" style="margin-bottom:8px;">${hiddenCount} entretien(s) non applicable(s) masqué(s) (réglages).</div>` : ""}
       <div class="plan-list">
-        ${items
-          .map((it) => {
-            if (it.statut === "non_applicable") {
-              return `
-              <div class="plan-row na">
-                <div class="plan-row-head">
-                  <span>${CATEGORY_EMOJI[it.category] || "🔩"} ${esc(it.name)}</span>
-                  <span class="muted small">non applicable</span>
-                </div>
-                <div class="muted small">${esc(it.not_applicable_reason || "Ne concerne pas ce véhicule.")}</div>
-              </div>`;
-            }
-            const color = statusVar(it.statut);
-            const overdue =
-              (it.km_restants != null && it.km_restants <= 0) || (it.jours_restants != null && it.jours_restants <= 0);
-            const pctFromKm =
-              it.km_restants != null && it.interval_km
-                ? 100 - (it.km_restants / it.interval_km) * 100
-                : null;
-            const pctFromDays =
-              it.jours_restants != null && it.interval_months
-                ? 100 - (it.jours_restants / (it.interval_months * 30)) * 100
-                : null;
-            const pct = overdue ? 100 : Math.max(0, Math.min(100, pctFromKm ?? pctFromDays ?? 30));
-            // Au bout de la jauge : le kilométrage restant/dépassé si l'échéance
-            // en dépend, sinon la durée restante/dépassée (jamais le prix, déjà
-            // affiché juste en dessous — c'était le bug remonté).
-            let rightLabel = "";
-            if (overdue) {
-              rightLabel = it.depasse_de_km != null
-                ? `-${fmtKm(it.depasse_de_km)}`
-                : it.jours_restants != null
-                ? `-${Math.abs(it.jours_restants)} j`
-                : "⚠️";
-            } else if (it.km_restants != null) {
-              rightLabel = fmtKm(it.km_restants);
-            } else if (it.jours_restants != null) {
-              rightLabel = `${it.jours_restants} j`;
-            }
-            return `
-            <details class="plan-row">
-              <summary class="plan-row-summary">
-                <div class="plan-row-head">
-                  <span>${CATEGORY_EMOJI[it.category] || "🔩"} ${esc(it.name)}</span>
-                  <span class="mono small" style="color:${overdue ? "var(--ce-danger-text)" : "var(--ce-text-muted)"}">${rightLabel}</span>
-                </div>
-                <div class="bar"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
-                <div class="plan-row-meta muted small">
-                  ${it.prevu_vers && !overdue ? `📅 ${esc(it.prevu_vers)}` : overdue ? "⚠️ à faire dès que possible" : ""}
-                  ${it.cost_estimate_eur != null ? ` · 💰 ${fmtEur(it.cost_estimate_eur)}` : ""}
-                </div>
-              </summary>
-              <div class="plan-row-edit">
-                <div class="muted small" style="margin-bottom:10px;">
-                  🔧 Dernière intervention connue :
-                  ${it.last_done_date ? `<b>${fmtDate(it.last_done_date)}</b> à <b>${fmtKm(it.last_done_km)}</b>` : "non renseignée (calcul basé sur la mise en circulation)"}
-                </div>
-                <button class="btn primary full done-today-btn" data-item-id="${it.id}" data-item-name="${esc(it.name)}">✓ Fait aujourd'hui (${fmtKm(v.mileage)})</button>
-                <div class="edit-divider"><span>ou une date antérieure</span></div>
-                <div class="row-2">
-                  <label>Date de l'intervention
-                    <input type="date" class="log-date-input" data-item-id="${it.id}" value="${it.last_done_date ? isoDateFromUnix(it.last_done_date) : todayIso()}" max="${todayIso()}" />
-                  </label>
-                  <label>Kilométrage
-                    <input type="number" class="log-km-input" data-item-id="${it.id}" value="${it.last_done_km ?? v.mileage}" min="0" />
-                  </label>
-                </div>
-                <button class="btn small ghost full log-save-btn" data-item-id="${it.id}" data-item-name="${esc(it.name)}">Enregistrer cette date</button>
-              </div>
-            </details>`;
-          })
-          .join("")}
+        ${items.map((it) => this._renderPlanRow(it, v)).join("")}
       </div>
+      <button class="btn small ghost full" id="add-item-btn" style="margin-top:10px;">+ Ajouter un entretien</button>
+      <div id="add-item-form" class="add-item-form" style="display:none;"></div>
     `;
+  }
+
+  _renderPlanRow(it, v) {
+    const isNA = it.statut === "non_applicable";
+    const applicableChecked = it.applicable !== false;
+    const diyBadge = !isNA && it.diy_difficulty ? `<span class="diy-badge diy-${it.diy_difficulty}">${DIY_LABEL[it.diy_difficulty] || it.diy_difficulty}</span>` : "";
+
+    let summaryBody = "";
+    if (isNA) {
+      summaryBody = `
+        <div class="plan-row-head">
+          <span>${CATEGORY_EMOJI[it.category] || "🔩"} ${esc(it.name)}</span>
+          <span class="muted small">non applicable</span>
+        </div>
+        <div class="muted small">${esc(it.not_applicable_reason || "Ne concerne pas ce véhicule.")}</div>`;
+    } else {
+      const color = statusVar(it.statut);
+      const overdue =
+        (it.km_restants != null && it.km_restants <= 0) || (it.jours_restants != null && it.jours_restants <= 0);
+      const pctFromKm = it.km_restants != null && it.interval_km ? 100 - (it.km_restants / it.interval_km) * 100 : null;
+      const pctFromDays =
+        it.jours_restants != null && it.interval_months ? 100 - (it.jours_restants / (it.interval_months * 30)) * 100 : null;
+      const pct = overdue ? 100 : Math.max(0, Math.min(100, pctFromKm ?? pctFromDays ?? 30));
+      let rightLabel = "";
+      if (overdue) {
+        rightLabel = it.depasse_de_km != null ? `-${fmtKm(it.depasse_de_km)}` : it.jours_restants != null ? `-${Math.abs(it.jours_restants)} j` : "⚠️";
+      } else if (it.km_restants != null) {
+        rightLabel = fmtKm(it.km_restants);
+      } else if (it.jours_restants != null) {
+        rightLabel = `${it.jours_restants} j`;
+      }
+      summaryBody = `
+        <div class="plan-row-head">
+          <span>${CATEGORY_EMOJI[it.category] || "🔩"} ${esc(it.name)} ${diyBadge}</span>
+          <span class="mono small" style="color:${overdue ? "var(--ce-danger-text)" : "var(--ce-text-muted)"}">${rightLabel}</span>
+        </div>
+        <div class="bar"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        <div class="plan-row-meta muted small">
+          ${it.prevu_vers && !overdue ? `📅 ${esc(it.prevu_vers)}` : overdue ? "⚠️ à faire dès que possible" : ""}
+          ${it.cost_estimate_eur != null ? ` · 💰 ${fmtEur(it.cost_estimate_eur)} (garage)` : ""}
+          ${it.diy_cost_estimate_eur != null ? ` · 🔧 ${fmtEur(it.diy_cost_estimate_eur)} (pièces DIY)` : ""}
+        </div>`;
+    }
+
+    return `
+      <details class="plan-row ${isNA ? "na" : ""}">
+        <summary class="plan-row-summary">${summaryBody}</summary>
+        <div class="plan-row-edit">
+          <label class="checkbox-row">
+            <input type="checkbox" class="applicable-cb" data-item-id="${it.id}" ${applicableChecked ? "checked" : ""} />
+            Applicable à mon véhicule
+          </label>
+          ${it.custom ? `<button class="link-btn" id="remove-item-${it.id}" data-item-id="${it.id}" style="margin-top:4px;">Retirer cet entretien ajouté manuellement</button>` : ""}
+
+          ${
+            !isNA
+              ? `
+          <div class="edit-divider"><span>dernière intervention</span></div>
+          <div class="muted small" style="margin-bottom:10px;">
+            🔧 ${it.last_done_date ? `<b>${fmtDate(it.last_done_date)}</b> à <b>${fmtKm(it.last_done_km)}</b>` : "non renseignée (calcul basé sur la mise en circulation)"}
+          </div>
+          <button class="btn primary full done-today-btn" data-item-id="${it.id}" data-item-name="${esc(it.name)}">✓ Fait aujourd'hui (${fmtKm(v.mileage)})</button>
+          <div class="edit-divider"><span>ou une date antérieure</span></div>
+          <div class="row-2">
+            <label>Date de l'intervention
+              <input type="date" class="log-date-input" data-item-id="${it.id}" value="${it.last_done_date ? isoDateFromUnix(it.last_done_date) : todayIso()}" max="${todayIso()}" />
+            </label>
+            <label>Kilométrage
+              <input type="number" class="log-km-input" data-item-id="${it.id}" value="${it.last_done_km ?? v.mileage}" min="0" />
+            </label>
+          </div>
+          <button class="btn small ghost full log-save-btn" data-item-id="${it.id}" data-item-name="${esc(it.name)}">Enregistrer cette date</button>
+
+          <div class="edit-divider"><span>ou fixer l'échéance directement</span></div>
+          <div class="row-2">
+            <label>Échéance (km)
+              <input type="number" class="override-km-input" data-item-id="${it.id}" value="${it.due_km_override ?? ""}" placeholder="${it.due_km ?? ""}" min="0" />
+            </label>
+            <label>Échéance (date)
+              <input type="date" class="override-date-input" data-item-id="${it.id}" value="${it.due_date_override ? isoDateFromUnix(it.due_date_override) : ""}" />
+            </label>
+          </div>
+          <button class="btn small ghost full override-save-btn" data-item-id="${it.id}">Appliquer cet ajustement</button>
+
+          <div class="edit-divider"><span>bricolage (DIY)</span></div>
+          ${this._renderDiySection(it)}
+          `
+              : ""
+          }
+        </div>
+      </details>`;
+  }
+
+  _renderDiySection(it) {
+    if (this._diyLoading[it.id]) {
+      return `<div class="muted small">🔎 Génération de l'explication…</div>`;
+    }
+    if (it.diy_explanation) {
+      return `
+        <div class="diy-box">
+          ${it.diy_safety_warning ? `<div class="diy-warning">⚠️ ${esc(it.diy_safety_warning)}</div>` : ""}
+          <div class="small">${esc(it.diy_explanation)}</div>
+          ${it.diy_estimated_time_minutes ? `<div class="muted small" style="margin-top:6px;">⏱️ Temps estimé : ~${it.diy_estimated_time_minutes} min</div>` : ""}
+          ${
+            it.diy_tools_needed && it.diy_tools_needed.length
+              ? `<div class="muted small">🧰 Outillage spécifique : ${it.diy_tools_needed.map(esc).join(", ")}</div>`
+              : ""
+          }
+        </div>`;
+    }
+    return `<button class="btn small ghost full diy-generate-btn" data-item-id="${it.id}">🔧 Comment le faire soi-même ?</button>`;
   }
 
   _renderTabHistorique(v) {
@@ -843,6 +912,8 @@ class CarnetEntretienCard extends HTMLElement {
     root.querySelectorAll(".theme-card").forEach((el) =>
       el.addEventListener("click", () => this._selectTheme(el.dataset.themeId))
     );
+    root.getElementById("setting-notifications")?.addEventListener("change", (e) => this._updateSetting("notifications_enabled", e.target.checked));
+    root.getElementById("setting-hide-na")?.addEventListener("change", (e) => this._updateSetting("hide_not_applicable", e.target.checked));
 
     root.querySelectorAll(".tile").forEach((el) =>
       el.addEventListener("click", () => {
@@ -864,37 +935,6 @@ class CarnetEntretienCard extends HTMLElement {
     if (addForm) {
       addForm.addEventListener("submit", (e) => this._submitAddVehicle(e));
 
-      root.getElementById("f-vin-photo")?.addEventListener("change", async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const status = root.getElementById("vin-scan-status");
-        status.textContent = "🔎 Lecture en cours…";
-        try {
-          const dataUrl = await fileToCompressedDataUrl(file, 900, 0.82);
-          const res = await this._ws({ type: "decode_vin_photo", data: { photo: dataUrl } });
-          this._applyVinResult(res, status);
-        } catch (err) {
-          console.error("carnet_entretien: échec de lecture du VIN", err);
-          status.textContent = "Échec : " + (err.message || err.code || "erreur inconnue") + " — remplissez manuellement.";
-        }
-      });
-
-      root.getElementById("decode-vin-text-btn")?.addEventListener("click", async () => {
-        const vin = root.getElementById("f-vin-text").value.trim();
-        const status = root.getElementById("vin-scan-status");
-        if (!vin) {
-          status.textContent = "Saisissez un VIN avant de décoder.";
-          return;
-        }
-        status.textContent = "🔎 Décodage en cours…";
-        try {
-          const res = await this._ws({ type: "decode_vin_text", data: { vin } });
-          this._applyVinResult(res, status);
-        } catch (err) {
-          console.error("carnet_entretien: échec de décodage du VIN", err);
-          status.textContent = "Échec : " + (err.message || err.code || "erreur inconnue") + " — remplissez manuellement.";
-        }
-      });
       const brandInput = root.getElementById("f-brand");
       brandInput.addEventListener("input", (e) => {
         this._addForm.brand = e.target.value;
@@ -1011,6 +1051,61 @@ class CarnetEntretienCard extends HTMLElement {
         this._logMaintenance(this._selectedId, { item_id: itemId, item_name: itemName, km, date: dateTs });
       })
     );
+
+    root.querySelectorAll(".applicable-cb").forEach((cb) =>
+      cb.addEventListener("change", (e) => {
+        this._setItemApplicable(this._selectedId, e.target.dataset.itemId, e.target.checked);
+      })
+    );
+    root.querySelectorAll(".override-save-btn").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const itemId = btn.dataset.itemId;
+        const kmInput = root.querySelector(`.override-km-input[data-item-id="${itemId}"]`);
+        const dateInput = root.querySelector(`.override-date-input[data-item-id="${itemId}"]`);
+        const km = kmInput.value.trim() === "" ? null : parseInt(kmInput.value, 10);
+        const dateTs = dateInput.value ? Math.floor(new Date(dateInput.value + "T12:00:00").getTime() / 1000) : null;
+        this._setItemOverride(this._selectedId, itemId, km, dateTs);
+      })
+    );
+    root.querySelectorAll(".diy-generate-btn").forEach((btn) =>
+      btn.addEventListener("click", () => this._generateDiyExplanation(this._selectedId, btn.dataset.itemId))
+    );
+    root.querySelectorAll("[id^='remove-item-']").forEach((btn) =>
+      btn.addEventListener("click", () => this._removePlanItem(this._selectedId, btn.dataset.itemId))
+    );
+
+    root.getElementById("add-item-btn")?.addEventListener("click", () => {
+      const box = root.getElementById("add-item-form");
+      if (box.style.display === "none") {
+        box.style.display = "block";
+        box.innerHTML = `
+          <div class="sensor-link-box" style="margin-top:8px;">
+            <label>Nom de l'entretien<input type="text" id="new-item-name" placeholder="Ex : Remplacement rotule de direction" /></label>
+            <div class="row-2">
+              <label>Intervalle (km)<input type="number" id="new-item-km" min="0" value="0" /></label>
+              <label>Intervalle (mois)<input type="number" id="new-item-months" min="0" value="0" /></label>
+            </div>
+            <label>Coût estimé (€, optionnel)<input type="number" id="new-item-cost" min="0" /></label>
+            <button class="btn small primary full" id="new-item-save-btn" style="margin-top:8px;">Ajouter</button>
+          </div>`;
+        root.getElementById("new-item-save-btn").addEventListener("click", () => {
+          const name = root.getElementById("new-item-name").value.trim();
+          if (!name) {
+            alert("Donnez un nom à cet entretien.");
+            return;
+          }
+          const interval_km = parseInt(root.getElementById("new-item-km").value, 10) || 0;
+          const interval_months = parseInt(root.getElementById("new-item-months").value, 10) || 0;
+          const costRaw = root.getElementById("new-item-cost").value;
+          this._addPlanItem(this._selectedId, {
+            name, interval_km, interval_months,
+            cost_estimate_eur: costRaw ? parseFloat(costRaw) : undefined,
+          });
+        });
+      } else {
+        box.style.display = "none";
+      }
+    });
     root.getElementById("add-log-btn")?.addEventListener("click", () => {
       const item_name = prompt("Intervention réalisée :");
       if (!item_name) return;
@@ -1169,6 +1264,11 @@ const STYLE = `
   .vehicle-photo.placeholder { display:flex; align-items:center; justify-content:center; background: var(--ce-surface); font-size:24px; }
   .photo-controls { display:flex; gap:10px; margin-top:4px; }
   .link-btn { background:none; border:none; padding:0; color: var(--ce-accent); font-size: 0.76em; cursor:pointer; font-family:inherit; }
+  .checkbox-row { display:flex; align-items:center; gap:8px; font-size:0.85em; color: var(--ce-text); cursor:pointer; }
+  .checkbox-row input { width:auto; }
+  .diy-badge { font-size:0.68em; padding:1px 6px; border-radius:999px; background: var(--ce-surface-2); color: var(--ce-text-muted); white-space:nowrap; }
+  .diy-box { background: var(--ce-surface-2); border-radius: 8px; padding: 8px 10px; margin-top: 4px; font-size: 0.85em; line-height:1.45; }
+  .diy-warning { color: var(--ce-danger-text); font-size: 0.85em; margin-bottom: 6px; font-weight:600; }
 
   .theme-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
   .theme-card { background: var(--ce-surface); border: 1px solid var(--ce-border); border-radius: 10px; padding: 12px; cursor:pointer; }

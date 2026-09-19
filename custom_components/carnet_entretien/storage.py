@@ -24,12 +24,18 @@ def now_ts() -> float:
     return time.time()
 
 
+DEFAULT_SETTINGS: dict[str, Any] = {
+    "theme": "gt_cuir",
+    "hide_not_applicable": False,
+    "notifications_enabled": True,
+}
+
 DEFAULT_DATA: dict[str, Any] = {
     "vehicles": {},      # id -> vehicle dict
     "model_cache": {},   # "marque|modele|motorisation|annee" -> {known_issues, cached_at}
     "motorisation_cache": {},  # "marque|modele|annee" -> {"list": [...], "cached_at": ...}
     "ai_usage": {"date": "", "tokens": 0},
-    "settings": {"theme": "gt_cuir"},
+    "settings": dict(DEFAULT_SETTINGS),
 }
 
 
@@ -47,6 +53,10 @@ class CarnetStore:
             # fusion défensive : garde les clés par défaut si absentes (upgrade)
             merged = dict(DEFAULT_DATA)
             merged.update(stored)
+            # "settings" mérite une fusion clé par clé (pas un simple écrasement) :
+            # sinon un stockage antérieur à v0.10 (sans hide_not_applicable /
+            # notifications_enabled) perdrait ces nouveaux réglages par défaut.
+            merged["settings"] = {**DEFAULT_SETTINGS, **(stored.get("settings") or {})}
             self.data = merged
         else:
             self.data = {
@@ -54,7 +64,7 @@ class CarnetStore:
                 "model_cache": {},
                 "motorisation_cache": {},
                 "ai_usage": {"date": "", "tokens": 0},
-                "settings": {"theme": "gt_cuir"},
+                "settings": dict(DEFAULT_SETTINGS),
             }
 
     async def async_save(self) -> None:
@@ -76,6 +86,7 @@ class CarnetStore:
             "created_at": now_ts(),
             "mileage_history": [{"date": now_ts(), "km": vehicle.get("mileage", 0)}],
             "maintenance_plan": [],
+            "maintenance_plan_sources": "",
             "known_issues": [],
             "known_issues_sources": "",
             "recalls": [],
@@ -137,11 +148,57 @@ class CarnetStore:
         await self.async_save()
         return vehicle
 
-    async def async_set_plan(self, vehicle_id: str, plan: list[dict[str, Any]]) -> None:
+    async def async_set_plan(
+        self, vehicle_id: str, plan: list[dict[str, Any]], sources_summary: str = ""
+    ) -> None:
         vehicle = self.vehicles.get(vehicle_id)
         if vehicle is not None:
             vehicle["maintenance_plan"] = plan
+            vehicle["maintenance_plan_sources"] = sources_summary
             await self.async_save()
+
+    async def async_update_plan_item(
+        self, vehicle_id: str, item_id: str, patch: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        """Modifie un item existant du plan en place (bascule
+        applicable/non applicable, ajustement manuel d'échéance, mise en
+        cache d'une explication DIY générée à la demande...) sans toucher
+        aux autres items ni régénérer quoi que ce soit.
+        """
+        vehicle = self.vehicles.get(vehicle_id)
+        if vehicle is None:
+            return None
+        for item in vehicle.get("maintenance_plan", []):
+            if item.get("id") == item_id:
+                item.update(patch)
+                await self.async_save()
+                return item
+        return None
+
+    async def async_add_plan_item(self, vehicle_id: str, item: dict[str, Any]) -> dict[str, Any] | None:
+        """Ajoute un item personnalisé au plan sans toucher aux autres —
+        permet de compléter une échéance oubliée sans perdre les dates de
+        dernière intervention déjà enregistrées sur le reste du plan.
+        """
+        vehicle = self.vehicles.get(vehicle_id)
+        if vehicle is None:
+            return None
+        item = {"id": f"custom_{new_id()}", "applicable": True, "custom": True, **item}
+        vehicle.setdefault("maintenance_plan", []).append(item)
+        await self.async_save()
+        return item
+
+    async def async_remove_plan_item(self, vehicle_id: str, item_id: str) -> bool:
+        vehicle = self.vehicles.get(vehicle_id)
+        if vehicle is None:
+            return False
+        plan = vehicle.get("maintenance_plan", [])
+        new_plan = [i for i in plan if i.get("id") != item_id]
+        if len(new_plan) == len(plan):
+            return False
+        vehicle["maintenance_plan"] = new_plan
+        await self.async_save()
+        return True
 
     async def async_set_known_issues(
         self, vehicle_id: str, issues: list[dict[str, Any]], sources_summary: str = ""
@@ -232,10 +289,13 @@ class CarnetStore:
     # ---------- Réglages (thème visuel, etc.) ----------
 
     def get_settings(self) -> dict[str, Any]:
-        return self.data.setdefault("settings", {"theme": "gt_cuir"})
+        settings = self.data.setdefault("settings", dict(DEFAULT_SETTINGS))
+        for key, value in DEFAULT_SETTINGS.items():
+            settings.setdefault(key, value)
+        return settings
 
     async def async_set_settings(self, patch: dict[str, Any]) -> dict[str, Any]:
-        settings = self.data.setdefault("settings", {"theme": "gt_cuir"})
+        settings = self.get_settings()
         settings.update(patch)
         await self.async_save()
         return settings
