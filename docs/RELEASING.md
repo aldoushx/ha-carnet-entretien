@@ -30,11 +30,15 @@ ha-carnet-entretien/
   README.md
   LICENSE
   CHANGELOG.md
-  icon.png                  ← icône du dépôt
+  icon.png                  ← icône pour le README / la page GitHub
+  badge.svg                 ← illustration d'en-tête du README
   docs/
   custom_components/
     carnet_entretien/
       manifest.json          ← la version ("version": "x.y.z") vit ici
+      brand/                 ← icône affichée DANS Home Assistant (§7)
+        icon.png
+        icon@2x.png
       __init__.py
       ...
 ```
@@ -52,7 +56,7 @@ Dans le dossier extrait de l'archive :
 cd ha-carnet-entretien
 git init
 git add .
-git commit -m "Version initiale — 0.9.0"
+git commit -m "Version initiale — 1.0.0"
 ```
 
 Si vous n'avez pas encore configuré Git sur cette machine :
@@ -87,14 +91,14 @@ taguée.
 
 Le tag doit correspondre à la version du `manifest.json`
 (`custom_components/carnet_entretien/manifest.json`, champ `"version"`),
-précédé de `v`. Actuellement : **`v0.9.0`**.
+précédé de `v`. Actuellement : **`v1.0.0`**.
 
 ### Option A — Interface GitHub
 
 1. Sur la page du dépôt → **Releases** (colonne de droite) → **Create a
    new release** (ou **Draft a new release**).
-2. **Choose a tag** → tapez `v0.9.0` → **Create new tag on publish**.
-3. **Release title** : `v0.9.0`.
+2. **Choose a tag** → tapez `v1.0.0` → **Create new tag on publish**.
+3. **Release title** : `v1.0.0`.
 4. **Description** : collez le contenu de la section correspondante de
    `CHANGELOG.md`.
 5. **Publish release**.
@@ -102,7 +106,7 @@ précédé de `v`. Actuellement : **`v0.9.0`**.
 ### Option B — GitHub CLI
 
 ```bash
-gh release create v0.9.0 --title "v0.9.0" --notes-file CHANGELOG.md
+gh release create v1.0.0 --title "v1.0.0" --notes-file CHANGELOG.md
 ```
 
 (`--notes-file CHANGELOG.md` colle tout le changelog ; pour ne coller que
@@ -159,26 +163,33 @@ publiée :
 
 ---
 
-## 7. Icône du dépôt
+## 7. Icône du dépôt et de l'intégration
 
-`icon.png` à la racine du dépôt (déjà ajouté, 512×512) sert à
-l'illustration dans le `README.md` et dans la fiche du dépôt sur GitHub.
-Il ne s'affiche **pas automatiquement** comme icône d'intégration dans
-l'écran "Appareils et services" de Home Assistant : cet endroit-là est
-piloté par un dépôt séparé, [home-assistant/brands](https://github.com/home-assistant/brands),
-qui nécessite une pull request indépendante :
+Deux emplacements distincts, deux mécanismes différents :
 
-1. Fork de `home-assistant/brands`.
-2. Créez `custom_integrations/carnet_entretien/icon.png` (256×256) et
-   `custom_integrations/carnet_entretien/icon@2x.png` (512×512) — déjà
-   générés pour vous dans le dossier `brands/` de cette archive, à copier
-   tels quels.
-3. Pull request vers `home-assistant/brands`, suivant leur
-   [guide de contribution](https://github.com/home-assistant/brands#readme).
-4. Une fois mergée (délai variable, revue humaine), l'icône apparaît
-   automatiquement dans HA — aucune action de votre part dans ce dépôt-ci.
+**`icon.png` à la racine du dépôt** (déjà en place, 512×512) sert
+uniquement à l'illustration dans le `README.md` et sur la page GitHub du
+dépôt — sans effet dans Home Assistant lui-même.
 
-Cette étape est optionnelle et peut attendre que l'intégration soit stable.
+**`custom_components/carnet_entretien/brand/`** (déjà en place :
+`icon.png` 256×256 et `icon@2x.png` 512×512) est le mécanisme qui affiche
+réellement l'icône dans Home Assistant, depuis la version **2026.3** :
+les intégrations personnalisées peuvent désormais embarquer leurs propres
+images de marque directement dans ce dossier, servies via
+`/api/brands/integration/carnet_entretien/icon.png`. Plus besoin de PR
+vers `home-assistant/brands` (ce dépôt n'accepte d'ailleurs plus les
+nouvelles soumissions d'intégrations tierces depuis ce changement) — rien
+à faire de plus, l'icône est incluse dans chaque release comme n'importe
+quel autre fichier.
+
+Cette icône s'affiche correctement dans Paramètres → Appareils et
+services, sur la page de l'intégration et sur les fiches d'appareils.
+**Limite connue** : la vignette dans la **liste de HACS elle-même** peut
+continuer à afficher "icon not available" même quand tout le reste
+fonctionne — HACS a un bug ouvert (interface encore basée sur l'ancien
+CDN `brands.home-assistant.io` plutôt que sur le nouveau proxy local) qui
+ne dépend pas de ce dépôt et devrait se résoudre avec une future mise à
+jour du frontend HACS.
 
 ---
 

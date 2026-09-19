@@ -1,7 +1,7 @@
 """Client Gemini pour la génération du carnet d'entretien, des points de
 vigilance et de l'estimation de valeur.
 
-Reprend les leçons de robustesse de ha-millesime :
+Conçu pour être robuste face aux erreurs d'API courantes :
 - thinking désactivé sur les extractions structurées courtes
 - budgets de sortie généreux (les réponses tronquées sont la cause n°1
   d'échec silencieux observée dans leur changelog)

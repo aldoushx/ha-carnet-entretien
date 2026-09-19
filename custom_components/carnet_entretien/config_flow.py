@@ -1,4 +1,4 @@
-"""Config flow : demande une clé Gemini optionnelle, comme ha-millesime."""
+"""Config flow : demande une clé Gemini optionnelle."""
 from __future__ import annotations
 
 import voluptuous as vol

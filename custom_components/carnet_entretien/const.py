@@ -8,7 +8,7 @@ CONF_GEMINI_API_KEY = "gemini_api_key"
 
 SIGNAL_VEHICLES_UPDATED = f"{DOMAIN}_vehicles_updated"
 
-# Modèles Gemini essayés dans l'ordre (repli automatique comme ha-millesime).
+# Modèles Gemini essayés dans l'ordre, avec repli automatique en cas d'échec.
 # gemini-1.5-flash a été retiré : Google a sunset la lignée 1.5 sur de
 # nombreuses clés, ce qui provoquait une erreur "modèle indisponible"
 # systématique en fin de cascade (masquant l'erreur réelle des modèles

@@ -1,26 +1,23 @@
-<p align="center"><img src="icon.png" width="96" height="96" alt="Icône CARnet - Garage Log" /></p>
+<p align="center"><img src="badge.svg" width="180" height="180" alt="CARnet - Garage Log" /></p>
 
-# 🚗 CARnet - Garage Log — Home Assistant
+<h1 align="center">CARnet - Garage Log</h1>
+<p align="center">Carnet d'entretien automobile intelligent pour Home Assistant</p>
+
+<p align="center">
+<img alt="HACS Custom" src="https://img.shields.io/badge/HACS-Custom-41BDF5?logo=homeassistantcommunitystore&logoColor=white">
+<img alt="Home Assistant" src="https://img.shields.io/badge/Home%20Assistant-2024.1%2B-41BDF5?logo=home-assistant&logoColor=white">
+<img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
+<img alt="Version" src="https://img.shields.io/badge/version-1.0.0-orange">
+</p>
 
 **Carnet d'entretien automobile intelligent pour Home Assistant**, généré et
-tenu à jour par **Google Gemini** : plan d'entretien constructeur, points de
-vigilance connus, estimation de valeur de revente, et une carte Lovelace
-dédiée avec quatre thèmes visuels au choix.
+tenu à jour par **Google Gemini** : plan d'entretien basé sur un catalogue
+fixe de ~28 opérations, points de vigilance connus, rappels constructeur,
+estimation de valeur de revente, et une carte Lovelace dédiée avec quatre
+thèmes visuels au choix.
 
-![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5?logo=homeassistantcommunitystore&logoColor=white)
-![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-41BDF5?logo=home-assistant&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-blue)
-![Version](https://img.shields.io/badge/version-0.10.0-orange)
-
-Architecture inspirée de [ha-millesime](https://github.com/Redsklns/ha-millesime)
-(cave à vin gérée par IA) : stockage 100 % local, carte Lovelace auto-servie
-(rien à copier dans `www/`), IA optionnelle avec repli manuel si aucune clé
-n'est configurée.
-
-> **État du projet** : fonctionnel et testé sur une instance personnelle,
-> encore jeune (v0.7) — voir [CHANGELOG.md](CHANGELOG.md) pour l'historique
-> et [Limites connues](docs/INSTALL.md#9-limites-connues--pistes-damélioration)
-> avant un usage en production.
+Stockage 100 % local, carte Lovelace auto-servie (rien à copier dans
+`www/`), IA optionnelle avec repli manuel si aucune clé n'est configurée.
 
 <!-- 📸 Capture d'écran de la carte à ajouter ici -->
 
@@ -81,15 +78,10 @@ reste utilisable en saisie 100 % manuelle.
 
 - [Guide d'installation et d'utilisation détaillé](docs/INSTALL.md)
 - [Changelog](CHANGELOG.md)
-- [Idées de fonctionnalités à venir](docs/IDEAS.md)
-- [Publier des mises à jour via GitHub + HACS](docs/RELEASING.md)
 
 ## 🤝 Contribuer
 
-Les retours, issues et pull requests sont les bienvenus — c'est un projet
-jeune, taillé pour évoluer avec l'usage réel. Avant de proposer une
-fonctionnalité, un coup d'œil à [docs/IDEAS.md](docs/IDEAS.md) pour voir si
-elle y figure déjà.
+Les retours, issues et pull requests sont les bienvenus.
 
 ## 📜 Licence
 

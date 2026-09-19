@@ -1,6 +1,6 @@
 """Intégration Carnet d'entretien.
 
-Structure calquée sur ha-millesime :
+Architecture :
 - stockage JSON local (storage.py)
 - appels Gemini côté serveur (gemini_client.py)
 - API websocket consommée par la carte Lovelace auto-servie (www/)
@@ -192,7 +192,7 @@ def _async_sync_mileage_listener(hass: HomeAssistant, entry: ConfigEntry, vehicl
 
 async def _async_register_static_path(hass: HomeAssistant) -> None:
     """Sert la carte Lovelace directement depuis le composant (rien à copier
-    dans /www/) et l'enregistre comme ressource frontend, comme ha-millesime.
+    dans /www/) et l'enregistre comme ressource frontend automatiquement.
 
     Utilise l'API moderne (HA 2024.7+) : `register_static_path` (synchrone)
     a été retiré au profit de `async_register_static_paths`, et l'accès via

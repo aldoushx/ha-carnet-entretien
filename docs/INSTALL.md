@@ -70,7 +70,7 @@
 ## 4. Ajouter la carte au tableau de bord
 
 La ressource JS est **enregistrée automatiquement** au démarrage de
-Home Assistant (comme pour ha-millesime) — vous n'avez rien à déclarer
+Home Assistant — vous n'avez rien à déclarer
 dans Paramètres → Tableaux de bord → Ressources.
 
 1. Ouvrez un tableau de bord → **Modifier le tableau de bord** →
@@ -200,9 +200,6 @@ possible même pour un modèle absent du fichier.
   échéances entre elles (`utils.py`), basée sur l'historique de
   kilométrage du véhicule ; peu fiable tant que peu de points de mesure
   existent (valeur par défaut 12 000 km/an en attendant).
-- **Pas de scan de carte grise / photo** (contrairement au scan
-  d'étiquette de ha-millesime) : pourrait être ajouté en réutilisant le
-  même pattern (image en base64 envoyée à Gemini Vision) si utile.
 - **Suppression d'entités** : gérée via le registre HA ; à tester
   spécifiquement sur votre version de Home Assistant, les API de
   registre évoluent parfois d'une version à l'autre.

@@ -1,7 +1,7 @@
 """Couche de persistance locale (JSON via homeassistant.helpers.storage.Store).
 
 Toutes les données restent en local dans .storage/carnet_entretien_data,
-à l'image de ha-millesime : aucune donnée n'est envoyée ailleurs qu'à
+aucune donnée n'est envoyée ailleurs qu'à
 Gemini, et uniquement au moment d'une génération explicite.
 """
 from __future__ import annotations
@@ -300,7 +300,7 @@ class CarnetStore:
         await self.async_save()
         return settings
 
-    # ---------- Suivi tokens IA (comme le budget quotidien Gemini de ha-millesime) ----------
+    # ---------- Suivi tokens IA (budget quotidien Gemini) ----------
 
     async def async_add_token_usage(self, tokens: int) -> None:
         import datetime
