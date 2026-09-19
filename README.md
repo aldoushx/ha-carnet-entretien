@@ -1,4 +1,4 @@
-<p align="center"><img src="badge.svg" width="180" height="180" alt="CARnet - Garage Log" /></p>
+<p align="center"><img src="badge.svg" width="360" height="360" alt="CARnet - Garage Log" /></p>
 
 <h1 align="center">CARnet - Garage Log</h1>
 <p align="center">Carnet d'entretien automobile intelligent pour Home Assistant</p>
