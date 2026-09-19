@@ -27,9 +27,8 @@ Stockage 100 % local, carte Lovelace auto-servie (rien à copier dans
   avec autocomplétion intelligente (référentiel local + suggestions Gemini
   mises en cache), année, kilométrage, plaque, photo.
 - 🛠️ **Plan d'entretien basé sur un catalogue fixe** (~28 opérations codées
-  en dur : vidange, tous les filtres, courroie de distribution **et**
-  d'accessoires séparément, disques **et** plaquettes avant/arrière comme
-  entrées distinctes, batterie, climatisation, FAP/EGR, contrôle
+  en dur : vidange, tous les filtres, courroie de distribution et
+  d'accessoires, disques et plaquettes avant/arrière, batterie, climatisation, FAP/EGR, contrôle
   technique, révision constructeur...). L'IA ne décide que de
   l'applicabilité et des intervalles pour chaque entrée — rien ne peut
   plus être oublié d'une génération à l'autre. Chaque échéance : intervalle
@@ -73,11 +72,6 @@ Optionnelle mais recommandée pour la génération automatique (plan, points de
 vigilance, valeur, autocomplétion motorisation). Clé gratuite sur
 [aistudio.google.com](https://aistudio.google.com). Sans clé, l'intégration
 reste utilisable en saisie 100 % manuelle.
-
-## 📄 Documentation
-
-- [Guide d'installation et d'utilisation détaillé](docs/INSTALL.md)
-- [Changelog](CHANGELOG.md)
 
 ## 🤝 Contribuer
 
