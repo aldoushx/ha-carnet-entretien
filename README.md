@@ -7,7 +7,7 @@
 <img alt="HACS Custom" src="https://img.shields.io/badge/HACS-Custom-41BDF5?logo=homeassistantcommunitystore&logoColor=white">
 <img alt="Home Assistant" src="https://img.shields.io/badge/Home%20Assistant-2024.1%2B-41BDF5?logo=home-assistant&logoColor=white">
 <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
-<img alt="Version" src="https://img.shields.io/badge/version-1.0.2-orange">
+<img alt="Version" src="https://img.shields.io/badge/version-1.0.3-orange">
 </p>
 
 **Carnet d'entretien automobile intelligent pour Home Assistant**, généré et

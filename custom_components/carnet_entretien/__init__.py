@@ -27,8 +27,9 @@ from homeassistant.helpers.device_registry import async_get as async_get_device_
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.entity_registry import async_entries_for_config_entry, async_get as async_get_entity_registry
 from homeassistant.helpers.event import async_track_state_change_event, async_track_time_interval
+from homeassistant.helpers.storage import Store
 
-from .const import CONF_GEMINI_API_KEY, DOMAIN, SIGNAL_VEHICLES_UPDATED, STATUS_DUE
+from .const import CONF_GEMINI_API_KEY, DOMAIN, SIGNAL_VEHICLES_UPDATED, STATUS_DUE, STORAGE_KEY, STORAGE_VERSION
 from .gemini_client import GeminiClient, GeminiError
 from .maintenance_catalog import CATALOG_BY_ID, MAINTENANCE_CATALOG
 from .storage import CarnetStore
@@ -94,6 +95,22 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             unsub()
         hass.data[DOMAIN].pop(entry.entry_id, None)
     return ok
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Appelé par Home Assistant quand l'utilisateur supprime DÉFINITIVEMENT
+    l'intégration (pas un simple rechargement ni une désactivation).
+
+    Le stockage local (`storage.py`/`CarnetStore`) vit dans un fichier
+    `.storage/carnet_entretien_data` totalement indépendant du cycle de vie
+    de la config entry : sans ce hook, ce fichier survit à n'importe quelle
+    désinstallation, y compris un retrait complet du dépôt HACS — d'où des
+    véhicules "supprimés" qui réapparaissent, échéances non validées
+    comprises, à la moindre réinstallation. On le purge donc explicitement
+    ici.
+    """
+    store = Store(hass, STORAGE_VERSION, STORAGE_KEY)
+    await store.async_remove()
 
 
 async def async_remove_config_entry_device(hass: HomeAssistant, entry: ConfigEntry, device) -> bool:

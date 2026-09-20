@@ -31,12 +31,15 @@ async def async_setup_entry(
         for vehicle_id, vehicle in store.vehicles.items():
             if vehicle_id in known_ids:
                 continue
-            known_ids.add(vehicle_id)
-            new_entities += [
-                NextMaintenanceSensor(store, vehicle_id),
-                MileageSensor(store, vehicle_id),
-                ResaleValueSensor(store, vehicle_id),
-            ]
+            try:
+                known_ids.add(vehicle_id)
+                new_entities += [
+                    NextMaintenanceSensor(store, vehicle_id),
+                    MileageSensor(store, vehicle_id),
+                    ResaleValueSensor(store, vehicle_id),
+                ]
+            except Exception:  # noqa: BLE001 - un véhicule mal formé ne doit jamais bloquer les autres
+                _LOGGER.exception("Impossible de créer les capteurs pour le véhicule %s", vehicle_id)
         # Les suppressions passent par le registre d'entités (retrait explicite),
         # gérées dans __init__.py au moment de remove_vehicle.
         if new_entities:
@@ -66,7 +69,7 @@ class _VehicleSensorBase(SensorEntity):
     @property
     def name(self) -> str:
         v = self._vehicle
-        label = f"{v['brand']} {v['model']}" if v else self._vehicle_id
+        label = f"{v.get('brand', '?')} {v.get('model', '?')}" if v else self._vehicle_id
         return f"{label} - {self._name_suffix}"
 
     @property
@@ -76,9 +79,9 @@ class _VehicleSensorBase(SensorEntity):
             return None
         return {
             "identifiers": {(DOMAIN, self._vehicle_id)},
-            "name": f"{v['brand']} {v['model']} ({v.get('year', '?')})",
-            "manufacturer": v["brand"],
-            "model": v["model"],
+            "name": f"{v.get('brand', '?')} {v.get('model', '?')} ({v.get('year', '?')})",
+            "manufacturer": v.get("brand", "?"),
+            "model": v.get("model", "?"),
         }
 
 

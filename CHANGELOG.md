@@ -329,5 +329,27 @@ uniquement du polish autour de l'identité du projet et de son intégration
   Ajout d'un réglage de **taille du texte** (boutons A−/A+, 80% à 140%
   par pas de 10%), qui redimensionne toute la carte proportionnellement.
 
+## 🛠️ v1.0.3 — correctif majeur : le stockage survivait à la désinstallation
+
+- **Le fichier de stockage local (`.storage/carnet_entretien_data`)
+  n'était jamais purgé**, même en supprimant complètement l'intégration
+  et en la désinstallant de HACS — ce fichier vit indépendamment du cycle
+  de vie de la config entry. Conséquence directe : véhicules "supprimés"
+  (y compris via suppression manuelle des appareils) qui réapparaissaient
+  intégralement à la moindre réinstallation, échéances non validées
+  comprises. Ajout du hook `async_remove_entry`, appelé par Home Assistant
+  uniquement lors d'une suppression **définitive** de l'intégration (pas
+  un simple rechargement), qui purge maintenant ce fichier.
+  ⚠️ **Une fois cette version installée, un cycle complet
+  suppression-de-l'intégration → réinstallation est nécessaire pour purger
+  les données restées de la version précédente** — la mise à jour seule
+  ne suffit pas, puisque le bug empêchait justement cette purge jusqu'ici.
+- **Durcissement de `sensor.py`** : un enregistrement véhicule d'un ancien
+  schéma de données (champ manquant) ne fait plus planter la création des
+  capteurs des AUTRES véhicules, et n'interrompt plus tout le chargement
+  de l'intégration — chaque véhicule est traité indépendamment, avec
+  journalisation claire (`carnet_entretien`) en cas de souci sur l'un
+  d'eux.
+
 ---
 
