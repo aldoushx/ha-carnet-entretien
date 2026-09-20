@@ -22,19 +22,32 @@ STATUS_NOT_APPLICABLE = "non_applicable"
 
 
 def estimate_annual_km(vehicle: dict[str, Any]) -> int:
-    """Kilométrage annuel moyen réel, déduit de l'historique de kilométrage
-    du véhicule (au moins 2 points, sur au moins 30 jours). Repli sur une
-    moyenne par défaut sinon.
+    """Kilométrage annuel moyen, du plus précis au moins précis :
+    1. Rythme réel déduit de l'historique de kilométrage (au moins 2
+       relevés espacés d'au moins 30 jours) — le plus fiable, mais
+       indisponible tant qu'un seul relevé existe (ex : juste après la
+       création du véhicule).
+    2. Kilométrage total actuel divisé par l'âge du véhicule (année de mise
+       en circulation) — nettement plus pertinent qu'une constante fixe
+       pour un véhicule d'occasion déjà roulé, disponible dès la création.
+    3. Constante par défaut (1.) en tout dernier recours, si ni l'un ni
+       l'autre n'est calculable (année ou kilométrage manquants/à zéro).
     """
     history = vehicle.get("mileage_history") or []
-    if len(history) < 2:
-        return DEFAULT_ANNUAL_KM
-    first, last = history[0], history[-1]
-    days = (last["date"] - first["date"]) / 86400
-    km = last["km"] - first["km"]
-    if days < 30 or km <= 0:
-        return DEFAULT_ANNUAL_KM
-    return max(int(km / days * 365), 1000)
+    if len(history) >= 2:
+        first, last = history[0], history[-1]
+        days = (last["date"] - first["date"]) / 86400
+        km = last["km"] - first["km"]
+        if days >= 30 and km > 0:
+            return max(int(km / days * 365), 1000)
+
+    year = vehicle.get("year")
+    mileage = vehicle.get("mileage") or 0
+    if year and mileage > 0:
+        age_years = max(datetime.date.today().year - int(year), 1)
+        return max(int(mileage / age_years), 1000)
+
+    return DEFAULT_ANNUAL_KM
 
 
 def _registration_date(vehicle: dict[str, Any]) -> datetime.date:

@@ -1249,7 +1249,7 @@ const STYLE = `
   .header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px; }
   .header-actions { display:flex; align-items:center; gap:6px; }
   .title { font-family: var(--ce-font-header); font-size: 1.2em; font-weight: 600; letter-spacing:0.2px; color: var(--ce-text); display:flex; align-items:center; gap:8px; }
-  .title-icon { width:24px; height:24px; border-radius:6px; flex-shrink:0; }
+  .title-icon { width:48px; height:48px; border-radius:10px; flex-shrink:0; }
   .btn { border:none; border-radius: 8px; padding: 8px 14px; font-size: 0.9em; cursor:pointer; background: var(--ce-surface); color: var(--ce-text); font-family: inherit; }
   .btn.primary { background: var(--ce-accent); color: var(--ce-accent-contrast); font-weight:600; }
   .btn.danger { background: var(--ce-danger); color: #F5E6E0; }

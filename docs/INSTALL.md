@@ -69,23 +69,36 @@
 
 ## 4. Ajouter la carte au tableau de bord
 
-La ressource JS est **enregistrée automatiquement** au démarrage de
-Home Assistant — vous n'avez rien à déclarer
-dans Paramètres → Tableaux de bord → Ressources.
+**Étape manuelle obligatoire, une seule fois** — contrairement à d'autres
+intégrations similaires, la ressource JS n'est **pas** enregistrée
+automatiquement : ce mécanisme (`add_extra_js_url`) s'est avéré peu fiable
+sur certaines versions de Home Assistant (échec silencieux, sans erreur
+dans les logs). L'ajout manuel passe par l'interface standard de HA et
+fonctionne de façon garantie, quelle que soit votre version :
 
-1. Ouvrez un tableau de bord → **Modifier le tableau de bord** →
+1. **Paramètres → Tableaux de bord** → menu **⋮** (en haut à droite) →
+   **Ressources**.
+2. **Ajouter une ressource** :
+   - URL : `/carnet_entretien/carnet-entretien-card.js`
+   - Type de ressource : **Module JavaScript**
+3. Enregistrer, puis **rechargement complet du cache du navigateur**
+   (Ctrl+Maj+R / Cmd+Maj+R).
+4. Ouvrez un tableau de bord → **Modifier le tableau de bord** →
    **Ajouter une carte** → cherchez **"Carnet d'entretien"** dans la
    liste (ou choisissez "Manuel" et collez le YAML ci-dessous).
-2. YAML minimal :
+5. YAML minimal :
    ```yaml
    type: custom:carnet-entretien-card
    ```
 
-Si la carte n'apparaît pas dans la liste après installation, forcez un
-rechargement complet du cache du navigateur (Ctrl+Maj+R / Cmd+Maj+R),
-la ressource porte un paramètre de version basé sur la date de
-modification du fichier pour éviter le cache normalement, mais certains
-navigateurs mobiles sont plus agressifs.
+**Après une mise à jour de l'intégration**, le contenu du fichier change
+mais pas son URL : un simple rechargement du cache du navigateur suffit,
+pas besoin de retoucher la ressource.
+
+Si malgré cette ressource la carte reste en erreur ("Custom element
+doesn't exist"), vérifiez dans Paramètres → Système → Journaux qu'aucune
+erreur ne mentionne `carnet_entretien` au démarrage (fichier manquant,
+échec d'enregistrement de la route HTTP) — voir la section Dépannage.
 
 ---
 

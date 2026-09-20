@@ -29,12 +29,16 @@ class CarnetEntretienConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        return CarnetEntretienOptionsFlow(config_entry)
+        return CarnetEntretienOptionsFlow()
 
 
 class CarnetEntretienOptionsFlow(config_entries.OptionsFlow):
-    def __init__(self, config_entry):
-        self.config_entry = config_entry
+    """Depuis une version récente de Home Assistant, `config_entry` est une
+    propriété en lecture seule sur `OptionsFlow`, assignée automatiquement
+    par le framework — un `__init__` qui l'assigne manuellement (pattern
+    historiquement standard, utilisé par de très nombreuses intégrations)
+    lève désormais AttributeError. On ne définit donc plus `__init__` du
+    tout ; `self.config_entry` reste accessible normalement, hérité."""
 
     async def async_step_init(self, user_input: dict | None = None):
         if user_input is not None:

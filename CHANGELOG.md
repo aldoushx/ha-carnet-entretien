@@ -351,5 +351,34 @@ uniquement du polish autour de l'identité du projet et de son intégration
   journalisation claire (`carnet_entretien`) en cas de souci sur l'un
   d'eux.
 
+## 🛠️ v1.0.4 — la carte ne se chargeait toujours pas sur certaines versions de HA
+
+- **`add_extra_js_url` retiré**, remplacé par un ajout manuel obligatoire
+  de la ressource Lovelace (une fois, à l'installation — voir
+  `docs/INSTALL.md §4`). Ce mécanisme d'enregistrement automatique de la
+  carte s'est avéré peu fiable sur certaines versions récentes de Home
+  Assistant : échec **silencieux**, aucune erreur journalisée, la route
+  HTTP fonctionnait mais la ressource n'apparaissait jamais dans le
+  tableau de bord. L'ajout manuel via Paramètres → Tableaux de bord →
+  Ressources passe par l'UI standard de HA et fonctionne de façon
+  garantie, quelle que soit la version.
+- **`OptionsFlow` corrigé** : `config_entry` est devenu une propriété en
+  lecture seule sur les versions récentes de HA, assignée automatiquement
+  par le framework — notre `__init__` qui l'assignait manuellement (pattern
+  historiquement standard) levait `AttributeError` à l'ouverture des
+  réglages de l'intégration. Ne définit plus `__init__` du tout.
+
+## 🛠️ v1.0.5 — ajustements
+
+- **Icône du titre de la carte doublée** (24px → 48px), trop petite pour
+  être lisible.
+- **Kilométrage annuel moyen** : se rabattait sur une constante fixe
+  (12 000 km/an) pour tout véhicule n'ayant qu'un seul relevé de
+  kilométrage (donc systématiquement juste après la création). Repli
+  amélioré : kilométrage total actuel ÷ âge du véhicule (année de mise en
+  circulation), nettement plus pertinent pour un véhicule d'occasion déjà
+  roulé, disponible dès la création plutôt que d'attendre plusieurs
+  relevés espacés d'au moins 30 jours.
+
 ---
 

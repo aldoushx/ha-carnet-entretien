@@ -17,7 +17,6 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.components import persistent_notification, websocket_api
-from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -225,19 +224,26 @@ def _async_sync_mileage_listener(hass: HomeAssistant, entry: ConfigEntry, vehicl
 
 
 async def _async_register_static_path(hass: HomeAssistant) -> None:
-    """Sert la carte Lovelace directement depuis le composant (rien à copier
-    dans /www/) et l'enregistre comme ressource frontend automatiquement.
+    """Sert la carte Lovelace depuis le composant, à l'URL /carnet_entretien/
+    carnet-entretien-card.js — cette route HTTP est nécessaire dans tous les
+    cas, y compris pour la ressource ajoutée manuellement (voir docs/INSTALL.md §4).
 
     Utilise l'API moderne (HA 2024.7+) : `register_static_path` (synchrone)
-    a été retiré au profit de `async_register_static_paths`, et l'accès via
-    `hass.components.frontend` est également déprécié au profit d'un import
-    direct.
+    a été retiré au profit de `async_register_static_paths`.
 
-    Volontairement défensif : si l'enregistrement échoue pour une raison ou
-    une autre (fichier manquant, chemin déjà pris...), on journalise
-    clairement l'erreur plutôt que de laisser l'exception remonter et faire
-    échouer TOUT le chargement de l'intégration (services, capteurs,
-    notifications...) à cause du seul échec d'affichage de la carte.
+    N'appelle PLUS `add_extra_js_url` : ce mécanisme d'injection automatique
+    de ressource frontend s'est avéré peu fiable sur certaines versions
+    récentes de HA (échec silencieux, sans erreur journalisée — la route
+    HTTP fonctionne, mais la ressource n'apparaît jamais dans le tableau de
+    bord). L'ajout de la ressource se fait donc manuellement une fois à
+    l'installation (étape documentée, stable quelle que soit la version de
+    HA puisqu'elle passe par l'UI standard plutôt qu'une API interne).
+
+    Volontairement défensif : si l'enregistrement de la route échoue pour
+    une raison ou une autre (fichier manquant, chemin déjà pris...), on
+    journalise clairement l'erreur plutôt que de laisser l'exception
+    remonter et faire échouer TOUT le chargement de l'intégration
+    (services, capteurs, notifications...) à cause du seul échec de la carte.
     """
     if hass.data[DOMAIN].get("_static_registered"):
         return
@@ -256,11 +262,9 @@ async def _async_register_static_path(hass: HomeAssistant) -> None:
         await hass.http.async_register_static_paths(
             [StaticPathConfig(CARD_URL, str(CARD_JS_PATH), cache_headers=False)]
         )
-        version = CARD_JS_PATH.stat().st_mtime_ns  # cache-busting à chaque modification du fichier
-        add_extra_js_url(hass, f"{CARD_URL}?v={version}")
     except Exception:  # noqa: BLE001 - on veut vraiment tout attraper ici
         _LOGGER.exception(
-            "Échec de l'enregistrement de la carte Lovelace carnet_entretien "
+            "Échec de l'enregistrement de la route HTTP de la carte Lovelace carnet_entretien "
             "(le reste de l'intégration — services, capteurs, notifications — "
             "continue de fonctionner normalement)."
         )

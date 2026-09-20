@@ -7,7 +7,7 @@
 <img alt="HACS Custom" src="https://img.shields.io/badge/HACS-Custom-41BDF5?logo=homeassistantcommunitystore&logoColor=white">
 <img alt="Home Assistant" src="https://img.shields.io/badge/Home%20Assistant-2024.1%2B-41BDF5?logo=home-assistant&logoColor=white">
 <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
-<img alt="Version" src="https://img.shields.io/badge/version-1.0.3-orange">
+<img alt="Version" src="https://img.shields.io/badge/version-1.0.5-orange">
 </p>
 
 **Carnet d'entretien automobile intelligent pour Home Assistant**, généré et
@@ -16,8 +16,9 @@ fixe de ~28 opérations, points de vigilance connus, rappels constructeur,
 estimation de valeur de revente, et une carte Lovelace dédiée avec quatre
 thèmes visuels au choix.
 
-Stockage 100 % local, carte Lovelace auto-servie (rien à copier dans
-`www/`), IA optionnelle avec repli manuel si aucune clé n'est configurée.
+Stockage 100 % local, carte Lovelace servie par le composant (rien à copier
+dans `www/` — une ressource à ajouter une fois via l'UI, voir installation),
+IA optionnelle avec repli manuel si aucune clé n'est configurée.
 
 <!-- 📸 Capture d'écran de la carte à ajouter ici -->
 
