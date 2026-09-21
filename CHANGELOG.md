@@ -380,5 +380,39 @@ uniquement du polish autour de l'identité du projet et de son intégration
   roulé, disponible dès la création plutôt que d'attendre plusieurs
   relevés espacés d'au moins 30 jours.
 
+## 🆕 v1.1.0
+
+- **Icône remplacée partout** (page Intégrations, fiche HACS, coin de la
+  carte Lovelace) par la nouvelle icône fournie, déjà au format natif
+  48×48 — nette à l'échelle d'affichage réelle plutôt qu'agrandie depuis
+  une source plus petite ou compressée depuis une plus grande.
+- **Rappel périodique de mise à jour du kilométrage**, en plus du rappel
+  d'échéances dépassées : notification persistante si le kilométrage d'un
+  véhicule en saisie manuelle n'a pas été mis à jour depuis X jours
+  (réglable, 30 jours par défaut, désactivable). Les véhicules liés à un
+  capteur de kilométrage en sont naturellement exclus (ils se mettent à
+  jour tout seuls). Vérifié au démarrage, une fois par jour, et après
+  chaque mise à jour de kilométrage.
+- **Catalogue étendu à 45 opérations** (contre 28) : ajout de tout
+  l'entretien spécifique hybride (HEV/PHEV — filtre ventilation batterie
+  HT, refroidissement inverter, diagnostic SoH), 100% électrique (BEV —
+  réducteur, refroidissement batterie de traction, graissage étriers,
+  cartouche dessiccante), GPL (filtres phase gazeuse/liquide, jeu aux
+  soupapes, inspection réglementaire du réservoir) et quelques compléments
+  thermiques qui manquaient (AdBlue, additif FAP/Eolys, ponts et boîte de
+  transfert 4x4, géométrie des trains, réglage freins à tambour).
+- **Sélecteur de carburant/énergie** à la création du véhicule (Essence /
+  Diesel / Électrique / Hybride / GPL), avant le champ Motorisation —
+  optionnel mais fortement recommandé : affine à la fois les suggestions
+  de motorisation et la génération du plan (l'IA n'a plus à deviner le
+  type d'énergie depuis le seul libellé de motorisation, ce qui limite le
+  risque d'erreurs d'applicabilité sur les entrées thermiques vs
+  électriques).
+- **"Masquer les entretiens non applicables" coché par défaut** à
+  l'installation — avec 45 opérations dont beaucoup ne concernent qu'un
+  type d'énergie donné, la plupart des véhicules ont désormais une bonne
+  proportion d'entrées non applicables ; les masquer par défaut rend la
+  liste lisible dès le départ (reste décochable dans Réglages).
+
 ---
 

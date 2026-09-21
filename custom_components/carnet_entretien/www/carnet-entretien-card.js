@@ -6,7 +6,7 @@
 // toucher au JS : voir le bloc THEMES en bas de fichier.
 
 const DOMAIN = "carnet_entretien";
-const CARNET_ICON_DATA_URL = "data:image/png;base64,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";
+const CARNET_ICON_DATA_URL = "data:image/png;base64,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";
 
 const STATUS_LABEL = { ok: "OK", bientot: "Bientôt", echue: "Échue", non_applicable: "Non applicable" };
 const SEVERITY_LABEL = { mineur: "Mineur", majeur: "Majeur", securite: "Sécurité" };
@@ -43,13 +43,13 @@ class CarnetEntretienCard extends HTMLElement {
     this._tab = "entretien"; // entretien | historique
     this._loading = false;
     this._loadingMsg = "";
-    this._addForm = { brand: "", model: "", motorisation: "", year: "", mileage: "", plate: "", photo: "" };
+    this._addForm = { brand: "", model: "", fuel_type: "", motorisation: "", year: "", mileage: "", plate: "", photo: "" };
     this._brandOptions = [];
     this._modelOptions = [];
     this._mileageSourceEditing = false;
     this._pendingSensorEntity = "";
     this._theme = "gt_cuir";
-    this._settings = { hide_not_applicable: false, notifications_enabled: true, font_scale: 1 };
+    this._settings = { hide_not_applicable: true, notifications_enabled: true, font_scale: 1, mileage_reminder_enabled: true, mileage_reminder_days: 30 };
     this._motorisationKey = null;
     this._motorisationFullList = null;
     this._diyLoading = {}; // { [itemId]: bool } — état de chargement de l'explication DIY
@@ -121,6 +121,7 @@ class CarnetEntretienCard extends HTMLElement {
           brand: f.brand,
           model: f.model,
           motorisation: f.motorisation,
+          fuel_type: f.fuel_type,
           year: parseInt(f.year, 10),
           mileage: parseInt(f.mileage, 10),
           plate: f.plate,
@@ -131,7 +132,7 @@ class CarnetEntretienCard extends HTMLElement {
       this._selectedId = res.vehicle.id;
       this._view = "detail";
       this._tab = "entretien";
-      this._addForm = { brand: "", model: "", motorisation: "", year: "", mileage: "", plate: "", photo: "" };
+      this._addForm = { brand: "", model: "", fuel_type: "", motorisation: "", year: "", mileage: "", plate: "", photo: "" };
     } catch (err) {
       alert("Erreur lors de la génération : " + (err.message || err.code || err));
     } finally {
@@ -163,7 +164,7 @@ class CarnetEntretienCard extends HTMLElement {
       this._renderSuggestions("motorisation", []);
       return;
     }
-    const key = `${f.brand}|${f.model}|${f.year}`;
+    const key = `${f.brand}|${f.model}|${f.year}|${f.fuel_type}`;
     if (this._motorisationKey !== key) {
       this._motorisationKey = key;
       this._motorisationFullList = null;
@@ -171,7 +172,7 @@ class CarnetEntretienCard extends HTMLElement {
       try {
         const res = await this._ws({
           type: "search_motorisations",
-          data: { brand: f.brand, model: f.model, year: parseInt(f.year, 10), query: "" },
+          data: { brand: f.brand, model: f.model, year: parseInt(f.year, 10), fuel_type: f.fuel_type, query: "" },
         });
         if (this._motorisationKey !== key) return; // la sélection a changé entre-temps
         this._motorisationFullList = res.results || [];
@@ -478,6 +479,15 @@ class CarnetEntretienCard extends HTMLElement {
         <input type="checkbox" id="setting-hide-na" ${this._settings.hide_not_applicable ? "checked" : ""} />
         Masquer les entretiens non applicables dans la liste
       </label>
+      <label class="checkbox-row" style="margin-top:10px;">
+        <input type="checkbox" id="setting-mileage-reminder" ${this._settings.mileage_reminder_enabled ? "checked" : ""} />
+        Rappel périodique de mise à jour du kilométrage
+      </label>
+      <div class="mileage-reminder-days-row" style="${this._settings.mileage_reminder_enabled ? "" : "display:none;"}">
+        <span class="muted small">tous les</span>
+        <input type="number" id="setting-mileage-reminder-days" value="${this._settings.mileage_reminder_days ?? 30}" min="1" max="365" />
+        <span class="muted small">jours</span>
+      </div>
       <p class="section-label">Taille du texte</p>
       <div class="font-size-row">
         <button class="btn small ghost" id="font-decrease-btn" ${this._settings.font_scale <= 0.8 ? "disabled" : ""}>A−</button>
@@ -505,6 +515,16 @@ class CarnetEntretienCard extends HTMLElement {
         </label>
         <label>Année
           <input type="number" id="f-year" value="${esc(f.year)}" min="1970" max="2100" />
+        </label>
+        <label>Carburant / énergie <span class="muted">(optionnel — affine les suggestions et la génération)</span>
+          <select id="f-fuel-type">
+            <option value="" ${f.fuel_type === "" ? "selected" : ""}>Non précisé</option>
+            <option value="Essence" ${f.fuel_type === "Essence" ? "selected" : ""}>Essence</option>
+            <option value="Diesel" ${f.fuel_type === "Diesel" ? "selected" : ""}>Diesel</option>
+            <option value="Électrique" ${f.fuel_type === "Électrique" ? "selected" : ""}>Électrique</option>
+            <option value="Hybride" ${f.fuel_type === "Hybride" ? "selected" : ""}>Hybride (HEV/PHEV)</option>
+            <option value="GPL" ${f.fuel_type === "GPL" ? "selected" : ""}>GPL</option>
+          </select>
         </label>
         <label>Motorisation <span class="muted">(optionnel — suggestions une fois marque/modèle/année remplis)</span>
           <div class="autocomplete">
@@ -544,7 +564,7 @@ class CarnetEntretienCard extends HTMLElement {
           }
           <div>
             <div class="detail-title">${esc(v.brand)} ${esc(v.model)} <span class="muted">(${v.year})</span></div>
-            <div class="muted small">${esc(v.motorisation || "")}</div>
+            <div class="muted small">${esc(v.motorisation || "")}${v.fuel_type ? ` · ${esc(v.fuel_type)}` : ""}</div>
             ${v.plate ? `<div class="plate-chip mono">${esc(v.plate.toUpperCase())}</div>` : ""}
             <div class="photo-controls">
               <label class="link-btn">
@@ -925,6 +945,11 @@ class CarnetEntretienCard extends HTMLElement {
     );
     root.getElementById("setting-notifications")?.addEventListener("change", (e) => this._updateSetting("notifications_enabled", e.target.checked));
     root.getElementById("setting-hide-na")?.addEventListener("change", (e) => this._updateSetting("hide_not_applicable", e.target.checked));
+    root.getElementById("setting-mileage-reminder")?.addEventListener("change", (e) => this._updateSetting("mileage_reminder_enabled", e.target.checked));
+    root.getElementById("setting-mileage-reminder-days")?.addEventListener("change", (e) => {
+      const days = Math.max(1, Math.min(365, parseInt(e.target.value, 10) || 30));
+      this._updateSetting("mileage_reminder_days", days);
+    });
     root.getElementById("font-decrease-btn")?.addEventListener("click", () => {
       const next = Math.max(0.8, Math.round(((this._settings.font_scale || 1) - 0.1) * 10) / 10);
       this._updateSetting("font_scale", next);
@@ -971,6 +996,10 @@ class CarnetEntretienCard extends HTMLElement {
       modelInput.addEventListener("blur", () => setTimeout(() => this._closeSuggestions("model"), 150));
 
       root.getElementById("f-year").addEventListener("input", (e) => (this._addForm.year = e.target.value));
+      root.getElementById("f-fuel-type").addEventListener("change", (e) => {
+        this._addForm.fuel_type = e.target.value;
+        this._motorisationKey = null; // le carburant a changé : on relance la recherche au prochain focus
+      });
 
       const motoInput = root.getElementById("f-motorisation");
       motoInput.addEventListener("input", (e) => {
@@ -1298,6 +1327,8 @@ const STYLE = `
   .swatches span { width:16px; height:16px; border-radius:4px; display:inline-block; }
   .font-size-row { display:flex; align-items:center; gap:12px; }
   .font-size-row .btn:disabled { opacity:0.4; cursor:default; }
+  .mileage-reminder-days-row { display:flex; align-items:center; gap:8px; margin-top:8px; }
+  .mileage-reminder-days-row input { width:70px; padding:6px 8px; border-radius:8px; border:1px solid var(--ce-border); background: var(--ce-surface); color: var(--ce-text); }
 
   .form { display:flex; flex-direction:column; gap: 10px; }
   .form label { display:flex; flex-direction:column; gap:4px; font-size:0.85em; color: var(--ce-text-muted); }

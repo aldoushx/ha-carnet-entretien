@@ -202,7 +202,7 @@ class GeminiClient:
     # ---------------- Fonctions métier ----------------
 
     async def generate_maintenance_plan(
-        self, brand: str, model: str, motorisation: str, year: int, mileage: int
+        self, brand: str, model: str, motorisation: str, year: int, mileage: int, fuel_type: str = ""
     ) -> GeminiResult:
         catalog_lines = "\n".join(
             f'- "{it["id"]}" : {it["name"]} (défaut : {it["default_interval_km"]} km / '
@@ -246,25 +246,37 @@ confirmé par les deux plutôt qu'une information isolée :
 Marque : {brand}
 Modèle : {model}
 Motorisation : {motorisation or "non précisée"}
+Type de carburant/énergie : {fuel_type or "non précisé — déduis-le de la motorisation si possible"}
 Année : {year}
 Kilométrage actuel : {mileage} km
 
-Voici un catalogue FIXE de {len(MAINTENANCE_CATALOG)} opérations d'entretien possibles.
-Tu dois renvoyer un objet pour CHACUNE d'entre elles, sans exception, en
-reprenant exactement son "catalog_id" :
+Voici un catalogue FIXE de {len(MAINTENANCE_CATALOG)} opérations d'entretien possibles,
+couvrant aussi les motorisations thermiques, hybrides (HEV/PHEV), 100%
+électriques (BEV) et GPL. Tu dois renvoyer un objet pour CHACUNE d'entre
+elles, sans exception, en reprenant exactement son "catalog_id" :
 
 {catalog_lines}
 
 Pour chaque entrée :
 - "applicable" : false si cette opération concerne un équipement que CE
-  véhicule précis n'a PAS (exemple typique : "disques_arriere" doit être
-  applicable=false ET "plaquettes_machoires_arriere" doit rester
+  véhicule précis n'a PAS. Le type de carburant/énergie ci-dessus est un
+  critère de tri de premier ordre : sur un véhicule 100% électrique (BEV),
+  toutes les entrées liées au moteur thermique (vidange, bougies,
+  distribution, FAP/EGR, AdBlue, embrayage, GPL...) doivent être
+  applicable=false, et à l'inverse les entrées spécifiques électrique
+  (réducteur, refroidissement batterie de traction, diagnostic SoH...)
+  s'appliquent. Sur un hybride, les deux familles thermique ET hybride
+  s'appliquent en général (sauf exception du modèle). Sur un GPL, les
+  entrées GPL s'ajoutent aux entrées thermiques standards. Applique le même
+  principe pour l'équipement mécanique (exemple typique : "disques_arriere"
+  doit être applicable=false ET "plaquettes_machoires_arriere" doit rester
   applicable=true si ce modèle/motorisation est équipé de freins à TAMBOURS
   à l'arrière — les deux entrées ne s'excluent pas forcément, décide
-  indépendamment pour chacune). Dans ce cas, renseigne
-  "not_applicable_reason" en une phrase courte expliquant l'équipement réel.
+  indépendamment pour chacune). Dans tous les cas de non-applicabilité,
+  renseigne "not_applicable_reason" en une phrase courte expliquant pourquoi.
   De même, "chaine_distribution" et "courroie_distribution" sont mutuellement
-  exclusives sur un même véhicule : une seule des deux doit être applicable.
+  exclusives sur un même véhicule thermique : une seule des deux doit être
+  applicable (et les deux sont non applicables sur un BEV).
 - Si applicable : ajuste "interval_km"/"interval_months" par rapport aux
   valeurs par défaut du catalogue si tu as une information plus précise pour
   CE véhicule (sinon reprends les valeurs par défaut) ; mets 0 pour
@@ -273,18 +285,18 @@ Pour chaque entrée :
   (pièces + main d'œuvre) ; "diy_difficulty" : niveau de difficulté à
   réaliser soi-même (facile/moyen/difficile/non_recommande — non_recommande
   si ça touche à la sécurité et nécessite un outillage/une expertise
-  spécifique, ex : distribution) ; "diy_cost_estimate_eur" : coût des seules
-  pièces si fait soi-même (sans main d'œuvre).
+  spécifique, ex : distribution, circuit haute tension) ; "diy_cost_estimate_eur" :
+  coût des seules pièces si fait soi-même (sans main d'œuvre).
 - Si non applicable : "interval_km"/"interval_months"/coûts peuvent être 0,
   seul "not_applicable_reason" compte.
 
 IMPORTANT — cohérence factuelle : les caractéristiques techniques objectives
 de ce véhicule (type de frein arrière disque/tambour, présence ou non d'une
-courroie vs chaîne de distribution, etc.) sont des FAITS qui ne doivent pas
-varier si on te repose la question pour le même véhicule. Si tu n'es pas
-certain à 100% d'une caractéristique d'équipement précise, dis-le dans
-"notes" ("non vérifié avec certitude") plutôt que d'affirmer tour à tour une
-chose puis son contraire.
+courroie vs chaîne de distribution, type d'énergie, etc.) sont des FAITS qui
+ne doivent pas varier si on te repose la question pour le même véhicule. Si
+tu n'es pas certain à 100% d'une caractéristique d'équipement précise,
+dis-le dans "notes" ("non vérifié avec certitude") plutôt que d'affirmer
+tour à tour une chose puis son contraire.
 
 N'invente pas de valeurs si tu n'es pas raisonnablement confiant : reprends
 alors les valeurs par défaut du catalogue et indique-le dans "notes".
@@ -292,7 +304,7 @@ Renseigne aussi "sources" : les types de documents sur lesquels tu t'es
 appuyé (ex : "Programme d'entretien officiel {brand}", "Revue Technique
 Automobile (RTA)"). Réponds uniquement avec le JSON demandé (un objet par
 catalog_id, tous présents), sans texte autour."""
-        return await self._call(prompt, schema, max_output_tokens=8192)
+        return await self._call(prompt, schema, max_output_tokens=12288)
 
     async def generate_known_issues(self, brand: str, model: str, motorisation: str, year: int) -> GeminiResult:
         schema = {
@@ -350,21 +362,25 @@ spécifique à ce modèle, renvoie une liste "issues" vide et dis-le dans
 demandé, sans texte autour."""
         return await self._call(prompt, schema, max_output_tokens=3072)
 
-    async def list_motorisations(self, brand: str, model: str, year: int) -> GeminiResult:
+    async def list_motorisations(self, brand: str, model: str, year: int, fuel_type: str = "") -> GeminiResult:
         schema = {"type": "ARRAY", "items": {"type": "STRING"}}
+        fuel_line = (
+            f"Ne liste QUE les motorisations correspondant à l'énergie suivante : {fuel_type}.\n"
+            if fuel_type
+            else ""
+        )
         prompt = f"""Liste les motorisations/versions commercialisées pour ce véhicule précis :
 
 Marque : {brand}
 Modèle : {model}
 Année : {year}
-
-Donne la liste des motorisations disponibles cette année-là (essence,
-diesel, hybride, électrique), sous la forme habituelle du marché français
-(ex : "1.5 BlueHDi 130", "1.2 PureTech 130 EAT8", "2.0 HDi 150"). Maximum
-20 entrées, sans doublons. Si tu n'es pas certain de l'année exacte,
-donne les motorisations de la génération commercialisée à cette période.
-Réponds uniquement avec le JSON demandé (tableau de chaînes), sans texte
-autour."""
+{fuel_line}
+Donne la liste des motorisations disponibles cette année-là, sous la forme
+habituelle du marché français (ex : "1.5 BlueHDi 130", "1.2 PureTech 130
+EAT8", "2.0 HDi 150"). Maximum 20 entrées, sans doublons. Si tu n'es pas
+certain de l'année exacte, donne les motorisations de la génération
+commercialisée à cette période. Réponds uniquement avec le JSON demandé
+(tableau de chaînes), sans texte autour."""
         return await self._call(prompt, schema, max_output_tokens=1024)
 
     async def check_recalls(self, brand: str, model: str, motorisation: str, year: int) -> GeminiResult:

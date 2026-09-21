@@ -26,9 +26,11 @@ def now_ts() -> float:
 
 DEFAULT_SETTINGS: dict[str, Any] = {
     "theme": "gt_cuir",
-    "hide_not_applicable": False,
+    "hide_not_applicable": True,
     "notifications_enabled": False,
     "font_scale": 1.0,
+    "mileage_reminder_enabled": True,
+    "mileage_reminder_days": 30,
 }
 
 DEFAULT_DATA: dict[str, Any] = {
@@ -98,6 +100,7 @@ class CarnetStore:
             "mileage_source": "manual",
             "mileage_sensor_entity_id": None,
             "photo": None,
+            "fuel_type": "",
             **vehicle,
         }
         vehicle["id"] = vehicle_id  # au cas où **vehicle contenait déjà "id"
@@ -276,8 +279,8 @@ class CarnetStore:
 
     # ---------- Cache des motorisations (autocomplétion du champ "version") ----------
 
-    def motorisation_cache_key(self, brand: str, model: str, year: int) -> str:
-        return f"{brand.strip().lower()}|{model.strip().lower()}|{year}"
+    def motorisation_cache_key(self, brand: str, model: str, year: int, fuel_type: str = "") -> str:
+        return f"{brand.strip().lower()}|{model.strip().lower()}|{year}|{fuel_type.strip().lower()}"
 
     def get_motorisation_cache(self, key: str) -> list[str] | None:
         entry = self.data["motorisation_cache"].get(key)

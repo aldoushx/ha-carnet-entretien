@@ -80,6 +80,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _async_sync_mileage_listener(hass, entry, vehicle_id)
 
     await _async_check_overdue_notifications(hass, entry)
+    await _async_check_mileage_reminders(hass, entry)
     entry.async_on_unload(
         async_track_time_interval(hass, lambda now: _schedule_overdue_check(hass, entry), timedelta(hours=24))
     )
@@ -138,11 +139,13 @@ async def _async_reload_on_options_update(hass: HomeAssistant, entry: ConfigEntr
 
 
 def _schedule_overdue_check(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Lance la vérification en tâche de fond (à appeler après toute
-    mutation susceptible de faire passer une échéance en statut "échue" :
-    mise à jour de kilométrage, enregistrement d'une intervention, création
-    d'un véhicule, changement de capteur lié)."""
+    """Lance les vérifications en tâche de fond (à appeler après toute
+    mutation susceptible de faire passer une échéance en statut "échue", ou
+    de remettre à zéro le compteur du rappel de kilométrage : mise à jour de
+    kilométrage, enregistrement d'une intervention, création d'un véhicule,
+    changement de capteur lié, changement de réglages)."""
     hass.async_create_task(_async_check_overdue_notifications(hass, entry))
+    hass.async_create_task(_async_check_mileage_reminders(hass, entry))
 
 
 async def _async_check_overdue_notifications(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -169,6 +172,45 @@ async def _async_check_overdue_notifications(hass: HomeAssistant, entry: ConfigE
                 title="🔧 Entretien à faire",
                 notification_id=notif_id,
             )
+
+
+async def _async_check_mileage_reminders(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Rappel périodique : pour chaque véhicule en saisie manuelle du
+    kilométrage (un véhicule lié à un capteur n'en a pas besoin, il se met
+    à jour tout seul), notifie si le dernier relevé remonte à plus de
+    `mileage_reminder_days`. Réglage indépendant du rappel d'échéances
+    dépassées, activé par défaut, avec sa propre bascule et sa propre
+    périodicité (voir Réglages dans la carte).
+    """
+    store: CarnetStore = hass.data[DOMAIN][entry.entry_id]["store"]
+    settings = store.get_settings()
+    enabled = settings.get("mileage_reminder_enabled", True)
+    period_days = settings.get("mileage_reminder_days", 30) or 30
+    now = datetime.now().timestamp()
+
+    for vehicle_id, vehicle in list(store.vehicles.items()):
+        notif_id = f"{DOMAIN}_{vehicle_id}_mileage_reminder"
+        if not enabled or vehicle.get("mileage_source") == "sensor":
+            persistent_notification.async_dismiss(hass, notif_id)
+            continue
+
+        history = vehicle.get("mileage_history") or []
+        last_update_ts = history[-1]["date"] if history else vehicle.get("created_at", now)
+        days_since = (now - last_update_ts) / 86400
+
+        if days_since < period_days:
+            persistent_notification.async_dismiss(hass, notif_id)
+            continue
+
+        label = f"{vehicle.get('brand', '')} {vehicle.get('model', '')}".strip() or "Véhicule"
+        persistent_notification.async_create(
+            hass,
+            f"Le kilométrage de **{label}** n'a pas été mis à jour depuis "
+            f"{int(days_since)} jours (rappel réglé sur {period_days} j). Une valeur à "
+            "jour améliore la précision des échéances et de la date prévisionnelle.",
+            title="📏 Mettre à jour le kilométrage",
+            notification_id=notif_id,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -344,6 +386,7 @@ async def _create_vehicle(hass: HomeAssistant, entry: ConfigEntry, store: Carnet
             "year": int(data["year"]),
             "mileage": int(data["mileage"]),
             "plate": data.get("plate", ""),
+            "fuel_type": data.get("fuel_type", ""),
             "photo": data.get("photo") or None,
         }
     )
@@ -381,7 +424,7 @@ async def _refresh_plan(store: CarnetStore, gemini: GeminiClient, vehicle_id: st
         raise ValueError("Véhicule inconnu")
     result = await gemini.generate_maintenance_plan(
         vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""),
-        vehicle["year"], vehicle.get("mileage", 0),
+        vehicle["year"], vehicle.get("mileage", 0), vehicle.get("fuel_type", ""),
     )
     raw_items = result.data.get("items", []) if isinstance(result.data, dict) else result.data
     sources = result.data.get("sources", []) if isinstance(result.data, dict) else []
@@ -592,16 +635,17 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
             vol.Required("brand"): str,
             vol.Required("model"): str,
             vol.Required("year"): int,
+            vol.Optional("fuel_type", default=""): str,
             vol.Optional("query", default=""): str,
         }
     )
     @websocket_api.async_response
     async def ws_search_motorisations(hass, connection, msg):
-        key = store.motorisation_cache_key(msg["brand"], msg["model"], msg["year"])
+        key = store.motorisation_cache_key(msg["brand"], msg["model"], msg["year"], msg["fuel_type"])
         options = store.get_motorisation_cache(key)
         if options is None:
             try:
-                result = await gemini.list_motorisations(msg["brand"], msg["model"], msg["year"])
+                result = await gemini.list_motorisations(msg["brand"], msg["model"], msg["year"], msg["fuel_type"])
                 options = [str(o) for o in result.data]
                 await store.async_set_motorisation_cache(key, options)
                 await store.async_add_token_usage(result.tokens)
@@ -624,6 +668,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
             vol.Optional("mileage_source"): vol.In(["manual", "sensor"]),
             vol.Optional("mileage_sensor_entity_id"): str,
             vol.Optional("photo"): str,
+            vol.Optional("fuel_type", default=""): str,
         }
     )
     @websocket_api.async_response

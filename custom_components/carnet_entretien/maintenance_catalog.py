@@ -85,6 +85,46 @@ MAINTENANCE_CATALOG: list[dict[str, Any]] = [
      "default_interval_km": 0, "default_interval_months": 24, "first_interval_months": 48},
     {"id": "revision_constructeur", "name": "Révision constructeur périodique", "category": "revision",
      "default_interval_km": 15000, "default_interval_months": 12},
+
+    # ---- Thermique : compléments (4x4, SCR/FAP, trains, tambours) ----
+    {"id": "adblue", "name": "Appoint AdBlue (SCR, diesel)", "category": "moteur",
+     "default_interval_km": 0, "default_interval_months": 6},
+    {"id": "additif_fap_eolys", "name": "Additif FAP (Eolys)", "category": "moteur",
+     "default_interval_km": 60000, "default_interval_months": 0},
+    {"id": "vidange_ponts_boite_transfert", "name": "Vidange des ponts et boîte de transfert (4x4/AWD)",
+     "category": "autre", "default_interval_km": 60000, "default_interval_months": 48},
+    {"id": "geometrie_parallelisme", "name": "Contrôle et réglage de la géométrie des trains",
+     "category": "pneumatiques", "default_interval_km": 20000, "default_interval_months": 24},
+    {"id": "reglage_freins_tambour", "name": "Dépoussiérage et réglage des freins à tambour",
+     "category": "freinage", "default_interval_km": 20000, "default_interval_months": 0},
+
+    # ---- Hybride (HEV/PHEV) ----
+    {"id": "filtre_ventilation_batterie_ht", "name": "Filtre de ventilation de la batterie HT",
+     "category": "electronique", "default_interval_km": 0, "default_interval_months": 24},
+    {"id": "liquide_refroidissement_inverter", "name": "Liquide de refroidissement de l'inverter/convertisseur",
+     "category": "electronique", "default_interval_km": 0, "default_interval_months": 60},
+    {"id": "diagnostic_soh_batterie_traction", "name": "Diagnostic de santé de la batterie de traction (SoH)",
+     "category": "electronique", "default_interval_km": 0, "default_interval_months": 24},
+
+    # ---- 100 % électrique (BEV) ----
+    {"id": "vidange_reducteur_electrique", "name": "Vidange de l'huile du réducteur / transmission électrique",
+     "category": "electronique", "default_interval_km": 0, "default_interval_months": 60},
+    {"id": "liquide_refroidissement_batterie_traction", "name": "Liquide de refroidissement de la batterie de traction",
+     "category": "electronique", "default_interval_km": 0, "default_interval_months": 60},
+    {"id": "graissage_etriers_frein", "name": "Nettoyage et graissage des étriers de frein (colonnettes)",
+     "category": "freinage", "default_interval_km": 0, "default_interval_months": 24},
+    {"id": "cartouche_dessiccante_batterie", "name": "Cartouche dessiccante du circuit de refroidissement batterie",
+     "category": "electronique", "default_interval_km": 0, "default_interval_months": 60},
+
+    # ---- GPL ----
+    {"id": "filtre_gpl_gazeux", "name": "Filtre GPL (phase gazeuse)", "category": "filtration",
+     "default_interval_km": 20000, "default_interval_months": 0},
+    {"id": "filtre_gpl_liquide", "name": "Filtre GPL (phase liquide)", "category": "filtration",
+     "default_interval_km": 20000, "default_interval_months": 0},
+    {"id": "jeu_soupapes_gpl", "name": "Contrôle et réglage du jeu aux soupapes", "category": "moteur",
+     "default_interval_km": 40000, "default_interval_months": 0},
+    {"id": "controle_reservoir_gpl", "name": "Inspection réglementaire du réservoir GPL, canalisations et soupape",
+     "category": "autre", "default_interval_km": 0, "default_interval_months": 120},
 ]
 
 CATALOG_BY_ID: dict[str, dict[str, Any]] = {item["id"]: item for item in MAINTENANCE_CATALOG}
