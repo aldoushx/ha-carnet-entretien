@@ -582,5 +582,33 @@ serveur.
   console navigateur préfixés "DEBUG") sont retirés, la cause étant
   identifiée avec certitude.
 
+## 🛠️ v1.3.3 — la génération DIY échouait sur tous les modèles Gemini (modèle 2.0 Flash arrêté par Google)
+
+Signalé avec le message "Tous les modèles Gemini ont échoué — gemini-2.5-flash
+[rate_limited]: Quota dépassé... ; gemini-2.0-flash [http_error]: Modèle
+indisponible pour cette clé ; gemini-2.5-flash-lite [http_error]: Modèle
+indisponible pour cette clé" lors d'une demande d'explication DIY (mais le
+souci touchait potentiellement toutes les générations IA : plan, points de
+vigilance, rappels, revente).
+
+- **Cause** : `gemini-2.0-flash`, deuxième modèle de la cascade de repli,
+  a été **définitivement arrêté par Google** — l'appel renvoie
+  systématiquement une erreur HTTP 404, traduite par l'intégration en
+  "Modèle indisponible pour cette clé". Placé en position intermédiaire,
+  il faisait échouer toute la cascade dès que le premier modèle
+  (`gemini-2.5-flash`) était temporairement à quota, empêchant le repli
+  d'atteindre un modèle réellement disponible.
+- **Correctif** : `gemini-2.0-flash` retiré de la liste. La cascade
+  inclut désormais, dans l'ordre : `gemini-2.5-flash`,
+  `gemini-2.5-flash-lite`, puis en repli supplémentaire les modèles de la
+  génération courante `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite` et
+  `gemini-3.8-flash` (ce dernier plus capable mais plus coûteux, utilisé
+  seulement si tout le reste échoue) — de quoi absorber un quota
+  temporairement dépassé sur un modèle sans faire échouer toute la
+  génération.
+- Aucune action requise après la mise à jour : la cascade se réajuste
+  automatiquement au prochain appel IA (génération de plan, DIY, points
+  de vigilance, rappels, estimation de revente).
+
 ---
 
