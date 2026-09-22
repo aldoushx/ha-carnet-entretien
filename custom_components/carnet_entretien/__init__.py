@@ -42,11 +42,34 @@ CARD_JS_PATH = Path(__file__).parent / "www" / "carnet-entretien-card.js"
 CARD_URL = f"/{DOMAIN}/carnet-entretien-card.js"
 
 
-def _load_referentiel_file() -> dict[str, list[str]]:
+def _load_referentiel_file() -> dict[str, dict[str, list[str]]]:
     """Lecture synchrone du JSON référentiel — à n'appeler que via
-    hass.async_add_executor_job pour ne pas bloquer la boucle asyncio."""
+    hass.async_add_executor_job pour ne pas bloquer la boucle asyncio.
+
+    Format : {"auto": {marque: [modèles]}, "moto": {...}, "scooter": {...},
+    "velo_electrique": {...}} — une catégorie séparée par type de véhicule,
+    pour que les marques/modèles d'une moto n'apparaissent jamais dans les
+    suggestions d'une voiture et inversement.
+    """
     with open(REFERENTIEL_PATH, encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    # Compat : un très ancien fichier "à plat" (marque -> modèles, sans
+    # catégorie) est traité comme la catégorie "auto" uniquement.
+    if data and not any(isinstance(v, dict) for v in data.values()):
+        return {"auto": data}
+    return data
+
+
+def _referentiel_category(
+    referentiel: dict[str, dict[str, list[str]]], vehicle_type: str, two_wheeler_type: str
+) -> dict[str, list[str]]:
+    """Sélectionne le sous-référentiel marque/modèle correspondant au type
+    de véhicule, pour garantir l'isolation entre catégories (une voiture ne
+    doit jamais voir de marques de moto en suggestion, et réciproquement).
+    """
+    if vehicle_type == "deux_roues":
+        return referentiel.get(two_wheeler_type or "moto", {})
+    return referentiel.get("auto", {})
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -59,7 +82,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     session = async_get_clientsession(hass)
     gemini = GeminiClient(session, api_key)
 
-    referentiel: dict[str, list[str]] = await hass.async_add_executor_job(_load_referentiel_file)
+    referentiel: dict[str, dict[str, list[str]]] = await hass.async_add_executor_job(_load_referentiel_file)
 
     hass.data[DOMAIN][entry.entry_id] = {
         "store": store,
@@ -614,7 +637,7 @@ def _serialize_vehicle(vehicle: dict) -> dict:
 def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> None:
     store: CarnetStore = hass.data[DOMAIN][entry.entry_id]["store"]
     gemini: GeminiClient = hass.data[DOMAIN][entry.entry_id]["gemini"]
-    referentiel: dict[str, list[str]] = hass.data[DOMAIN][entry.entry_id]["referentiel"]
+    referentiel: dict[str, dict[str, list[str]]] = hass.data[DOMAIN][entry.entry_id]["referentiel"]
 
     @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/get_vehicles"})
     @websocket_api.async_response
@@ -627,17 +650,20 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
             vol.Required("type"): f"{DOMAIN}/search_referentiel",
             vol.Optional("brand"): str,
             vol.Optional("query", default=""): str,
+            vol.Optional("vehicle_type", default="auto"): vol.In(["auto", "deux_roues"]),
+            vol.Optional("two_wheeler_type", default=""): vol.In(["", "moto", "scooter", "velo_electrique"]),
         }
     )
     @websocket_api.async_response
     async def ws_search_referentiel(hass, connection, msg):
         query = msg["query"].strip().lower()
+        category = _referentiel_category(referentiel, msg["vehicle_type"], msg["two_wheeler_type"])
         if msg.get("brand"):
-            models = referentiel.get(msg["brand"], [])
+            models = category.get(msg["brand"], [])
             results = [m for m in models if query in m.lower()] if query else models
             connection.send_result(msg["id"], {"results": results})
         else:
-            brands = list(referentiel.keys())
+            brands = list(category.keys())
             results = [b for b in brands if query in b.lower()] if query else brands
             connection.send_result(msg["id"], {"results": results})
 

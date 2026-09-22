@@ -62,6 +62,16 @@ class CarnetEntretienCard extends HTMLElement {
     this._motorisationFullList = null;
     this._diyLoading = {}; // { [itemId]: bool } — état de chargement de l'explication DIY
     this._diyError = {}; // { [itemId]: message } — dernière erreur de génération DIY, pour affichage inline
+    // _render() reconstruit tout le innerHTML du shadow DOM à chaque appel
+    // (mise à jour de kilométrage, bascule applicable/non applicable,
+    // enregistrement d'une intervention, génération DIY...). Sans état
+    // explicite, chaque <details> d'entretien perd son ouverture à chaque
+    // rafraîchissement : l'encart qu'on vient de dérouler se réenroule tout
+    // seul (typiquement pendant une requête DIY), obligeant à le rechercher
+    // plus haut dans la liste pour le rouvrir. On mémorise donc ici les
+    // entretiens actuellement dépliés pour reproduire l'attribut "open" à
+    // chaque rendu, quelle que soit l'action qui l'a déclenché.
+    this._expandedItemIds = new Set();
   }
 
   setConfig(config) {
@@ -154,13 +164,21 @@ class CarnetEntretienCard extends HTMLElement {
   }
 
   async _searchBrand(query) {
-    const res = await this._ws({ type: "search_referentiel", data: { query } });
+    const f = this._addForm;
+    const res = await this._ws({
+      type: "search_referentiel",
+      data: { query, vehicle_type: f.vehicle_type, two_wheeler_type: f.vehicle_type === "deux_roues" ? f.two_wheeler_type : "" },
+    });
     this._brandOptions = res.results || [];
     this._renderSuggestions("brand", this._brandOptions);
   }
 
   async _searchModel(brand, query) {
-    const res = await this._ws({ type: "search_referentiel", data: { brand, query } });
+    const f = this._addForm;
+    const res = await this._ws({
+      type: "search_referentiel",
+      data: { brand, query, vehicle_type: f.vehicle_type, two_wheeler_type: f.vehicle_type === "deux_roues" ? f.two_wheeler_type : "" },
+    });
     this._modelOptions = res.results || [];
     this._renderSuggestions("model", this._modelOptions);
   }
@@ -409,6 +427,14 @@ class CarnetEntretienCard extends HTMLElement {
 
   _render() {
     if (!this.shadowRoot) return;
+    // La liste des entretiens est triée par échéance la plus proche : la
+    // position d'un item peut donc bouger d'un rendu à l'autre (ex : après
+    // avoir enregistré une intervention, son échéance recule et l'item
+    // change de place). On restaure la position de défilement pour éviter
+    // l'impression déroutante que la liste "saute" ou que des entretiens
+    // masqués/cochés réapparaissent ailleurs.
+    const prevBody = this.shadowRoot.querySelector(".body");
+    const prevScrollTop = prevBody ? prevBody.scrollTop : 0;
     const content =
       this._view === "settings"
         ? this._renderSettings()
@@ -441,6 +467,8 @@ class CarnetEntretienCard extends HTMLElement {
       </ha-card>
     `;
     this._bindEvents();
+    const nextBody = this.shadowRoot.querySelector(".body");
+    if (nextBody && prevScrollTop) nextBody.scrollTop = prevScrollTop;
   }
 
   _renderList() {
@@ -858,8 +886,9 @@ class CarnetEntretienCard extends HTMLElement {
         </div>`;
     }
 
+    const isOpen = this._expandedItemIds.has(it.id);
     return `
-      <details class="plan-row ${isNA ? "na" : ""}">
+      <details class="plan-row ${isNA ? "na" : ""}" data-item-id="${it.id}" ${isOpen ? "open" : ""}>
         <summary class="plan-row-summary">${summaryBody}</summary>
         <div class="plan-row-edit">
           <label class="checkbox-row">
@@ -1021,14 +1050,27 @@ class CarnetEntretienCard extends HTMLElement {
       addForm.addEventListener("submit", (e) => this._submitAddVehicle(e));
       root.querySelectorAll(".vehicle-type-btn").forEach((btn) =>
         btn.addEventListener("click", () => {
+          if (this._addForm.vehicle_type === btn.dataset.vehicleType) return;
           this._addForm.vehicle_type = btn.dataset.vehicleType;
+          // Le référentiel marque/modèle est séparé par catégorie (auto /
+          // moto / scooter / vélo électrique) : une marque de moto ne doit
+          // jamais rester sélectionnée après bascule vers "Auto", et
+          // inversement — on réinitialise donc marque/modèle/motorisation.
+          this._addForm.brand = "";
+          this._addForm.model = "";
+          this._addForm.motorisation = "";
           this._motorisationKey = null; // le type change le contexte : on relance la recherche au prochain focus
           this._render();
         })
       );
       root.getElementById("f-two-wheeler-type")?.addEventListener("change", (e) => {
+        if (this._addForm.two_wheeler_type === e.target.value) return;
         this._addForm.two_wheeler_type = e.target.value;
+        this._addForm.brand = "";
+        this._addForm.model = "";
+        this._addForm.motorisation = "";
         this._motorisationKey = null;
+        this._render();
       });
 
       const brandInput = root.getElementById("f-brand");
@@ -1151,6 +1193,17 @@ class CarnetEntretienCard extends HTMLElement {
         this._logMaintenance(this._selectedId, { item_id: itemId, item_name: itemName, km, date: dateTs });
       })
     );
+
+    // Mémorise l'ouverture/fermeture manuelle de chaque encart d'entretien
+    // pour la reproduire au prochain _render() (voir _expandedItemIds dans
+    // le constructeur) — sans ça, toute action (case à cocher, log d'une
+    // intervention, génération DIY...) referme l'encart en cours de lecture.
+    root.querySelectorAll("details.plan-row").forEach((el) => {
+      el.addEventListener("toggle", () => {
+        if (el.open) this._expandedItemIds.add(el.dataset.itemId);
+        else this._expandedItemIds.delete(el.dataset.itemId);
+      });
+    });
 
     root.querySelectorAll(".applicable-cb").forEach((cb) =>
       cb.addEventListener("change", (e) => {

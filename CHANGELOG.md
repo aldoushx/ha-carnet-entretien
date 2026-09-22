@@ -470,5 +470,49 @@ uniquement du polish autour de l'identité du projet et de son intégration
   marque/modèle/année ne partage plus son cache entre une recherche auto
   et une recherche moto, par exemple).
 
+## 🛠️ v1.3.0 — l'encart d'un entretien ne se referme plus tout seul, référentiel marque/modèle enrichi
+
+- **Correctif : un entretien déplié se repliait automatiquement**, par
+  exemple juste après avoir cliqué sur "🔧 Comment le faire soi-même ?",
+  obligeant à le rechercher plus haut dans la liste pour lire le conseil
+  généré. Cause : chaque action (case "Applicable", enregistrement d'une
+  intervention, génération DIY, ajustement d'échéance...) recharge les
+  véhicules et reconstruit entièrement l'affichage, ce qui réinitialisait
+  systématiquement tous les encarts `<details>` à l'état fermé — la carte
+  ne gardait aucune mémoire de ce que l'utilisateur avait ouvert. La carte
+  mémorise désormais quels entretiens sont dépliés et reproduit cet état à
+  chaque rafraîchissement, quelle que soit l'action qui l'a déclenché.
+  Cette même reconstruction complète de la liste (qui se retrie aussi par
+  échéance la plus proche) est le mécanisme le plus probable derrière les
+  signalements d'entretiens "masqués qui réapparaissent" ou de case à
+  cocher "qui se décoche" après une action : l'encart concerné se
+  refermait et la liste se retriait au même instant, donnant l'impression
+  qu'un autre réglage venait de changer alors que la donnée réelle,
+  elle, était correcte. La position de défilement de la liste est
+  également restaurée après chaque rafraîchissement, pour éviter que la
+  vue ne "saute" en haut de la liste à chaque action.
+- **Référentiel marque/modèle enrichi et séparé par catégorie de
+  véhicule** : le fichier `data/referentiel.json` ne comportait qu'une
+  vingtaine de marques automobiles et aucune marque de deux-roues, alors
+  qu'il est partagé par toutes les catégories depuis l'ajout du support
+  moto/scooter/vélo électrique.
+  - Ajout d'une soixantaine de marques automobiles supplémentaires
+    (généralistes, premium et sportives) et enrichissement des gammes de
+    modèles déjà présentes.
+  - Ajout de catalogues marque/modèle dédiés pour les **motos** (18
+    marques), les **scooters** (11 marques) et les **vélos électriques**
+    (20 marques).
+  - Le référentiel est désormais structuré par catégorie
+    (`{"auto": {...}, "moto": {...}, "scooter": {...}, "velo_electrique":
+    {...}}`) et la recherche marque/modèle (`search_referentiel`) filtre
+    sur la catégorie du véhicule en cours de création : les suggestions
+    d'une moto n'incluent plus jamais de marques automobiles, et
+    inversement, à l'image de ce qui existait déjà pour les catalogues
+    d'entretien.
+  - Changer de type de véhicule ou de sous-type (auto ↔ 2 roues, moto ↔
+    scooter ↔ vélo électrique) au formulaire d'ajout réinitialise
+    désormais marque/modèle/motorisation, pour éviter de garder
+    sélectionnée une marque qui n'existe plus dans la nouvelle catégorie.
+
 ---
 
