@@ -19,7 +19,7 @@
 
 **CARnet - Garage Log** is a smart maintenance logbook for **cars,
 motorcycles, scooters and e-bikes** in Home Assistant. It uses **Google
-Gemini** (optional, free tier available) to generate and keep up to date:
+Gemini** (free tier available) to generate and keep up to date:
 a maintenance plan built from a fixed catalog of operations per vehicle
 type, known issues/weak points for the exact model, active manufacturer
 recalls, and a resale value estimate over time — all shown on a dedicated
@@ -399,7 +399,7 @@ MIT — see [LICENSE](LICENSE).
 
 **CARnet - Garage Log** est un carnet d'entretien intelligent pour
 **voitures, motos, scooters et vélos électriques** dans Home Assistant.
-Il s'appuie sur **Google Gemini** (optionnel, un forfait gratuit est
+Il s'appuie sur **Google Gemini** (un forfait gratuit est
 disponible) pour générer et tenir à jour : un plan d'entretien basé sur un
 catalogue fixe d'opérations par type de véhicule, les points de vigilance
 connus sur le modèle précis, les rappels constructeur actifs, et une
