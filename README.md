@@ -1,4 +1,4 @@
-<p align="center"><img src="badge.svg" width="360" height="360" alt="CARnet - Garage Log" /></p>
+<p align="center"><img src="badge.svg" width="180" height="180" alt="CARnet - Garage Log" /></p>
 
 <h1 align="center">CARnet - Garage Log</h1>
 <p align="center">Smart vehicle maintenance logbook for Home Assistant</p>
@@ -32,6 +32,46 @@ only need to register it as a dashboard resource once (see
 [§4](#4-add-the-card-to-a-dashboard)). Gemini is entirely optional: without
 an API key, the integration still works with fully manual data entry.
 
+### 🌟 Beyond a basic logbook
+
+A spreadsheet or a paper logbook can log what you've already done. CARnet
+is built to do the part that's actually tedious: figuring out **what needs
+doing, when, at what cost, and how** — for your exact vehicle, not a
+generic one.
+
+- 🔍 **A maintenance plan built from real research, not a generic
+  template.** For the exact brand/model/engine/year you enter, Gemini
+  researches the manufacturer's official service schedule and
+  garage/technical-guide sources to decide which of the catalog's fixed
+  operations actually apply and at what interval — instead of one generic
+  "every 10,000 km" rule applied blindly to every car.
+- 🛠️ **DIY cost and step-by-step guidance, generated on demand.** Every
+  item shows an estimated parts-only cost alongside the garage price, and
+  a "how do I do this myself?" button generates a detailed, model-specific
+  DIY explanation (tools, steps, difficulty) — not just a checkbox telling
+  you an operation is due.
+- 💶 **Estimated cost per operation**, garage price and DIY price side by
+  side, so you can decide in advance whether a given job is worth doing
+  yourself.
+- 🔔 **Due-date notifications**, not just a dashboard you have to
+  remember to check — the integration raises a Home Assistant persistent
+  notification (and can drive your own automations/`notify.*` calls, see
+  [§6](#6-automate-with-services)) as soon as an item becomes overdue or a
+  mileage-based reminder is reached.
+- 🔗 **Real mileage, not a manual guess.** Link an existing Home Assistant
+  sensor (OBD dongle, OEM odometer integration, `input_number`...) instead
+  of typing the mileage in by hand every time — due dates and "km
+  remaining" recalculate automatically as the linked sensor updates.
+- 📈 **A resale value estimate grounded in the current market**, not a
+  static depreciation curve — Gemini looks at market trend, mileage
+  versus the segment average and the vehicle's condition to produce a
+  price range with a written rationale, trackable over time.
+- ⚠️ **An inventory of the most frequently reported issues** for that
+  exact model — the weak points other owners and garages report most
+  often, with severity and an indicative repair cost — so you know what
+  to watch for before it becomes an expensive surprise, plus active
+  manufacturer recalls researched on creation.
+
 ### ✨ Features
 
 - 🚗🏍️🛵🚲 **Cars, motorcycles/scooters and e-bikes**, each with a
@@ -41,8 +81,8 @@ an API key, the integration still works with fully manual data entry.
   plate, photo.
 - 🛠️ **Fixed maintenance catalog per vehicle type** (46 operations for a
   car, 26 for a motorcycle/scooter, 15 for an e-bike): oil change, every
-  filter, timing belt/chain and accessory belt as separate entries,
-  front/rear discs and pads as separate entries, battery, A/C,
+  filter, timing belt/chain **and** accessory belt as separate entries,
+  front/rear discs **and** pads as separate entries, battery, A/C,
   DPF/EGR, roadworthiness inspection, manufacturer service schedule,
   motorcycle chain kit, traction battery diagnostics... The AI only
   decides applicability and intervals for each fixed entry — nothing can
@@ -375,6 +415,52 @@ bord (voir [§4](#4-ajouter-la-carte-au-tableau-de-bord)). Gemini est
 entièrement optionnel : sans clé API, l'intégration reste utilisable en
 saisie 100 % manuelle.
 
+### 🌟 Bien plus qu'un carnet basique
+
+Un tableur ou un carnet papier permet de noter ce que vous avez déjà fait.
+CARnet est conçu pour faire la partie vraiment fastidieuse : déterminer
+**ce qu'il faut faire, quand, pour combien, et comment** — pour votre
+véhicule précis, pas un modèle générique.
+
+- 🔍 **Un plan d'entretien construit sur une vraie recherche, pas un
+  modèle générique.** Pour la marque/modèle/motorisation/année exacte que
+  vous saisissez, Gemini recherche le programme d'entretien officiel
+  constructeur et des sources garagistes/revues techniques pour décider
+  quelles opérations du catalogue s'appliquent réellement et à quel
+  intervalle — au lieu d'une règle générique "tous les 10 000 km"
+  appliquée aveuglément à toutes les voitures.
+- 🛠️ **Coût DIY et conseils pas à pas, générés à la demande.** Chaque
+  échéance affiche un coût estimé des pièces seules à côté du tarif
+  garage, et un bouton "comment le faire moi-même ?" génère une
+  explication DIY détaillée et spécifique au modèle (outils, étapes,
+  difficulté) — pas juste une case à cocher indiquant qu'une opération est
+  due.
+- 💶 **Coût estimé par opération**, prix garage et prix DIY côte à côte,
+  pour décider à l'avance si une intervention vaut le coup de la faire
+  soi-même.
+- 🔔 **Notifications d'échéances**, pas seulement un tableau de bord qu'il
+  faut penser à consulter — l'intégration déclenche une notification
+  persistante Home Assistant (et peut alimenter vos propres automatisations
+  / appels `notify.*`, voir [§6](#6-automatiser-avec-les-services)) dès
+  qu'une échéance devient dépassée ou qu'un rappel au kilométrage est
+  atteint.
+- 🔗 **Kilométrage réel, pas une estimation saisie à la main.** Liez un
+  capteur Home Assistant existant (boîtier OBD, intégration odomètre
+  constructeur, `input_number`...) plutôt que de retaper le kilométrage à
+  chaque fois — les échéances et les "km restants" se recalculent
+  automatiquement à chaque mise à jour du capteur lié.
+- 📈 **Une estimation de valeur de revente ancrée dans le marché actuel**,
+  pas une courbe de décote statique — Gemini prend en compte la tendance
+  du marché, le kilométrage par rapport à la moyenne du segment et l'état
+  du véhicule pour produire une fourchette de prix avec un raisonnement
+  écrit, suivable dans le temps.
+- ⚠️ **Un inventaire des pannes les plus fréquemment rencontrées** sur ce
+  modèle précis — les points faibles les plus souvent signalés par les
+  autres propriétaires et les garagistes, avec gravité et coût de
+  réparation indicatif — pour savoir à quoi s'attendre avant que ça ne
+  devienne une mauvaise surprise coûteuse, ainsi que les rappels
+  constructeur actifs recherchés à la création.
+
 ### ✨ Fonctionnalités
 
 - 🚗🏍️🛵🚲 **Voitures, motos/scooters et vélos électriques**, chacun avec
@@ -384,8 +470,8 @@ saisie 100 % manuelle.
   en cache), année, kilométrage, plaque, photo.
 - 🛠️ **Catalogue d'entretien fixe par type de véhicule** (46 opérations
   pour une voiture, 26 pour une moto/scooter, 15 pour un vélo électrique) :
-  vidange, tous les filtres, courroie/chaîne de distribution et
-  d'accessoires comme entrées séparées, disques et plaquettes
+  vidange, tous les filtres, courroie/chaîne de distribution **et**
+  d'accessoires comme entrées séparées, disques **et** plaquettes
   avant/arrière comme entrées séparées, batterie, climatisation, FAP/EGR,
   contrôle technique, révision constructeur, kit chaîne moto, diagnostic
   batterie de traction... L'IA ne décide que de l'applicabilité et des
