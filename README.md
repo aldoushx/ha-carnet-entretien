@@ -266,8 +266,7 @@ by the browser. Go through this checklist in order:
 2. Pick **🚗 Car** or **🏍️ Two-wheeler** (motorcycle / scooter / e-bike);
    this decides which maintenance catalog and which brand/model
    suggestions apply — the two never mix.
-3. **Brand**: start typing, an autocomplete dropdown appears (local
-   reference list, editable — see [§7](#7-customize-the-brandmodel-reference-list)).
+3. **Brand**: start typing, an autocomplete dropdown appears.
    You can also type a brand that isn't listed: free text is always
    accepted.
 4. **Model**: the list filters by the chosen brand, same free-text
@@ -330,30 +329,7 @@ Each vehicle's `id` is visible in its sensors' attributes, or by clicking
 the vehicle in the card and inspecting the corresponding device under
 Settings → Devices.
 
-### 7. Customize the brand/model reference list
-
-`custom_components/carnet_entretien/data/referentiel.json` holds the
-brand/model autocomplete suggestions, split by category (`auto`, `moto`,
-`scooter`, `velo_electrique`) so a motorcycle brand never shows up while
-adding a car and vice versa:
-
-```json
-{
-  "auto": {
-    "YourBrand": ["Model A", "Model B"],
-    "Peugeot": ["208", "2008", "308", "...", "New model"]
-  },
-  "moto": { "Yamaha": ["MT-07", "..."] },
-  "scooter": { "Piaggio": ["Liberty 125", "..."] },
-  "velo_electrique": { "Cube": ["Reaction Hybrid", "..."] }
-}
-```
-
-Restart Home Assistant after editing (the file is loaded once at
-integration startup). Free text entry always remains possible even for a
-model missing from the file.
-
-### 8. Troubleshooting
+### 7. Troubleshooting
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
@@ -668,8 +644,7 @@ ou mise en cache par le navigateur. Suivez cette liste dans l'ordre :
    suggestions marque/modèle applicables — les deux ne se mélangent
    jamais.
 3. **Marque** : tapez les premières lettres, une liste déroulante
-   d'autocomplétion apparaît (référentiel local, éditable — voir
-   [§7](#7-personnaliser-le-référentiel-marquesmodèles)). Vous pouvez
+   d'autocomplétion apparaît. Vous pouvez
    aussi taper une marque absente de la liste : la saisie libre est
    toujours acceptée.
 4. **Modèle** : la liste se filtre selon la marque choisie, même principe
@@ -732,30 +707,7 @@ L'`id` de chaque véhicule est visible dans les attributs de ses capteurs,
 ou en cliquant sur le véhicule dans la carte puis en inspectant l'appareil
 correspondant dans Paramètres → Appareils.
 
-### 7. Personnaliser le référentiel marques/modèles
-
-`custom_components/carnet_entretien/data/referentiel.json` contient les
-suggestions marque/modèle, séparées par catégorie (`auto`, `moto`,
-`scooter`, `velo_electrique`) pour qu'une marque de moto n'apparaisse
-jamais lors de l'ajout d'une voiture, et inversement :
-
-```json
-{
-  "auto": {
-    "VotreMarque": ["Modèle A", "Modèle B"],
-    "Peugeot": ["208", "2008", "308", "...", "Nouveau modèle"]
-  },
-  "moto": { "Yamaha": ["MT-07", "..."] },
-  "scooter": { "Piaggio": ["Liberty 125", "..."] },
-  "velo_electrique": { "Cube": ["Reaction Hybrid", "..."] }
-}
-```
-
-Redémarrez Home Assistant après modification (le fichier est chargé une
-fois au démarrage de l'intégration). La saisie libre reste toujours
-possible même pour un modèle absent du fichier.
-
-### 8. Dépannage
+### 7. Dépannage
 
 | Symptôme | Cause probable | Solution |
 |---|---|---|
