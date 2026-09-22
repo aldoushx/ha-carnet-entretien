@@ -133,7 +133,7 @@ generic one.
      integration's setup screen (see [§3](#3-configure-the-integration)).
      The free tier's daily quota is generous for personal use; if you ever
      hit it, the integration automatically retries with other Gemini
-     models (see [§8](#8-troubleshooting)).
+     models.
 - HACS if you want the "custom repository" route (a manual install works
   just as well, see below).
 
@@ -483,7 +483,7 @@ véhicule précis, pas un modèle générique.
      [§3](#3-configurer-lintégration)). Le quota quotidien du forfait
      gratuit est généreux pour un usage personnel ; si vous l'atteignez
      malgré tout, l'intégration bascule automatiquement sur d'autres
-     modèles Gemini (voir [§8](#8-dépannage)).
+     modèles Gemini.
 - HACS si vous voulez la voie "dépôt personnalisé" (l'installation
   manuelle fonctionne tout aussi bien, voir ci-dessous).
 
