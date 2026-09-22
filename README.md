@@ -342,23 +342,6 @@ Settings → Devices.
 | Text is in the wrong language after switching | Only the interface/catalog translate instantly; AI-generated content (notes, known issues, DIY...) keeps its original language until regenerated | Use "↻ Regenerate plan" / refresh known issues or recalls / a new DIY request |
 | Entities missing after removing a vehicle | Expected, transient | They're removed from the registry automatically on removal |
 
-### 9. Known limitations
-
-- **Brand/model reference list**: deliberately curated, not exhaustive —
-  extend it per [§7](#7-customize-the-brandmodel-reference-list), or
-  replace it with a call to an open vehicle database if you want it fully
-  automated.
-- **Annual mileage estimate**: used to rank due items against each other
-  (`utils.py`), based on the vehicle's mileage history; not very reliable
-  until a few data points exist (falls back to registration-year-based
-  estimate, then a flat default).
-- **No automated tests** included in this project — consider adding some
-  (pytest + `pytest-homeassistant-custom-component`) before a wide public
-  release.
-- **AI content is a summary, not certified data** — known issues, recalls
-  and DIY guidance are Gemini's best synthesis of public information, not
-  a manufacturer source; always double-check anything safety-related.
-
 ### 🤝 Contributing
 
 Feedback, issues and pull requests are welcome.
@@ -719,25 +702,6 @@ correspondant dans Paramètres → Appareils.
 | Les entretiens masqués ("non applicables") réapparaissent | Bug historique, corrigé en v1.3.2 (un réglage était silencieusement rejeté à l'enregistrement) | Mettez à jour vers la dernière version |
 | Le texte reste dans la mauvaise langue après changement | Seules l'interface et le catalogue se traduisent instantanément ; le contenu généré par l'IA (notes, points de vigilance, DIY...) garde sa langue d'origine jusqu'à régénération | Utilisez "↻ Regénérer le plan" / rafraîchissez les points de vigilance ou rappels / relancez une demande DIY |
 | Capteurs manquants après suppression d'un véhicule | Normal, transitoire | Ils sont retirés du registre automatiquement au retrait |
-
-### 9. Limites connues
-
-- **Référentiel marques/modèles** : volontairement sélectif, pas
-  exhaustif — étoffez-le selon [§7](#7-personnaliser-le-référentiel-marquesmodèles),
-  ou remplacez-le par un appel à une base de données véhicules ouverte si
-  vous voulez l'automatiser entièrement.
-- **Estimation de kilométrage annuel** : utilisée pour classer les
-  échéances entre elles (`utils.py`), basée sur l'historique de
-  kilométrage du véhicule ; peu fiable tant que peu de points de mesure
-  existent (repli sur une estimation basée sur l'année de mise en
-  circulation, puis une valeur par défaut fixe).
-- **Pas de tests automatisés** inclus dans ce projet — à envisager
-  (pytest + `pytest-homeassistant-custom-component`) avant une diffusion
-  publique large.
-- **Le contenu IA est une synthèse, pas une donnée certifiée** — points
-  de vigilance, rappels et conseils DIY sont la meilleure synthèse de
-  Gemini à partir d'informations publiques, pas une source constructeur ;
-  vérifiez toujours ce qui touche à la sécurité.
 
 ### 🤝 Contribuer
 
