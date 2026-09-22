@@ -5,6 +5,12 @@ STORAGE_VERSION = 1
 STORAGE_KEY = f"{DOMAIN}_data"
 
 CONF_GEMINI_API_KEY = "gemini_api_key"
+# Langue de contenu de l'intégration (carte, catalogue, IA, notifications —
+# voir catalog_i18n.py) : choisie à l'installation, au même endroit que la
+# clé Gemini, modifiable ensuite via les Options de l'intégration. Distincte
+# de la langue de l'interface Home Assistant elle-même (réglage natif HA,
+# par profil utilisateur), qui reste inchangée par ce paramètre.
+CONF_LANGUAGE = "language"
 
 SIGNAL_VEHICLES_UPDATED = f"{DOMAIN}_vehicles_updated"
 

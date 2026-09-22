@@ -2,6 +2,31 @@
 
 Historique des versions de l'intégration Carnet d'entretien.
 
+## 🆕 Nouveautés v1.4.1
+
+- **Choix de la langue déplacé à l'installation** : la langue de contenu
+  (carte, catalogue, texte généré par l'IA, notifications) se choisit
+  désormais **au même écran que la clé API Gemini**, lors de l'ajout de
+  l'intégration (`config_flow`), et reste modifiable ensuite uniquement
+  depuis **Paramètres → Appareils et services → CARnet - Garage Log →
+  Configurer** (les Options). Le panneau Réglages de la carte n'affiche
+  plus qu'un rappel en lecture seule de la langue active — il n'y a plus
+  de sélecteur de langue cliquable dans la carte : l'entrée de
+  configuration Home Assistant est désormais la seule source de vérité,
+  synchronisée automatiquement dans le stockage de l'intégration à chaque
+  démarrage.
+- **Correctif** : `translations/en.json` contenait en réalité du texte
+  français par erreur (bug latent, non signalé mais repéré durant ce
+  travail) — corrigé, et utilisé comme base pour créer les nouvelles
+  traductions `de.json`, `es.json` et `it.json` de l'écran de
+  configuration/options (jusqu'ici seuls `fr.json` et `en.json`
+  existaient pour cet écran).
+- **README entièrement réécrit** : structure bilingue anglais d'abord,
+  français ensuite (au lieu de français uniquement), avec une nouvelle
+  section de dépannage détaillée dédiée au cas où la carte Lovelace
+  n'apparaît pas après l'installation (ressource JS manquante, mal
+  orthographiée, mise en cache — avec une checklist en 7 points).
+
 ## 🆕 Nouveautés v0.2
 
 Suite à des retours d'usage sur un outil comparable, chaque échéance du
@@ -609,6 +634,47 @@ vigilance, rappels, revente).
 - Aucune action requise après la mise à jour : la cascade se réajuste
   automatiquement au prochain appel IA (génération de plan, DIY, points
   de vigilance, rappels, estimation de revente).
+
+## 🌍 v1.4.0 — intégration multilingue (français, anglais, allemand, espagnol, italien)
+
+Un seul réglage de langue pour toute l'installation (Réglages de la carte,
+à côté du thème visuel) — pas un réglage par utilisateur HA : le contenu
+généré par l'IA est mis en cache et partagé entre tous les viewers du
+tableau de bord, donc une langue par personne n'aurait pas de sens.
+Couvre tout ce qui est visible par l'utilisateur :
+
+- **Interface de la carte** : 160 chaînes traduites (boutons, labels,
+  formulaire d'ajout de véhicule, écran Réglages, statuts, badges DIY,
+  messages de confirmation/erreur, étapes de chargement...) dans les 5
+  langues. Nouveau sélecteur de langue dans Réglages (drapeaux
+  🇫🇷🇬🇧🇩🇪🇪🇸🇮🇹), au même endroit que le sélecteur de thème.
+- **Catalogue d'entretien** : les noms des 87 opérations (auto, moto/
+  scooter, vélo électrique) sont traduits en anglais/allemand/espagnol/
+  italien (`catalog_i18n.py`, nouveau fichier) et affichés dans la langue
+  choisie — le français du catalogue source (`maintenance_catalog.py`)
+  n'est pas dupliqué, c'est la référence utilisée telle quelle pour "fr".
+- **Contenu généré par Gemini** : plan d'entretien (notes, raisons de non-
+  applicabilité), points de vigilance, rappels constructeur, explications
+  DIY et estimation de revente sont désormais demandés dans la langue
+  choisie. Le cache par modèle (points de vigilance/rappels, mutualisé
+  entre véhicules identiques) inclut maintenant la langue dans sa clé,
+  pour ne jamais resservir un texte dans la mauvaise langue après un
+  changement de réglage.
+- **Notifications persistantes HA** (échéance dépassée, rappel de
+  kilométrage) traduites, y compris le nom de l'entretien concerné.
+- **Important** : changer de langue traduit instantanément l'interface et
+  les noms d'opérations du catalogue (statiques), mais le contenu déjà
+  généré par l'IA pour un véhicule existant (notes, points de vigilance,
+  rappels, explications DIY, estimation de revente) reste dans la langue
+  où il a été généré jusqu'à sa prochaine régénération (boutons
+  "↻ Regénérer le plan" / rafraîchir les points de vigilance ou rappels /
+  nouvelle demande DIY) — ce n'est régénéré automatiquement pour aucun
+  véhicule existant afin de ne pas consommer de quota IA sans demande
+  explicite.
+- L'écran de configuration Home Assistant (ajout de l'intégration,
+  options) suit toujours la langue du profil HA de chaque utilisateur
+  (mécanisme natif HA, actuellement FR/EN) — c'est un réglage séparé de
+  celui-ci, propre à Home Assistant, non couvert par ce changement.
 
 ---
 

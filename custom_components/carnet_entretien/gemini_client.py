@@ -21,6 +21,7 @@ from typing import Any
 import aiohttp
 import async_timeout
 
+from .catalog_i18n import LANGUAGE_NAMES
 from .const import GEMINI_MODEL_CANDIDATES, GEMINI_TIMEOUT
 from .maintenance_catalog import CAR_CATALOG
 
@@ -28,6 +29,26 @@ _LOGGER = logging.getLogger(__name__)
 
 API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 RATE_LIMIT_RETRY_DELAYS = (5, 15)  # secondes ; 2 re-tentatives sur le MÊME modèle avant de passer au suivant
+
+
+def _language_instruction(language: str) -> str:
+    """Ligne ajoutée en fin de prompt pour forcer la langue de réponse.
+
+    Les prompts eux-mêmes restent écrits en français (langue native de
+    l'intégration, aucune raison de tous les réécrire) : seule cette ligne
+    change, dans une formulation en anglais — plus fiable pour orienter
+    Gemini que d'essayer d'écrire l'instruction dans chaque langue cible.
+    Sans effet si "fr" (déjà la langue par défaut des prompts).
+    """
+    if language == "fr" or language not in LANGUAGE_NAMES:
+        return ""
+    return (
+        f"\n\nIMPORTANT: write every text field of your JSON response "
+        f"(free-text explanations, notes, titles, descriptions...) exclusively "
+        f"in {LANGUAGE_NAMES[language]}. Keep any field defined by the schema's "
+        f"\"enum\" (fixed values such as difficulty/severity levels) in its "
+        f"original form — only free text changes language."
+    )
 
 
 class GeminiError(Exception):
@@ -207,6 +228,7 @@ class GeminiClient:
     async def generate_maintenance_plan(
         self, brand: str, model: str, motorisation: str, year: int, mileage: int,
         fuel_type: str = "", catalog: list[dict] | None = None, vehicle_kind_label: str = "véhicule",
+        language: str = "fr",
     ) -> GeminiResult:
         catalog = catalog if catalog is not None else CAR_CATALOG
         catalog_lines = "\n".join(
@@ -307,10 +329,12 @@ alors les valeurs par défaut du catalogue et indique-le dans "notes".
 Renseigne aussi "sources" : les types de documents sur lesquels tu t'es
 appuyé (ex : "Programme d'entretien officiel {brand}", "Revue Technique
 Automobile (RTA)"). Réponds uniquement avec le JSON demandé (un objet par
-catalog_id, tous présents), sans texte autour."""
+catalog_id, tous présents), sans texte autour.""" + _language_instruction(language)
         return await self._call(prompt, schema, max_output_tokens=12288)
 
-    async def generate_known_issues(self, brand: str, model: str, motorisation: str, year: int) -> GeminiResult:
+    async def generate_known_issues(
+        self, brand: str, model: str, motorisation: str, year: int, language: str = "fr"
+    ) -> GeminiResult:
         schema = {
             "type": "OBJECT",
             "properties": {
@@ -363,7 +387,7 @@ forums de propriétaires spécialisés"), pour que l'utilisateur sache d'où
 vient l'information. Sois honnête : si tu n'as pas d'information fiable et
 spécifique à ce modèle, renvoie une liste "issues" vide et dis-le dans
 "sources_summary" plutôt que d'inventer. Réponds uniquement avec le JSON
-demandé, sans texte autour."""
+demandé, sans texte autour.""" + _language_instruction(language)
         return await self._call(prompt, schema, max_output_tokens=3072)
 
     async def list_motorisations(
@@ -411,7 +435,9 @@ Réponds uniquement avec le JSON demandé (tableau de chaînes), sans texte
 autour."""
         return await self._call(prompt, schema, max_output_tokens=1024)
 
-    async def check_recalls(self, brand: str, model: str, motorisation: str, year: int) -> GeminiResult:
+    async def check_recalls(
+        self, brand: str, model: str, motorisation: str, year: int, language: str = "fr"
+    ) -> GeminiResult:
         schema = {
             "type": "OBJECT",
             "properties": {
@@ -453,11 +479,12 @@ réellement existé pour ce modèle précis — si tu n'as pas d'information
 fiable et spécifique, renvoie une liste "recalls" vide plutôt que
 d'inventer. Renseigne "sources" (types de documents/bases consultés, ex :
 "Base de rappels constructeur {brand}", "rappel.conso.gouv.fr"). Réponds
-uniquement avec le JSON demandé, sans texte autour."""
+uniquement avec le JSON demandé, sans texte autour.""" + _language_instruction(language)
         return await self._call(prompt, schema, max_output_tokens=2048)
 
     async def explain_diy_operation(
-        self, item_name: str, category: str, brand: str, model: str, motorisation: str, year: int
+        self, item_name: str, category: str, brand: str, model: str, motorisation: str, year: int,
+        language: str = "fr",
     ) -> GeminiResult:
         """Génération à la demande (2e temps, sur clic) : explication détaillée
         pour réaliser une opération soi-même — appelée séparément de la
@@ -490,7 +517,7 @@ expérimenté (pas un professionnel) dans "estimated_time_minutes". Si
 l'opération présente un risque de sécurité notable si mal réalisée (freinage,
 direction, distribution...), ajoute un avertissement court dans
 "safety_warning", sinon laisse ce champ vide. Réponds uniquement avec le
-JSON demandé, sans texte autour."""
+JSON demandé, sans texte autour.""" + _language_instruction(language)
         return await self._call(prompt, schema, max_output_tokens=1024)
 
     async def estimate_resale_value(
@@ -502,6 +529,7 @@ JSON demandé, sans texte autour."""
         mileage: int,
         annual_km: int,
         condition: str = "correct",
+        language: str = "fr",
     ) -> GeminiResult:
         schema = {
             "type": "OBJECT",
@@ -533,5 +561,5 @@ Argus) et qui expliquent la tendance actuelle du marché pour ce modèle
 (effet du kilométrage annuel par rapport à la moyenne, décote liée aux ZFE
 pour un diesel/essence ancien le cas échéant, cote de la motorisation ou de
 la finition, etc.). Réponds uniquement avec le JSON demandé, sans texte
-autour."""
+autour.""" + _language_instruction(language)
         return await self._call(prompt, schema, max_output_tokens=768)

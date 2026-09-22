@@ -31,6 +31,12 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "font_scale": 1.0,
     "mileage_reminder_enabled": True,
     "mileage_reminder_days": 30,
+    # Langue de l'ensemble de l'intégration (carte, catalogue d'entretien,
+    # contenu généré par Gemini, notifications persistantes) — un seul
+    # réglage pour toute l'installation, pas par utilisateur HA : le
+    # contenu IA est mis en cache et partagé entre tous les viewers du
+    # tableau de bord, donc une langue par viewer n'aurait pas de sens.
+    "language": "fr",
 }
 
 DEFAULT_DATA: dict[str, Any] = {
@@ -250,8 +256,19 @@ class CarnetStore:
 
     # ---------- Cache modèle (points de vigilance mutualisés) ----------
 
-    def model_cache_key(self, brand: str, model: str, motorisation: str, year: int) -> str:
-        return f"{brand.strip().lower()}|{model.strip().lower()}|{(motorisation or '').strip().lower()}|{year}"
+    def model_cache_key(self, brand: str, model: str, motorisation: str, year: int, language: str = "fr") -> str:
+        # "language" fait partie de la clé : les points de vigilance et
+        # rappels constructeur mis en cache sont du texte généré par Gemini
+        # dans une langue donnée — un changement de langue ne doit jamais
+        # resservir un texte en français à un utilisateur qui vient de
+        # basculer en anglais (ou l'inverse). Chaque langue a son propre
+        # cache par modèle, ce qui reste cohérent avec l'objectif du cache
+        # (mutualiser entre véhicules identiques) tout en couvrant le cas
+        # multilingue.
+        return (
+            f"{brand.strip().lower()}|{model.strip().lower()}|{(motorisation or '').strip().lower()}"
+            f"|{year}|{language}"
+        )
 
     def get_model_cache(self, key: str) -> dict[str, Any] | None:
         return self.data["model_cache"].get(key)

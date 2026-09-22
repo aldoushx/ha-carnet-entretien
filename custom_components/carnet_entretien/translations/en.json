@@ -2,10 +2,11 @@
   "config": {
     "step": {
       "user": {
-        "title": "Carnet d'entretien",
-        "description": "Clé Gemini optionnelle pour la génération automatique du plan d'entretien, des points de vigilance et de l'estimation de valeur.",
+        "title": "CARnet - Garage Log",
+        "description": "Free Gemini API key (optional) for automatic generation of the maintenance plan, known issues and resale value estimate. Also choose the content language for the whole integration (card, catalog, AI-generated text, notifications) — this can be changed later from the integration's Options.",
         "data": {
-          "gemini_api_key": "Clé API Gemini (optionnelle)"
+          "gemini_api_key": "Gemini API key (optional)",
+          "language": "Content language"
         }
       }
     }
@@ -14,7 +15,8 @@
     "step": {
       "init": {
         "data": {
-          "gemini_api_key": "Clé API Gemini"
+          "gemini_api_key": "Gemini API key",
+          "language": "Content language"
         }
       }
     }

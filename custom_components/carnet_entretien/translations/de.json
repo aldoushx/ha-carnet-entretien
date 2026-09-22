@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "CARnet - Garage Log",
+        "description": "Optionaler Gemini-API-Schlüssel für die automatische Erstellung des Wartungsplans, bekannter Probleme und der Wiederverkaufswert-Schätzung. Wählen Sie auch die Inhaltssprache der gesamten Integration (Karte, Katalog, KI-generierter Text, Benachrichtigungen) — später über die Optionen der Integration änderbar.",
+        "data": {
+          "gemini_api_key": "Gemini-API-Schlüssel (optional)",
+          "language": "Inhaltssprache"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "gemini_api_key": "Gemini-API-Schlüssel",
+          "language": "Inhaltssprache"
+        }
+      }
+    }
+  }
+}

@@ -28,7 +28,16 @@ from homeassistant.helpers.entity_registry import async_entries_for_config_entry
 from homeassistant.helpers.event import async_track_state_change_event, async_track_time_interval
 from homeassistant.helpers.storage import Store
 
-from .const import CONF_GEMINI_API_KEY, DOMAIN, SIGNAL_VEHICLES_UPDATED, STATUS_DUE, STORAGE_KEY, STORAGE_VERSION
+from .catalog_i18n import ITEM_NAMES, NOTIF_STRINGS
+from .const import (
+    CONF_GEMINI_API_KEY,
+    CONF_LANGUAGE,
+    DOMAIN,
+    SIGNAL_VEHICLES_UPDATED,
+    STATUS_DUE,
+    STORAGE_KEY,
+    STORAGE_VERSION,
+)
 from .gemini_client import GeminiClient, GeminiError
 from .maintenance_catalog import get_catalog
 from .storage import CarnetStore
@@ -81,6 +90,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     api_key = entry.options.get(CONF_GEMINI_API_KEY, entry.data.get(CONF_GEMINI_API_KEY, ""))
     session = async_get_clientsession(hass)
     gemini = GeminiClient(session, api_key)
+
+    # Langue choisie à l'installation (ou modifiée depuis via Options) :
+    # source de vérité unique pour "language" côté config entry, synchronisée
+    # ici vers les réglages internes (store) à chaque (re)démarrage de
+    # l'entrée — c'est-à-dire aussi juste après une modification via
+    # Options, qui déclenche un rechargement (_async_reload_on_options_update
+    # ci-dessous). Le reste du code (carte, catalogue, prompts Gemini,
+    # notifications) continue de lire store.get_settings()["language"] sans
+    # changement, seule la façon de LA DÉFINIR change (plus de sélecteur
+    # dans la carte depuis v1.4.1 — voir CHANGELOG).
+    configured_language = entry.options.get(CONF_LANGUAGE, entry.data.get(CONF_LANGUAGE, "fr"))
+    if store.get_settings().get("language") != configured_language:
+        await store.async_set_settings({"language": configured_language})
 
     referentiel: dict[str, dict[str, list[str]]] = await hass.async_add_executor_job(_load_referentiel_file)
 
@@ -173,26 +195,33 @@ def _schedule_overdue_check(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 async def _async_check_overdue_notifications(hass: HomeAssistant, entry: ConfigEntry) -> None:
     store: CarnetStore = hass.data[DOMAIN][entry.entry_id]["store"]
-    notifications_enabled = store.get_settings().get("notifications_enabled", True)
+    settings = store.get_settings()
+    notifications_enabled = settings.get("notifications_enabled", True)
+    lang = settings.get("language", "fr")
+    strings = NOTIF_STRINGS.get(lang, NOTIF_STRINGS["fr"])
     for vehicle_id, vehicle in list(store.vehicles.items()):
-        label = f"{vehicle.get('brand', '')} {vehicle.get('model', '')}".strip() or "Véhicule"
+        label = f"{vehicle.get('brand', '')} {vehicle.get('model', '')}".strip() or strings["vehicle_fallback"]
         for item in compute_plan_status(vehicle):
             notif_id = f"{DOMAIN}_{vehicle_id}_{item.get('id')}"
             if not notifications_enabled or item.get("statut") != STATUS_DUE:
                 persistent_notification.async_dismiss(hass, notif_id)
                 continue
+            # Nom de l'entretien traduit dans la langue choisie, comme pour
+            # l'affichage carte (voir _serialize_vehicle) — un item
+            # personnalisé (sans traduction disponible) garde son nom saisi.
+            item_names = ITEM_NAMES.get(item.get("id"))
+            item_name = item_names[lang] if item_names and lang in item_names else item.get("name")
             details = []
             if item.get("depasse_de_km") is not None:
-                details.append(f"{round(item['depasse_de_km']):,} km de dépassement".replace(",", " "))
+                details.append(strings["overdue_km"].format(km=f"{round(item['depasse_de_km']):,}".replace(",", " ")))
             jours = item.get("jours_restants")
             if jours is not None and jours < 0:
-                details.append(f"{abs(jours)} j de retard")
-            detail_text = " · ".join(details) if details else "échéance dépassée"
+                details.append(strings["overdue_days"].format(days=abs(jours)))
+            detail_text = " · ".join(details) if details else strings["overdue_generic"]
             persistent_notification.async_create(
                 hass,
-                f"**{label}** — {item.get('name')}\n\n{detail_text}. Ouvrez la carte "
-                "Carnet d'entretien pour enregistrer l'intervention une fois réalisée.",
-                title="🔧 Entretien à faire",
+                strings["overdue_body"].format(label=label, item=item_name, detail=detail_text),
+                title=strings["overdue_title"],
                 notification_id=notif_id,
             )
 
@@ -209,6 +238,8 @@ async def _async_check_mileage_reminders(hass: HomeAssistant, entry: ConfigEntry
     settings = store.get_settings()
     enabled = settings.get("mileage_reminder_enabled", True)
     period_days = settings.get("mileage_reminder_days", 30) or 30
+    lang = settings.get("language", "fr")
+    strings = NOTIF_STRINGS.get(lang, NOTIF_STRINGS["fr"])
     now = datetime.now().timestamp()
 
     for vehicle_id, vehicle in list(store.vehicles.items()):
@@ -225,13 +256,11 @@ async def _async_check_mileage_reminders(hass: HomeAssistant, entry: ConfigEntry
             persistent_notification.async_dismiss(hass, notif_id)
             continue
 
-        label = f"{vehicle.get('brand', '')} {vehicle.get('model', '')}".strip() or "Véhicule"
+        label = f"{vehicle.get('brand', '')} {vehicle.get('model', '')}".strip() or strings["vehicle_fallback"]
         persistent_notification.async_create(
             hass,
-            f"Le kilométrage de **{label}** n'a pas été mis à jour depuis "
-            f"{int(days_since)} jours (rappel réglé sur {period_days} j). Une valeur à "
-            "jour améliore la précision des échéances et de la date prévisionnelle.",
-            title="📏 Mettre à jour le kilométrage",
+            strings["mileage_body"].format(label=label, days=int(days_since), period=period_days),
+            title=strings["mileage_title"],
             notification_id=notif_id,
         )
 
@@ -448,6 +477,7 @@ async def _refresh_plan(store: CarnetStore, gemini: GeminiClient, vehicle_id: st
     if not vehicle:
         raise ValueError("Véhicule inconnu")
 
+    language = store.get_settings().get("language", "fr")
     vehicle_type = vehicle.get("vehicle_type", "auto")
     two_wheeler_type = vehicle.get("two_wheeler_type", "")
     catalog = get_catalog(vehicle_type, two_wheeler_type)
@@ -459,7 +489,7 @@ async def _refresh_plan(store: CarnetStore, gemini: GeminiClient, vehicle_id: st
     result = await gemini.generate_maintenance_plan(
         vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""),
         vehicle["year"], vehicle.get("mileage", 0), vehicle.get("fuel_type", ""),
-        catalog=catalog, vehicle_kind_label=kind_label,
+        catalog=catalog, vehicle_kind_label=kind_label, language=language,
     )
     raw_items = result.data.get("items", []) if isinstance(result.data, dict) else result.data
     sources = result.data.get("sources", []) if isinstance(result.data, dict) else []
@@ -504,8 +534,10 @@ async def _refresh_plan(store: CarnetStore, gemini: GeminiClient, vehicle_id: st
             "diy_cost_estimate_eur": ai_item.get("diy_cost_estimate_eur"),
             "applicable": applicable,
             "not_applicable_reason": ai_item.get("not_applicable_reason"),
-            "notes": ai_item.get("notes") or ("Non couvert par la génération IA — valeurs génériques du catalogue."
-                                               if cid not in ai_by_id else None),
+            "notes": ai_item.get("notes") or (
+                NOTIF_STRINGS.get(language, NOTIF_STRINGS["fr"])["generic_ai_fallback_note"]
+                if cid not in ai_by_id else None
+            ),
         }
         if "first_interval_months" in catalog_item:
             item["first_interval_months"] = catalog_item["first_interval_months"]
@@ -526,10 +558,11 @@ async def _refresh_known_issues(store: CarnetStore, gemini: GeminiClient, vehicl
     if not vehicle:
         raise ValueError("Véhicule inconnu")
 
+    language = store.get_settings().get("language", "fr")
     # Mutualisation par modèle : on ne réinterroge pas Gemini si un véhicule
-    # identique (marque+modèle+motorisation+année) a déjà été analysé.
+    # identique (marque+modèle+motorisation+année+langue) a déjà été analysé.
     cache_key = store.model_cache_key(
-        vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""), vehicle["year"]
+        vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""), vehicle["year"], language
     )
     cached = store.get_model_cache(cache_key)
     if cached:
@@ -539,7 +572,7 @@ async def _refresh_known_issues(store: CarnetStore, gemini: GeminiClient, vehicl
         return
 
     result = await gemini.generate_known_issues(
-        vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""), vehicle["year"]
+        vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""), vehicle["year"], language=language
     )
     sources_summary = result.data.get("sources_summary", "")
     issues = [{"id": f"issue_{i}", **issue} for i, issue in enumerate(result.data.get("issues", []))]
@@ -553,10 +586,11 @@ async def _refresh_recalls(store: CarnetStore, gemini: GeminiClient, vehicle_id:
     if not vehicle:
         raise ValueError("Véhicule inconnu")
 
+    language = store.get_settings().get("language", "fr")
     # Mutualisation par modèle, même clé que les points de vigilance : un
     # rappel constructeur concerne le modèle, pas un exemplaire précis.
     cache_key = store.model_cache_key(
-        vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""), vehicle["year"]
+        vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""), vehicle["year"], language
     )
     cached = store.get_recalls_cache(cache_key)
     if cached:
@@ -564,7 +598,7 @@ async def _refresh_recalls(store: CarnetStore, gemini: GeminiClient, vehicle_id:
         return
 
     result = await gemini.check_recalls(
-        vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""), vehicle["year"]
+        vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""), vehicle["year"], language=language
     )
     sources_summary = ", ".join(result.data.get("sources", [])) if isinstance(result.data.get("sources"), list) else str(result.data.get("sources", ""))
     recalls = [{"id": f"recall_{i}", **r} for i, r in enumerate(result.data.get("recalls", []))]
@@ -577,9 +611,11 @@ async def _snapshot_value(store: CarnetStore, gemini: GeminiClient, vehicle_id: 
     vehicle = store.get_vehicle(vehicle_id)
     if not vehicle:
         raise ValueError("Véhicule inconnu")
+    language = store.get_settings().get("language", "fr")
     result = await gemini.estimate_resale_value(
         vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""),
         vehicle["year"], vehicle.get("mileage", 0), estimate_annual_km(vehicle), condition,
+        language=language,
     )
     snapshot = {
         "date": __import__("time").time(),
@@ -628,9 +664,28 @@ async def _set_mileage_source(
 # ---------------------------------------------------------------------------
 
 
-def _serialize_vehicle(vehicle: dict) -> dict:
+def _serialize_vehicle(vehicle: dict, language: str = "fr") -> dict:
     v = dict(vehicle)
-    v["maintenance_plan"] = compute_plan_status(vehicle)
+    plan = compute_plan_status(vehicle)
+    if language != "fr":
+        # Les noms d'opérations du catalogue fixe (maintenance_catalog.py)
+        # sont écrits en français en dur — c'est la langue "source" du
+        # catalogue. Pour toute autre langue, on substitue le nom traduit
+        # (catalog_i18n.py) à l'affichage, sans jamais toucher au français
+        # stocké ni à "id" (qui reste la clé stable utilisée pour retrouver
+        # l'item lors d'une bascule applicable/non applicable, d'un log
+        # d'intervention, etc.). Les items personnalisés ("custom": True,
+        # ajoutés à la main par l'utilisateur) n'ont pas de traduction
+        # disponible (nom libre) : ils gardent leur nom tel quel, dans
+        # quelque langue qu'ils aient été saisis.
+        translated = []
+        for item in plan:
+            names = ITEM_NAMES.get(item.get("id"))
+            if names and language in names:
+                item = {**item, "name": names[language]}
+            translated.append(item)
+        plan = translated
+    v["maintenance_plan"] = plan
     return v
 
 
@@ -642,7 +697,8 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
     @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/get_vehicles"})
     @websocket_api.async_response
     async def ws_get_vehicles(hass, connection, msg):
-        vehicles = [_serialize_vehicle(v) for v in store.vehicles.values()]
+        lang = store.get_settings().get("language", "fr")
+        vehicles = [_serialize_vehicle(v, lang) for v in store.vehicles.values()]
         connection.send_result(msg["id"], {"vehicles": vehicles, "settings": store.get_settings()})
 
     @websocket_api.websocket_command(
@@ -724,7 +780,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         data = {k: v for k, v in msg.items() if k not in ("id", "type")}
         try:
             vehicle = await _create_vehicle(hass, entry, store, gemini, data)
-            connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(vehicle)})
+            connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(vehicle, store.get_settings().get("language", "fr"))})
         except GeminiError as err:
             connection.send_error(msg["id"], err.code, str(err))
 
@@ -748,7 +804,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         vehicle = await store.async_update_mileage(msg["vehicle_id"], msg["mileage"])
         async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
         _schedule_overdue_check(hass, entry)
-        connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(vehicle) if vehicle else None})
+        connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(vehicle, store.get_settings().get("language", "fr")) if vehicle else None})
 
     @websocket_api.websocket_command(
         {
@@ -763,7 +819,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         vehicle = await _set_mileage_source(
             hass, entry, store, msg["vehicle_id"], msg["source"], msg.get("entity_id")
         )
-        connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(vehicle) if vehicle else None})
+        connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(vehicle, store.get_settings().get("language", "fr")) if vehicle else None})
 
     @websocket_api.websocket_command(
         {vol.Required("type"): f"{DOMAIN}/refresh_plan", vol.Required("vehicle_id"): str}
@@ -772,7 +828,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
     async def ws_refresh_plan(hass, connection, msg):
         try:
             await _refresh_plan(store, gemini, msg["vehicle_id"])
-            connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(store.get_vehicle(msg["vehicle_id"]))})
+            connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(store.get_vehicle(msg["vehicle_id"]), store.get_settings().get("language", "fr"))})
         except GeminiError as err:
             connection.send_error(msg["id"], err.code, str(err))
 
@@ -783,7 +839,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
     async def ws_refresh_known_issues(hass, connection, msg):
         try:
             await _refresh_known_issues(store, gemini, msg["vehicle_id"])
-            connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(store.get_vehicle(msg["vehicle_id"]))})
+            connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(store.get_vehicle(msg["vehicle_id"]), store.get_settings().get("language", "fr"))})
         except GeminiError as err:
             connection.send_error(msg["id"], err.code, str(err))
 
@@ -794,7 +850,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
     async def ws_refresh_recalls(hass, connection, msg):
         try:
             await _refresh_recalls(store, gemini, msg["vehicle_id"])
-            connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(store.get_vehicle(msg["vehicle_id"]))})
+            connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(store.get_vehicle(msg["vehicle_id"]), store.get_settings().get("language", "fr"))})
         except GeminiError as err:
             connection.send_error(msg["id"], err.code, str(err))
 
@@ -933,9 +989,16 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
             connection.send_error(msg["id"], "not_found", "Échéance inconnue")
             return
         try:
+            language = store.get_settings().get("language", "fr")
+            # Nom traduit si disponible (item du catalogue fixe), pour que le
+            # nom d'opération passé au prompt corresponde à ce que
+            # l'utilisateur voit réellement à l'écran dans sa langue.
+            item_names = ITEM_NAMES.get(item.get("id"))
+            item_name = item_names[language] if item_names and language in item_names else item.get("name", "")
             result = await gemini.explain_diy_operation(
-                item.get("name", ""), item.get("category", "autre"),
+                item_name, item.get("category", "autre"),
                 vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""), vehicle["year"],
+                language=language,
             )
             await store.async_add_token_usage(result.tokens)
             patch = {
@@ -984,6 +1047,13 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
             vol.Optional("font_scale"): vol.Coerce(float),
             vol.Optional("mileage_reminder_enabled"): bool,
             vol.Optional("mileage_reminder_days"): vol.All(vol.Coerce(int), vol.Range(min=1)),
+            # PAS de "language" ici (v1.4.1) : ce n'est plus un réglage que
+            # la carte peut changer elle-même — c'est choisi à l'installation
+            # de l'intégration (ou modifié via ses Options), voir
+            # async_setup_entry qui synchronise CONF_LANGUAGE vers ce store
+            # à chaque (re)chargement. Accepter ce champ ici permettrait à la
+            # carte de créer une valeur en désaccord avec la config entry,
+            # écrasée au prochain rechargement — source de confusion inutile.
         }
     )
     @websocket_api.async_response
@@ -1005,7 +1075,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
     async def ws_set_photo(hass, connection, msg):
         vehicle = await store.async_set_photo(msg["vehicle_id"], msg.get("photo"))
         async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
-        connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(vehicle) if vehicle else None})
+        connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(vehicle, store.get_settings().get("language", "fr")) if vehicle else None})
 
     for handler in (
         ws_get_vehicles, ws_search_referentiel, ws_search_motorisations, ws_add_vehicle, ws_remove_vehicle,
