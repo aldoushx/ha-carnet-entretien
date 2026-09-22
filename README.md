@@ -1,4 +1,4 @@
-<p align="center"><img src="badge.svg" width="180" height="180" alt="CARnet - Garage Log" /></p>
+<p align="center"><img src="badge.svg" width="360" height="360" alt="CARnet - Garage Log" /></p>
 
 <h1 align="center">CARnet - Garage Log</h1>
 <p align="center">Smart vehicle maintenance logbook for Home Assistant</p>
@@ -81,8 +81,8 @@ generic one.
   plate, photo.
 - 🛠️ **Fixed maintenance catalog per vehicle type** (46 operations for a
   car, 26 for a motorcycle/scooter, 15 for an e-bike): oil change, every
-  filter, timing belt/chain **and** accessory belt as separate entries,
-  front/rear discs **and** pads as separate entries, battery, A/C,
+  filter, timing belt/chain and accessory belt as separate entries,
+  front/rear discs and pads as separate entries, battery, A/C,
   DPF/EGR, roadworthiness inspection, manufacturer service schedule,
   motorcycle chain kit, traction battery diagnostics... The AI only
   decides applicability and intervals for each fixed entry — nothing can
@@ -470,8 +470,8 @@ véhicule précis, pas un modèle générique.
   en cache), année, kilométrage, plaque, photo.
 - 🛠️ **Catalogue d'entretien fixe par type de véhicule** (46 opérations
   pour une voiture, 26 pour une moto/scooter, 15 pour un vélo électrique) :
-  vidange, tous les filtres, courroie/chaîne de distribution **et**
-  d'accessoires comme entrées séparées, disques **et** plaquettes
+  vidange, tous les filtres, courroie/chaîne de distribution et
+  d'accessoires comme entrées séparées, disques et plaquettes
   avant/arrière comme entrées séparées, batterie, climatisation, FAP/EGR,
   contrôle technique, révision constructeur, kit chaîne moto, diagnostic
   batterie de traction... L'IA ne décide que de l'applicabilité et des
