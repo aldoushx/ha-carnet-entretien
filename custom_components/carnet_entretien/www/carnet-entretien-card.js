@@ -92,30 +92,6 @@ class CarnetEntretienCard extends HTMLElement {
     return this._hass.connection.sendMessagePromise({ type: `${DOMAIN}/${message.type}`, ...message.data });
   }
 
-  // DEBUG (diagnostic temporaire — bug "entretiens masqués qui
-  // réapparaissent / case qui se décoche") : imprime dans la console
-  // navigateur l'état complet du plan du véhicule actuellement sélectionné
-  // (ou de tous les véhicules si aucun n'est sélectionné) ainsi que le
-  // réglage hide_not_applicable en vigueur côté carte à cet instant précis.
-  // Préfixe "[CARnet DEBUG]" pour pouvoir filtrer facilement dans la
-  // console (F12 → onglet Console → filtre "CARnet DEBUG").
-  _debugLogPlan(tag) {
-    const vehicles = this._selectedId ? this._vehicles.filter((v) => v.id === this._selectedId) : this._vehicles;
-    console.debug(
-      `[CARnet DEBUG] ${tag} — hide_not_applicable=${this._settings.hide_not_applicable}`,
-      vehicles.map((v) => ({
-        vehicle: `${v.brand} ${v.model}`,
-        plan: (v.maintenance_plan || []).map((it) => ({
-          id: it.id,
-          name: it.name,
-          applicable: it.applicable,
-          applicable_override: it.applicable_override,
-          statut: it.statut,
-        })),
-      }))
-    );
-  }
-
   async _fetchVehicles() {
     try {
       const res = await this._ws({ type: "get_vehicles" });
@@ -126,7 +102,6 @@ class CarnetEntretienCard extends HTMLElement {
           this._theme = res.settings.theme;
         }
       }
-      this._debugLogPlan("après _fetchVehicles");
     } catch (e) {
       console.error("carnet_entretien: échec du chargement", e);
     }
@@ -321,9 +296,8 @@ class CarnetEntretienCard extends HTMLElement {
   }
 
   async _setItemApplicable(vehicleId, itemId, applicable) {
-    this._debugLogPlan(`AVANT _setItemApplicable(item_id=${itemId}, applicable=${applicable})`);
     await this._ws({ type: "set_item_applicable", data: { vehicle_id: vehicleId, item_id: itemId, applicable } });
-    await this._fetchVehicles(); // logge lui-même l'état "APRÈS" (_debugLogPlan)
+    await this._fetchVehicles();
   }
 
   async _setItemOverride(vehicleId, itemId, dueKm, dueDate) {
@@ -406,9 +380,8 @@ class CarnetEntretienCard extends HTMLElement {
   }
 
   async _logMaintenance(vehicleId, payload) {
-    this._debugLogPlan(`AVANT _logMaintenance(${JSON.stringify(payload)})`);
     await this._ws({ type: "log_maintenance", data: { vehicle_id: vehicleId, ...payload } });
-    await this._fetchVehicles(); // logge lui-même l'état "APRÈS" (_debugLogPlan)
+    await this._fetchVehicles();
   }
 
   async _removeVehicle(vehicleId) {
@@ -441,12 +414,24 @@ class CarnetEntretienCard extends HTMLElement {
   }
 
   async _updateSetting(key, value) {
+    const previous = this._settings[key];
     this._settings = { ...this._settings, [key]: value };
     this._render();
     try {
       await this._ws({ type: "set_settings", data: { [key]: value } });
     } catch (e) {
-      console.error("carnet_entretien: échec de l'enregistrement du réglage", e);
+      // Si l'enregistrement échoue côté serveur, la valeur affichée
+      // localement ne doit pas mentir : on revient à l'ancienne valeur et on
+      // prévient clairement, plutôt que de laisser un réglage "appliqué" à
+      // l'écran mais jamais persisté (c'était la cause du bug où le
+      // masquage des entretiens non applicables se réinitialisait tout
+      // seul — voir CHANGELOG v1.3.2).
+      this._settings = { ...this._settings, [key]: previous };
+      this._render();
+      console.error("carnet_entretien: échec de l'enregistrement du réglage", key, value, e);
+      alert(
+        "Le réglage n'a pas pu être enregistré et a été annulé : " + (e.message || e.code || String(e))
+      );
     }
   }
 

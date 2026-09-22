@@ -631,18 +631,6 @@ async def _set_mileage_source(
 def _serialize_vehicle(vehicle: dict) -> dict:
     v = dict(vehicle)
     v["maintenance_plan"] = compute_plan_status(vehicle)
-    # DEBUG (diagnostic temporaire — bug "entretiens masqués qui
-    # réapparaissent") : c'est ICI, à chaque get_vehicles, que le statut
-    # "non_applicable" est (re)calculé à partir du champ brut "applicable"
-    # stocké. Si ce log montre "applicable=True/statut=non_applicable"
-    # incohérent, ou un item qui alterne applicable=True/False d'un appel à
-    # l'autre sans action utilisateur entre les deux, le problème est ici
-    # (calcul) plutôt que côté carte (affichage).
-    _LOGGER.debug(
-        "[carnet_entretien DEBUG] get_vehicles vehicle=%s (%s) -> %s",
-        vehicle.get("id"), vehicle.get("brand"),
-        [(i.get("id"), i.get("applicable"), i.get("applicable_override"), i.get("statut")) for i in v["maintenance_plan"]],
-    )
     return v
 
 
@@ -843,28 +831,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         msg_id = msg.pop("id")
         msg.pop("type")
         vehicle_id = msg.pop("vehicle_id")
-        # DEBUG (diagnostic temporaire — bug "entretiens masqués qui
-        # réapparaissent") : état de l'item AVANT modification, pour
-        # comparer avec l'état après et voir si autre chose que
-        # last_done_km/last_done_date bouge.
-        vehicle_before = store.get_vehicle(vehicle_id) or {}
-        item_before = next(
-            (i for i in vehicle_before.get("maintenance_plan", []) if i.get("id") == msg.get("item_id")), None
-        )
-        _LOGGER.debug(
-            "[carnet_entretien DEBUG] log_maintenance vehicle=%s item_id=%s payload=%s item_avant=%s",
-            vehicle_id, msg.get("item_id"), msg, item_before,
-        )
         entry_data = await store.async_log_maintenance(vehicle_id, msg)
-        vehicle_after = store.get_vehicle(vehicle_id) or {}
-        item_after = next(
-            (i for i in vehicle_after.get("maintenance_plan", []) if i.get("id") == msg.get("item_id")), None
-        )
-        _LOGGER.debug(
-            "[carnet_entretien DEBUG] log_maintenance TERMINÉ vehicle=%s item_après=%s plan_complet_applicable=%s",
-            vehicle_id, item_after,
-            [(i.get("id"), i.get("applicable"), i.get("applicable_override")) for i in vehicle_after.get("maintenance_plan", [])],
-        )
         async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
         _schedule_overdue_check(hass, entry)
         connection.send_result(msg_id, {"entry": entry_data})
@@ -879,23 +846,8 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
     )
     @websocket_api.async_response
     async def ws_set_item_applicable(hass, connection, msg):
-        # DEBUG (diagnostic temporaire) : état complet du plan AVANT la
-        # bascule, pour vérifier si SEUL l'item ciblé change ou si d'autres
-        # items perdent leur "applicable"/"applicable_override" au passage.
-        vehicle_before = store.get_vehicle(msg["vehicle_id"]) or {}
-        _LOGGER.debug(
-            "[carnet_entretien DEBUG] set_item_applicable vehicle=%s item_id=%s -> applicable=%s | plan_avant=%s",
-            msg["vehicle_id"], msg["item_id"], msg["applicable"],
-            [(i.get("id"), i.get("applicable"), i.get("applicable_override")) for i in vehicle_before.get("maintenance_plan", [])],
-        )
         item = await store.async_update_plan_item(
             msg["vehicle_id"], msg["item_id"], {"applicable_override": msg["applicable"], "applicable": msg["applicable"]}
-        )
-        vehicle_after = store.get_vehicle(msg["vehicle_id"]) or {}
-        _LOGGER.debug(
-            "[carnet_entretien DEBUG] set_item_applicable TERMINÉ item=%s | plan_après=%s",
-            item,
-            [(i.get("id"), i.get("applicable"), i.get("applicable_override")) for i in vehicle_after.get("maintenance_plan", [])],
         )
         async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
         _schedule_overdue_check(hass, entry)
@@ -1012,6 +964,26 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         {
             vol.Required("type"): f"{DOMAIN}/set_settings",
             vol.Optional("theme"): vol.In(["gt_cuir", "horlogerie", "carbone", "vintage"]),
+            # BUG CORRIGÉ (v1.3.2) : seule la clé "theme" était déclarée ici.
+            # Le schéma voluptuous d'une commande websocket_api est strict par
+            # défaut (extra keys not allowed) — tout réglage envoyé par la
+            # carte en dehors de "theme" (masquage des non applicables,
+            # notifications, échelle de police, rappel de kilométrage...)
+            # était donc rejeté AVANT même d'atteindre ce handler, avec une
+            # erreur "invalid_format" visible uniquement dans la console
+            # navigateur. La carte appliquait le changement localement de
+            # façon optimiste, mais comme il n'était jamais persisté, le
+            # prochain rechargement (déclenché par n'importe quelle action,
+            # ex. cocher/décocher un entretien) restaurait l'ancienne valeur
+            # — d'où les entretiens masqués qui "réapparaissaient" sans
+            # raison apparente : ce n'était pas la case d'un entretien qui se
+            # décochait, c'est le réglage de masquage lui-même qui n'était
+            # jamais enregistré.
+            vol.Optional("hide_not_applicable"): bool,
+            vol.Optional("notifications_enabled"): bool,
+            vol.Optional("font_scale"): vol.Coerce(float),
+            vol.Optional("mileage_reminder_enabled"): bool,
+            vol.Optional("mileage_reminder_days"): vol.All(vol.Coerce(int), vol.Range(min=1)),
         }
     )
     @websocket_api.async_response

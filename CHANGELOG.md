@@ -541,5 +541,46 @@ suffirait pas à faire disparaître le symptôme pour de bon.
   pour savoir s'il s'agit d'une vraie perte de donnée côté stockage ou
   d'un problème d'affichage/timing côté carte.
 
+## 🛠️ v1.3.2 — correctif définitif : "entretiens masqués qui réapparaissent"
+
+Cause identifiée grâce aux logs de diagnostic ajoutés en v1.3.1 (retirés
+dans cette version, le nécessaire ayant été trouvé) : ce n'était ni un bug
+d'affichage, ni un problème de tri de liste, mais un rejet silencieux côté
+serveur.
+
+- **Cause réelle** : le schéma de validation de la commande websocket
+  `set_settings` ne déclarait que la clé `theme` comme acceptée. Or c'est
+  cette même commande qui enregistre *tous* les réglages de la carte —
+  y compris **le masquage des entretiens non applicables**
+  (`hide_not_applicable`), les notifications, l'échelle de police et le
+  rappel de kilométrage. Toute tentative d'enregistrer un réglage autre
+  que le thème échouait donc systématiquement côté serveur avec l'erreur
+  `extra keys not allowed`, visible uniquement dans la console développeur
+  du navigateur — jamais signalée à l'écran.
+  - La carte appliquait pourtant le changement **localement** dès le clic
+    (affichage optimiste), donnant l'impression que ça avait fonctionné.
+  - Mais rien n'était réellement enregistré : au rechargement suivant —
+    déclenché par n'importe quelle action sur le plan (cocher/décocher un
+    entretien, enregistrer une intervention...) — le réglage repartait de
+    sa dernière valeur réellement sauvegardée, et les entretiens non
+    applicables, jusque-là masqués, redevenaient visibles avec leur case
+    "Applicable" logiquement décochée. C'est ce qui donnait l'impression
+    trompeuse qu'un entretien "réapparaissait" et qu'une case "se
+    décochait toute seule", alors qu'aucune donnée d'entretien n'était
+    réellement perdue ni modifiée — seul le réglage d'affichage du
+    masquage ne survivait jamais à l'enregistrement.
+- **Correctif** : le schéma accepte désormais explicitement les cinq
+  réglages existants (`hide_not_applicable`, `notifications_enabled`,
+  `font_scale`, `mileage_reminder_enabled`, `mileage_reminder_days`), avec
+  le bon type/validateur pour chacun.
+- **Filet de sécurité ajouté en prime** : si un enregistrement de réglage
+  échoue malgré tout à l'avenir (ex. panne réseau), la carte annule
+  maintenant proprement l'affichage optimiste et montre une alerte
+  explicite au lieu de laisser un réglage affiché comme actif sans jamais
+  l'avoir réellement été.
+- Les logs de diagnostic temporaires ajoutés en v1.3.1 (logs HA et
+  console navigateur préfixés "DEBUG") sont retirés, la cause étant
+  identifiée avec certitude.
+
 ---
 
