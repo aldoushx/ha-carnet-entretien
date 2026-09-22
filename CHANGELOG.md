@@ -514,5 +514,32 @@ uniquement du polish autour de l'identité du projet et de son intégration
     désormais marque/modèle/motorisation, pour éviter de garder
     sélectionnée une marque qui n'existe plus dans la nouvelle catégorie.
 
+## 🔍 v1.3.1 — logs de diagnostic pour le bug résiduel "entretiens masqués qui réapparaissent"
+
+Version purement diagnostique : aucun changement de comportement, juste des
+traces supplémentaires pour identifier précisément où l'état "applicable"
+d'un entretien change de façon inattendue, dans le cas où le correctif de
+la v1.3.0 (encart qui ne se referme plus, position de liste conservée) ne
+suffirait pas à faire disparaître le symptôme pour de bon.
+
+- **Logs HA (`_LOGGER.debug`)**, préfixés `[carnet_entretien DEBUG]` :
+  - `get_vehicles` : à chaque rafraîchissement, l'état `applicable` /
+    `applicable_override` / `statut` de tous les entretiens du plan, tel
+    qu'envoyé à la carte.
+  - `set_item_applicable` : le plan complet juste avant et juste après une
+    bascule de case à cocher, pour repérer si un item *autre* que celui
+    cliqué change lui aussi.
+  - `log_maintenance` : l'item concerné avant/après l'enregistrement d'une
+    intervention, plus l'état `applicable` de tout le plan après coup.
+- **Logs navigateur (`console.debug`)**, préfixés `[CARnet DEBUG]`,
+  filtrables dans la console (F12 → Console → filtre "CARnet DEBUG") :
+  état du plan du véhicule sélectionné juste avant et juste après chaque
+  bascule de case ou enregistrement d'intervention, avec le réglage
+  `hide_not_applicable` en vigueur à cet instant.
+- Objectif : comparer l'état stocké côté serveur (logs HA) et l'état reçu
+  côté carte (logs navigateur) au moment précis où le symptôme apparaît,
+  pour savoir s'il s'agit d'une vraie perte de donnée côté stockage ou
+  d'un problème d'affichage/timing côté carte.
+
 ---
 
