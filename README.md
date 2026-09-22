@@ -29,8 +29,7 @@ French, German, Spanish and Italian.
 Storage is 100% local (no cloud account, no telemetry). The card is
 served directly by the integration — nothing to copy into `www/` — you
 only need to register it as a dashboard resource once (see
-[§4](#4-add-the-card-to-a-dashboard)). Gemini is entirely optional: without
-an API key, the integration still works with fully manual data entry.
+[§4](#4-add-the-card-to-a-dashboard)). 
 
 ### 🌟 Beyond a basic logbook
 
@@ -411,9 +410,7 @@ l'italien.
 Le stockage est 100 % local (aucun compte cloud, aucune télémétrie). La
 carte est servie directement par l'intégration — rien à copier dans
 `www/` — il suffit de l'enregistrer une fois comme ressource de tableau de
-bord (voir [§4](#4-ajouter-la-carte-au-tableau-de-bord)). Gemini est
-entièrement optionnel : sans clé API, l'intégration reste utilisable en
-saisie 100 % manuelle.
+bord (voir [§4](#4-ajouter-la-carte-au-tableau-de-bord)). 
 
 ### 🌟 Bien plus qu'un carnet basique
 
