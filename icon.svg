@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <!-- Fond marron chocolat -->
+  <rect x="3" y="3" width="90" height="90" rx="20" fill="#392318"/>
+  
+  <!-- Couture dorée en pointillés -->
+  <rect x="9" y="9" width="78" height="78" rx="15" fill="none" stroke="#C59C35" stroke-width="2.4" stroke-dasharray="5,3"/>
+  
+  <!-- Monogramme Cn (Police Serif d'origine) -->
+  <text x="22" y="52" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="44" fill="#F4E5C3">C</text>
+  <text x="49" y="52" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="44" fill="#D96B27">n</text>
+  
+  <!-- Silhouette voiture d'origine -->
+  <path d="M 30 73 C 30 70 31.6 68.4 34.4 68 L 38.4 61.4 C 40 59 42.6 58 45.6 58 H 50.4 C 53.4 58 56 59 57.6 61.4 L 61.6 68 C 64.4 68.4 66 70 66 73 V 78 H 30 Z" fill="#F4E5C3"/>
+  <circle cx="39" cy="78" r="4" fill="#392318"/>
+  <circle cx="57" cy="78" r="4" fill="#392318"/>
+</svg>

@@ -7,14 +7,15 @@
 <img alt="HACS Custom" src="https://img.shields.io/badge/HACS-Custom-41BDF5?logo=homeassistantcommunitystore&logoColor=white">
 <img alt="Home Assistant" src="https://img.shields.io/badge/Home%20Assistant-2024.1%2B-41BDF5?logo=home-assistant&logoColor=white">
 <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
-<img alt="Version" src="https://img.shields.io/badge/version-1.1.0-orange">
+<img alt="Version" src="https://img.shields.io/badge/version-1.2.1-orange">
 </p>
 
-**Carnet d'entretien automobile intelligent pour Home Assistant**, généré et
-tenu à jour par **Google Gemini** : plan d'entretien basé sur un catalogue
-fixe de ~28 opérations, points de vigilance connus, rappels constructeur,
-estimation de valeur de revente, et une carte Lovelace dédiée avec quatre
-thèmes visuels au choix.
+**Carnet d'entretien intelligent pour Home Assistant — voitures, motos,
+scooters et vélos électriques**, généré et tenu à jour par **Google
+Gemini** : plan d'entretien basé sur des catalogues fixes par type de
+véhicule, points de vigilance connus, rappels constructeur, estimation de
+valeur de revente, et une carte Lovelace dédiée avec quatre thèmes
+visuels au choix.
 
 Stockage 100 % local, carte Lovelace servie par le composant (rien à copier
 dans `www/` — une ressource à ajouter une fois via l'UI, voir installation),
@@ -24,16 +25,20 @@ IA optionnelle avec repli manuel si aucune clé n'est configurée.
 
 ## ✨ Fonctionnalités
 
-- 🔍 **Ajout d'un véhicule en 30 secondes** : marque, modèle et motorisation
-  avec autocomplétion intelligente (référentiel local + suggestions Gemini
-  mises en cache), année, kilométrage, plaque, photo.
-- 🛠️ **Plan d'entretien basé sur un catalogue fixe** (~28 opérations codées
-  en dur : vidange, tous les filtres, courroie de distribution **et**
-  d'accessoires séparément, disques **et** plaquettes avant/arrière comme
-  entrées distinctes, batterie, climatisation, FAP/EGR, contrôle
-  technique, révision constructeur...). L'IA ne décide que de
+- 🚗🏍️🚲 **Voitures, motos/scooters et vélos électriques** : un sélecteur
+  de type à la création, marque/modèle/motorisation avec autocomplétion
+  intelligente (référentiel local + suggestions Gemini mises en cache),
+  année, kilométrage, plaque, photo.
+- 🛠️ **Plan d'entretien basé sur des catalogues fixes par type de
+  véhicule** (46 opérations pour une voiture, 26 pour moto/scooter, 15
+  pour un vélo électrique — vidange, tous les filtres, courroie/chaîne de
+  distribution **et** d'accessoires séparément, disques **et** plaquettes
+  avant/arrière comme entrées distinctes, batterie, climatisation,
+  FAP/EGR, contrôle technique, révision constructeur, kit chaîne moto,
+  diagnostic batterie de traction...). L'IA ne décide que de
   l'applicabilité et des intervalles pour chaque entrée — rien ne peut
-  plus être oublié d'une génération à l'autre. Chaque échéance : intervalle
+  plus être oublié d'une génération à l'autre, et un véhicule ne voit
+  jamais les entrées d'un autre type. Chaque échéance : intervalle
   km/mois, coût estimé, date prévisionnelle réelle, difficulté DIY et coût
   pièces si fait soi-même, avec explication détaillée générée à la demande.
 - ✏️ **Corrections manuelles à tout moment** : case applicable/non

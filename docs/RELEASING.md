@@ -30,7 +30,8 @@ ha-carnet-entretien/
   README.md
   LICENSE
   CHANGELOG.md
-  icon.png                  ← icône pour le README / la page GitHub
+  icon.png                  ← icône pour le README / la page GitHub (repli)
+  icon.svg                  ← version vectorielle, à privilégier
   badge.svg                 ← illustration d'en-tête du README
   docs/
   custom_components/
@@ -165,14 +166,18 @@ publiée :
 
 ## 7. Icône du dépôt et de l'intégration
 
-Deux emplacements distincts, deux mécanismes différents :
+Trois fichiers, trois usages différents :
 
-**`icon.png` à la racine du dépôt** (déjà en place, 512×512) sert
-uniquement à l'illustration dans le `README.md` et sur la page GitHub du
-dépôt — sans effet dans Home Assistant lui-même.
+**`icon.svg`** (vectoriel) sert au README/à la page GitHub du dépôt — net à
+n'importe quelle taille d'affichage, à privilégier partout où le format est
+accepté (GitHub le rend nativement dans le README via `<img>`). `icon.png`
+reste présent à la racine en repli pour les contextes qui n'acceptent pas
+le SVG.
 
-**`custom_components/carnet_entretien/brand/`** (déjà en place :
-`icon.png` 256×256 et `icon@2x.png` 512×512) est le mécanisme qui affiche
+**`custom_components/carnet_entretien/brand/`** (`icon.png` 48×48 et
+`icon@2x.png` 96×96 — tailles volontairement natives plutôt que
+surdimensionnées, pour un rendu net sans mise à l'échelle à ces
+résolutions précises d'affichage dans HA) est le mécanisme qui affiche
 réellement l'icône dans Home Assistant, depuis la version **2026.3** :
 les intégrations personnalisées peuvent désormais embarquer leurs propres
 images de marque directement dans ce dossier, servies via
@@ -180,7 +185,8 @@ images de marque directement dans ce dossier, servies via
 vers `home-assistant/brands` (ce dépôt n'accepte d'ailleurs plus les
 nouvelles soumissions d'intégrations tierces depuis ce changement) — rien
 à faire de plus, l'icône est incluse dans chaque release comme n'importe
-quel autre fichier.
+quel autre fichier. Le SVG n'est pas utilisable ici : ce mécanisme HA
+attend des PNG.
 
 Cette icône s'affiche correctement dans Paramètres → Appareils et
 services, sur la page de l'intégration et sur les fiches d'appareils.

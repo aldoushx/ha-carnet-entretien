@@ -30,7 +30,7 @@ from homeassistant.helpers.storage import Store
 
 from .const import CONF_GEMINI_API_KEY, DOMAIN, SIGNAL_VEHICLES_UPDATED, STATUS_DUE, STORAGE_KEY, STORAGE_VERSION
 from .gemini_client import GeminiClient, GeminiError
-from .maintenance_catalog import CATALOG_BY_ID, MAINTENANCE_CATALOG
+from .maintenance_catalog import get_catalog
 from .storage import CarnetStore
 from .utils import compute_plan_status, estimate_annual_km
 
@@ -387,6 +387,8 @@ async def _create_vehicle(hass: HomeAssistant, entry: ConfigEntry, store: Carnet
             "mileage": int(data["mileage"]),
             "plate": data.get("plate", ""),
             "fuel_type": data.get("fuel_type", ""),
+            "vehicle_type": data.get("vehicle_type", "auto"),
+            "two_wheeler_type": data.get("two_wheeler_type", ""),
             "photo": data.get("photo") or None,
         }
     )
@@ -422,15 +424,25 @@ async def _refresh_plan(store: CarnetStore, gemini: GeminiClient, vehicle_id: st
     vehicle = store.get_vehicle(vehicle_id)
     if not vehicle:
         raise ValueError("Véhicule inconnu")
+
+    vehicle_type = vehicle.get("vehicle_type", "auto")
+    two_wheeler_type = vehicle.get("two_wheeler_type", "")
+    catalog = get_catalog(vehicle_type, two_wheeler_type)
+    catalog_by_id = {it["id"]: it for it in catalog}
+    kind_label = {"moto": "moto", "scooter": "scooter", "velo_electrique": "vélo électrique"}.get(
+        two_wheeler_type, "véhicule"
+    ) if vehicle_type == "deux_roues" else "véhicule"
+
     result = await gemini.generate_maintenance_plan(
         vehicle["brand"], vehicle["model"], vehicle.get("motorisation", ""),
         vehicle["year"], vehicle.get("mileage", 0), vehicle.get("fuel_type", ""),
+        catalog=catalog, vehicle_kind_label=kind_label,
     )
     raw_items = result.data.get("items", []) if isinstance(result.data, dict) else result.data
     sources = result.data.get("sources", []) if isinstance(result.data, dict) else []
     sources_summary = ", ".join(str(s) for s in sources) if isinstance(sources, list) else str(sources)
 
-    ai_by_id = {it.get("catalog_id"): it for it in raw_items if it.get("catalog_id") in CATALOG_BY_ID}
+    ai_by_id = {it.get("catalog_id"): it for it in raw_items if it.get("catalog_id") in catalog_by_id}
 
     # Items existants (identifiés par id stable = catalog_id) : on préserve
     # tout ce qui est propre à CE véhicule et ne doit jamais être écrasé par
@@ -447,7 +459,7 @@ async def _refresh_plan(store: CarnetStore, gemini: GeminiClient, vehicle_id: st
     )
 
     new_plan: list[dict[str, Any]] = []
-    for catalog_item in MAINTENANCE_CATALOG:
+    for catalog_item in catalog:
         cid = catalog_item["id"]
         ai_item = ai_by_id.get(cid, {})
         existing = existing_by_id.get(cid, {})
@@ -636,16 +648,24 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
             vol.Required("model"): str,
             vol.Required("year"): int,
             vol.Optional("fuel_type", default=""): str,
+            vol.Optional("vehicle_type", default="auto"): vol.In(["auto", "deux_roues"]),
+            vol.Optional("two_wheeler_type", default=""): vol.In(["", "moto", "scooter", "velo_electrique"]),
             vol.Optional("query", default=""): str,
         }
     )
     @websocket_api.async_response
     async def ws_search_motorisations(hass, connection, msg):
-        key = store.motorisation_cache_key(msg["brand"], msg["model"], msg["year"], msg["fuel_type"])
+        key = store.motorisation_cache_key(
+            msg["brand"], msg["model"], msg["year"], msg["fuel_type"],
+            msg["vehicle_type"], msg["two_wheeler_type"],
+        )
         options = store.get_motorisation_cache(key)
         if options is None:
             try:
-                result = await gemini.list_motorisations(msg["brand"], msg["model"], msg["year"], msg["fuel_type"])
+                result = await gemini.list_motorisations(
+                    msg["brand"], msg["model"], msg["year"], msg["fuel_type"],
+                    msg["vehicle_type"], msg["two_wheeler_type"],
+                )
                 options = [str(o) for o in result.data]
                 await store.async_set_motorisation_cache(key, options)
                 await store.async_add_token_usage(result.tokens)
@@ -669,6 +689,8 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
             vol.Optional("mileage_sensor_entity_id"): str,
             vol.Optional("photo"): str,
             vol.Optional("fuel_type", default=""): str,
+            vol.Optional("vehicle_type", default="auto"): vol.In(["auto", "deux_roues"]),
+            vol.Optional("two_wheeler_type", default=""): vol.In(["", "moto", "scooter", "velo_electrique"]),
         }
     )
     @websocket_api.async_response

@@ -6,7 +6,15 @@
 // toucher au JS : voir le bloc THEMES en bas de fichier.
 
 const DOMAIN = "carnet_entretien";
-const CARNET_ICON_DATA_URL = "data:image/png;base64,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";
+const CARNET_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <rect x="3" y="3" width="90" height="90" rx="20" fill="#392318"/>
+  <rect x="9" y="9" width="78" height="78" rx="15" fill="none" stroke="#C59C35" stroke-width="2.4" stroke-dasharray="5,3"/>
+  <text x="22" y="52" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="44" fill="#F4E5C3">C</text>
+  <text x="49" y="52" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="44" fill="#D96B27">n</text>
+  <path d="M 30 73 C 30 70 31.6 68.4 34.4 68 L 38.4 61.4 C 40 59 42.6 58 45.6 58 H 50.4 C 53.4 58 56 59 57.6 61.4 L 61.6 68 C 64.4 68.4 66 70 66 73 V 78 H 30 Z" fill="#F4E5C3"/>
+  <circle cx="39" cy="78" r="4" fill="#392318"/>
+  <circle cx="57" cy="78" r="4" fill="#392318"/>
+</svg>`;
 
 const STATUS_LABEL = { ok: "OK", bientot: "Bientôt", echue: "Échue", non_applicable: "Non applicable" };
 const SEVERITY_LABEL = { mineur: "Mineur", majeur: "Majeur", securite: "Sécurité" };
@@ -43,7 +51,7 @@ class CarnetEntretienCard extends HTMLElement {
     this._tab = "entretien"; // entretien | historique
     this._loading = false;
     this._loadingMsg = "";
-    this._addForm = { brand: "", model: "", fuel_type: "", motorisation: "", year: "", mileage: "", plate: "", photo: "" };
+    this._addForm = { vehicle_type: "auto", two_wheeler_type: "moto", brand: "", model: "", fuel_type: "", motorisation: "", year: "", mileage: "", plate: "", photo: "" };
     this._brandOptions = [];
     this._modelOptions = [];
     this._mileageSourceEditing = false;
@@ -53,6 +61,7 @@ class CarnetEntretienCard extends HTMLElement {
     this._motorisationKey = null;
     this._motorisationFullList = null;
     this._diyLoading = {}; // { [itemId]: bool } — état de chargement de l'explication DIY
+    this._diyError = {}; // { [itemId]: message } — dernière erreur de génération DIY, pour affichage inline
   }
 
   setConfig(config) {
@@ -122,6 +131,8 @@ class CarnetEntretienCard extends HTMLElement {
           model: f.model,
           motorisation: f.motorisation,
           fuel_type: f.fuel_type,
+          vehicle_type: f.vehicle_type,
+          two_wheeler_type: f.vehicle_type === "deux_roues" ? f.two_wheeler_type : "",
           year: parseInt(f.year, 10),
           mileage: parseInt(f.mileage, 10),
           plate: f.plate,
@@ -132,7 +143,7 @@ class CarnetEntretienCard extends HTMLElement {
       this._selectedId = res.vehicle.id;
       this._view = "detail";
       this._tab = "entretien";
-      this._addForm = { brand: "", model: "", fuel_type: "", motorisation: "", year: "", mileage: "", plate: "", photo: "" };
+      this._addForm = { vehicle_type: "auto", two_wheeler_type: "moto", brand: "", model: "", fuel_type: "", motorisation: "", year: "", mileage: "", plate: "", photo: "" };
     } catch (err) {
       alert("Erreur lors de la génération : " + (err.message || err.code || err));
     } finally {
@@ -164,7 +175,7 @@ class CarnetEntretienCard extends HTMLElement {
       this._renderSuggestions("motorisation", []);
       return;
     }
-    const key = `${f.brand}|${f.model}|${f.year}|${f.fuel_type}`;
+    const key = `${f.brand}|${f.model}|${f.year}|${f.fuel_type}|${f.vehicle_type}|${f.two_wheeler_type}`;
     if (this._motorisationKey !== key) {
       this._motorisationKey = key;
       this._motorisationFullList = null;
@@ -172,7 +183,11 @@ class CarnetEntretienCard extends HTMLElement {
       try {
         const res = await this._ws({
           type: "search_motorisations",
-          data: { brand: f.brand, model: f.model, year: parseInt(f.year, 10), fuel_type: f.fuel_type, query: "" },
+          data: {
+            brand: f.brand, model: f.model, year: parseInt(f.year, 10), fuel_type: f.fuel_type,
+            vehicle_type: f.vehicle_type, two_wheeler_type: f.vehicle_type === "deux_roues" ? f.two_wheeler_type : "",
+            query: "",
+          },
         });
         if (this._motorisationKey !== key) return; // la sélection a changé entre-temps
         this._motorisationFullList = res.results || [];
@@ -288,12 +303,13 @@ class CarnetEntretienCard extends HTMLElement {
 
   async _generateDiyExplanation(vehicleId, itemId) {
     this._diyLoading[itemId] = true;
+    delete this._diyError[itemId];
     this._render();
     try {
       await this._ws({ type: "generate_diy_explanation", data: { vehicle_id: vehicleId, item_id: itemId } });
       await this._fetchVehicles();
     } catch (err) {
-      alert("Erreur : " + (err.message || err.code || err));
+      this._diyError[itemId] = err.message || err.code || String(err);
     } finally {
       delete this._diyLoading[itemId];
       this._render();
@@ -414,7 +430,7 @@ class CarnetEntretienCard extends HTMLElement {
       <style>${STYLE}</style>
       <ha-card data-theme="${this._theme}" style="font-size:${this._settings.font_scale || 1}em;">
         <div class="header">
-          <div class="title"><img class="title-icon" src="${CARNET_ICON_DATA_URL}" alt="" /> CARnet - Garage Log</div>
+          <div class="title">${CARNET_ICON_SVG} CARnet - Garage Log</div>
           <div class="header-actions">
             ${showSettingsBtn ? `<button class="btn ghost icon" id="settings-btn" title="Réglages">⚙️</button>` : ""}
             ${primaryBtn}
@@ -440,7 +456,7 @@ class CarnetEntretienCard extends HTMLElement {
           <div class="tile" data-id="${v.id}">
             ${v.photo ? `<img class="tile-photo" src="${v.photo}" alt="" />` : ""}
             <div class="tile-badge" style="background:${color}"></div>
-            <div class="tile-title">${esc(v.brand)} ${esc(v.model)}</div>
+            <div class="tile-title">${v.photo ? "" : vehicleEmoji(v) + " "}${esc(v.brand)} ${esc(v.model)}</div>
             <div class="tile-sub">${v.year} · ${fmtKm(v.mileage)}${v.plate ? ` · ${esc(v.plate.toUpperCase())}` : ""}</div>
             ${
               next
@@ -499,17 +515,34 @@ class CarnetEntretienCard extends HTMLElement {
 
   _renderAddForm() {
     const f = this._addForm;
+    const isTwoWheeler = f.vehicle_type === "deux_roues";
     return `
       <form id="add-form" class="form">
+        <label>Type de véhicule</label>
+        <div class="vehicle-type-toggle">
+          <button type="button" class="btn ${!isTwoWheeler ? "primary" : "ghost"} vehicle-type-btn" data-vehicle-type="auto">🚗 Auto</button>
+          <button type="button" class="btn ${isTwoWheeler ? "primary" : "ghost"} vehicle-type-btn" data-vehicle-type="deux_roues">🏍️ 2 roues</button>
+        </div>
+        ${
+          isTwoWheeler
+            ? `<label>Type de 2 roues
+                <select id="f-two-wheeler-type">
+                  <option value="moto" ${f.two_wheeler_type === "moto" ? "selected" : ""}>Moto</option>
+                  <option value="scooter" ${f.two_wheeler_type === "scooter" ? "selected" : ""}>Scooter</option>
+                  <option value="velo_electrique" ${f.two_wheeler_type === "velo_electrique" ? "selected" : ""}>Vélo électrique</option>
+                </select>
+              </label>`
+            : ""
+        }
         <label>Marque
           <div class="autocomplete">
-            <input id="f-brand" value="${esc(f.brand)}" placeholder="Ex : Peugeot" autocomplete="off" />
+            <input id="f-brand" value="${esc(f.brand)}" placeholder="${isTwoWheeler ? "Ex : Yamaha" : "Ex : Peugeot"}" autocomplete="off" />
             <div class="suggestions" id="brand-suggestions"></div>
           </div>
         </label>
         <label>Modèle
           <div class="autocomplete">
-            <input id="f-model" value="${esc(f.model)}" placeholder="Ex : 308" autocomplete="off" />
+            <input id="f-model" value="${esc(f.model)}" placeholder="${isTwoWheeler ? "Ex : MT-07" : "Ex : 308"}" autocomplete="off" />
             <div class="suggestions" id="model-suggestions"></div>
           </div>
         </label>
@@ -526,9 +559,9 @@ class CarnetEntretienCard extends HTMLElement {
             <option value="GPL" ${f.fuel_type === "GPL" ? "selected" : ""}>GPL</option>
           </select>
         </label>
-        <label>Motorisation <span class="muted">(optionnel — suggestions une fois marque/modèle/année remplis)</span>
+        <label>${f.two_wheeler_type === "velo_electrique" && isTwoWheeler ? "Moteur d'assistance" : "Motorisation"} <span class="muted">(optionnel — suggestions une fois marque/modèle/année remplis)</span>
           <div class="autocomplete">
-            <input id="f-motorisation" value="${esc(f.motorisation)}" placeholder="Ex : 1.5 BlueHDi 130" autocomplete="off" />
+            <input id="f-motorisation" value="${esc(f.motorisation)}" placeholder="${f.two_wheeler_type === "velo_electrique" && isTwoWheeler ? "Ex : Bosch Performance Line CX" : isTwoWheeler ? "Ex : MT-07 ABS" : "Ex : 1.5 BlueHDi 130"}" autocomplete="off" />
             <div class="suggestions" id="motorisation-suggestions"></div>
           </div>
         </label>
@@ -560,7 +593,7 @@ class CarnetEntretienCard extends HTMLElement {
           ${
             v.photo
               ? `<img class="vehicle-photo" src="${v.photo}" alt="" />`
-              : `<div class="vehicle-photo placeholder">🚗</div>`
+              : `<div class="vehicle-photo placeholder">${vehicleEmoji(v)}</div>`
           }
           <div>
             <div class="detail-title">${esc(v.brand)} ${esc(v.model)} <span class="muted">(${v.year})</span></div>
@@ -891,6 +924,14 @@ class CarnetEntretienCard extends HTMLElement {
           }
         </div>`;
     }
+    const error = this._diyError[it.id];
+    if (error) {
+      return `
+        <div class="diy-box">
+          <div class="diy-warning">⚠️ Échec de la génération : ${esc(error)}</div>
+          <button class="btn small primary full diy-generate-btn" data-item-id="${it.id}">🔄 Réessayer</button>
+        </div>`;
+    }
     return `<button class="btn small ghost full diy-generate-btn" data-item-id="${it.id}">🔧 Comment le faire soi-même ?</button>`;
   }
 
@@ -978,6 +1019,17 @@ class CarnetEntretienCard extends HTMLElement {
     const addForm = root.getElementById("add-form");
     if (addForm) {
       addForm.addEventListener("submit", (e) => this._submitAddVehicle(e));
+      root.querySelectorAll(".vehicle-type-btn").forEach((btn) =>
+        btn.addEventListener("click", () => {
+          this._addForm.vehicle_type = btn.dataset.vehicleType;
+          this._motorisationKey = null; // le type change le contexte : on relance la recherche au prochain focus
+          this._render();
+        })
+      );
+      root.getElementById("f-two-wheeler-type")?.addEventListener("change", (e) => {
+        this._addForm.two_wheeler_type = e.target.value;
+        this._motorisationKey = null;
+      });
 
       const brandInput = root.getElementById("f-brand");
       brandInput.addEventListener("input", (e) => {
@@ -1192,6 +1244,15 @@ class CarnetEntretienCard extends HTMLElement {
 
 // ---------------------------------------------------------------- helpers
 
+function vehicleEmoji(v) {
+  if (v.vehicle_type === "deux_roues") {
+    if (v.two_wheeler_type === "velo_electrique") return "🚲";
+    if (v.two_wheeler_type === "scooter") return "🛵";
+    return "🏍️";
+  }
+  return "🚗";
+}
+
 function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
@@ -1278,7 +1339,7 @@ const STYLE = `
   .header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px; }
   .header-actions { display:flex; align-items:center; gap:6px; }
   .title { font-family: var(--ce-font-header); font-size: 1.2em; font-weight: 600; letter-spacing:0.2px; color: var(--ce-text); display:flex; align-items:center; gap:8px; }
-  .title-icon { width:48px; height:48px; border-radius:10px; flex-shrink:0; }
+  .title-icon, .title svg { width:48px; height:48px; border-radius:10px; flex-shrink:0; }
   .btn { border:none; border-radius: 8px; padding: 8px 14px; font-size: 0.9em; cursor:pointer; background: var(--ce-surface); color: var(--ce-text); font-family: inherit; }
   .btn.primary { background: var(--ce-accent); color: var(--ce-accent-contrast); font-weight:600; }
   .btn.danger { background: var(--ce-danger); color: #F5E6E0; }
@@ -1327,6 +1388,8 @@ const STYLE = `
   .swatches span { width:16px; height:16px; border-radius:4px; display:inline-block; }
   .font-size-row { display:flex; align-items:center; gap:12px; }
   .font-size-row .btn:disabled { opacity:0.4; cursor:default; }
+  .vehicle-type-toggle { display:flex; gap:8px; margin-bottom:4px; }
+  .vehicle-type-toggle .btn { flex:1; }
   .mileage-reminder-days-row { display:flex; align-items:center; gap:8px; margin-top:8px; }
   .mileage-reminder-days-row input { width:70px; padding:6px 8px; border-radius:8px; border:1px solid var(--ce-border); background: var(--ce-surface); color: var(--ce-text); }
 

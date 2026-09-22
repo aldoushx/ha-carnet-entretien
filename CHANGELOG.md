@@ -414,5 +414,61 @@ uniquement du polish autour de l'identité du projet et de son intégration
   proportion d'entrées non applicables ; les masquer par défaut rend la
   liste lisible dès le départ (reste décochable dans Réglages).
 
+## 🆕 v1.2.0 — prise en charge des deux-roues
+
+- **Moto, scooter et vélo électrique**, en plus des voitures : sélecteur
+  🚗 Auto / 🏍️ 2 roues en tête du formulaire d'ajout, avec sous-choix du
+  type pour les 2 roues. Trois catalogues d'entretien totalement
+  distincts (`CAR_CATALOG` 46 entrées, `MOTORIZED_TWO_WHEELER_CATALOG`
+  moto/scooter 26 entrées, `EBIKE_CATALOG` vélo électrique 15 entrées) —
+  chaque véhicule ne pioche que dans son propre catalogue, donc aucun
+  risque qu'une entrée "chaîne de transmission" apparaisse, même en non
+  applicable, sur la fiche d'une voiture : c'est structurellement
+  impossible plutôt que filtré a posteriori.
+  Catalogue moto/scooter : vidange, kit chaîne ou courroie/galets
+  (scooter CVT), freins avant/arrière séparés, fourche, amortisseur,
+  contrôle technique (règles françaises 2 roues), etc. Catalogue vélo
+  électrique : chaîne, freins, diagnostic santé batterie (SoH),
+  connecteurs, firmware d'assistance, roulements, etc.
+- **Pneus avant et arrière dissociés** dans les trois catalogues (voiture
+  et vélo électrique — la moto l'était déjà) : ils s'usent et se
+  remplacent rarement en même temps.
+  ⚠️ Ce changement d'identifiant fait perdre la date de dernière
+  intervention de l'ancien item "Pneumatiques (jeu complet)" au prochain
+  renouvellement du plan — à ressaisir une fois pour les véhicules
+  existants.
+- **Icônes différenciées par type de véhicule** (🚗/🏍️/🛵/🚲) sur les
+  tuiles et la fiche détail.
+- **Robustesse de la génération IA améliorée** : re-tentative automatique
+  aussi sur erreur 503 (surcharge serveur transitoire), pas seulement sur
+  429 (quota).
+- **Erreur de génération DIY affichée proprement** : un encart inline
+  avec message clair et bouton "🔄 Réessayer", à la place d'une alerte
+  système bloquante qui n'invitait pas explicitement à relancer.
+- **Icône vectorielle (`icon.svg`)** ajoutée à la racine du dépôt, nette à
+  n'importe quelle taille d'affichage — utilisée pour le README et
+  inlinée directement dans le titre de la carte (remplace l'ancien PNG
+  encodé en base64, plus lourd et moins net). Les fichiers
+  `brand/icon.png` (48×48) et `brand/icon@2x.png` (96×96) ont aussi été
+  mis à jour avec la nouvelle version, à leur taille native plutôt que
+  surdimensionnés.
+
+## 🛠️ v1.2.1 — autocomplétion motorisation adaptée par type de véhicule
+
+- `vehicle_type`/`two_wheeler_type` transitent désormais jusqu'à
+  `list_motorisations` (jusqu'ici seule la génération du plan les
+  recevait) : le prompt et les exemples fournis à l'IA changent selon le
+  type de véhicule plutôt qu'un format voiture générique appliqué à tout.
+  - **Moto/scooter** : exemples au format du marché moto français, avec
+    distinction explicite pleine puissance / bridée 35kW compatible
+    permis A2 (ex : "MT-07 ABS" vs "MT-07 35kW (A2)").
+  - **Vélo électrique** : le champ devient "Moteur d'assistance" plutôt
+    que "Motorisation", suggestions au format moteur d'assistance (ex :
+    "Bosch Performance Line CX 85Nm", "Shimano EP8").
+  - **Voiture** : inchangé.
+- Clé de cache des suggestions étendue en conséquence (le même
+  marque/modèle/année ne partage plus son cache entre une recherche auto
+  et une recherche moto, par exemple).
+
 ---
 

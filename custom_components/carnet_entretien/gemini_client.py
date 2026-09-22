@@ -22,7 +22,7 @@ import aiohttp
 import async_timeout
 
 from .const import GEMINI_MODEL_CANDIDATES, GEMINI_TIMEOUT
-from .maintenance_catalog import MAINTENANCE_CATALOG
+from .maintenance_catalog import CAR_CATALOG
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -117,21 +117,21 @@ class GeminiClient:
         self, model: str, parts: list[dict[str, Any]], schema: dict[str, Any], max_output_tokens: int
     ) -> GeminiResult:
         """Comme _call_model, mais re-tente avec un délai croissant en cas de
-        429 (quota) sur CE modèle précis avant d'abandonner — un dépassement
-        de quota par minute se résout souvent tout seul en quelques secondes,
-        pas la peine de passer directement à un autre modèle potentiellement
-        indisponible pour la clé.
+        429 (quota) ou d'erreur serveur transitoire (503 surchargé, etc.) sur
+        CE modèle précis avant d'abandonner — ces deux cas se résolvent
+        souvent tout seuls en quelques secondes, pas la peine de passer
+        directement à un autre modèle potentiellement indisponible pour la clé.
         """
         last_err: GeminiError | None = None
         for attempt, delay in enumerate((0, *RATE_LIMIT_RETRY_DELAYS)):
             if delay:
-                _LOGGER.debug("Quota dépassé sur %s, nouvelle tentative dans %ss", model, delay)
+                _LOGGER.debug("Erreur transitoire sur %s, nouvelle tentative dans %ss", model, delay)
                 await asyncio.sleep(delay)
             try:
                 return await self._call_model(model, parts, schema, max_output_tokens)
             except GeminiError as err:
                 last_err = err
-                if err.code != "rate_limited":
+                if err.code not in ("rate_limited", "server_error"):
                     raise
                 continue
         raise last_err
@@ -161,11 +161,14 @@ class GeminiClient:
                             "rate_limited",
                             f"Quota dépassé sur {model}" + (f" (retry-after {retry_after}s)" if retry_after else ""),
                         )
+                    if resp.status >= 500:
+                        # 503 (surcharge) et autres erreurs serveur : transitoires par
+                        # nature, la même stratégie de re-tentative que le 429 s'applique.
+                        payload = await resp.text()
+                        raise GeminiError("server_error", f"Erreur {resp.status} sur {model}: {payload[:200]}")
                     if resp.status >= 400:
                         payload = await resp.text()
-                        # Certains paramètres (ex: thinkingConfig) ne sont pas supportés par
-                        # tous les modèles et renvoient parfois 500 plutôt que 400.
-                        if resp.status in (400, 500):
+                        if resp.status == 400:
                             raise GeminiError("http_error", f"Erreur {resp.status} sur {model}: {payload[:200]}")
                         raise GeminiError("http_error", f"Erreur {resp.status} sur {model}")
                     data = await resp.json()
@@ -202,12 +205,14 @@ class GeminiClient:
     # ---------------- Fonctions métier ----------------
 
     async def generate_maintenance_plan(
-        self, brand: str, model: str, motorisation: str, year: int, mileage: int, fuel_type: str = ""
+        self, brand: str, model: str, motorisation: str, year: int, mileage: int,
+        fuel_type: str = "", catalog: list[dict] | None = None, vehicle_kind_label: str = "véhicule",
     ) -> GeminiResult:
+        catalog = catalog if catalog is not None else CAR_CATALOG
         catalog_lines = "\n".join(
             f'- "{it["id"]}" : {it["name"]} (défaut : {it["default_interval_km"]} km / '
             f'{it["default_interval_months"]} mois)'
-            for it in MAINTENANCE_CATALOG
+            for it in catalog
         )
         schema = {
             "type": "OBJECT",
@@ -237,11 +242,11 @@ class GeminiClient:
             },
             "required": ["items"],
         }
-        prompt = f"""Tu es un expert en entretien automobile. Sur la base de la documentation
-constructeur officielle (carnet/plan de maintenance) ET des revues techniques
-indépendantes (type Revue Technique Automobile) pour ce véhicule précis —
-croise mentalement ces deux types de sources et privilégie ce qui est
-confirmé par les deux plutôt qu'une information isolée :
+        prompt = f"""Tu es un expert en entretien de {vehicle_kind_label}s. Sur la base de la
+documentation constructeur officielle (carnet/plan de maintenance) ET des
+revues techniques indépendantes pour ce {vehicle_kind_label} précis — croise
+mentalement ces deux types de sources et privilégie ce qui est confirmé par
+les deux plutôt qu'une information isolée :
 
 Marque : {brand}
 Modèle : {model}
@@ -250,10 +255,9 @@ Type de carburant/énergie : {fuel_type or "non précisé — déduis-le de la m
 Année : {year}
 Kilométrage actuel : {mileage} km
 
-Voici un catalogue FIXE de {len(MAINTENANCE_CATALOG)} opérations d'entretien possibles,
-couvrant aussi les motorisations thermiques, hybrides (HEV/PHEV), 100%
-électriques (BEV) et GPL. Tu dois renvoyer un objet pour CHACUNE d'entre
-elles, sans exception, en reprenant exactement son "catalog_id" :
+Voici un catalogue FIXE de {len(catalog)} opérations d'entretien possibles
+pour ce type de {vehicle_kind_label}. Tu dois renvoyer un objet pour CHACUNE
+d'entre elles, sans exception, en reprenant exactement son "catalog_id" :
 
 {catalog_lines}
 
@@ -362,25 +366,49 @@ spécifique à ce modèle, renvoie une liste "issues" vide et dis-le dans
 demandé, sans texte autour."""
         return await self._call(prompt, schema, max_output_tokens=3072)
 
-    async def list_motorisations(self, brand: str, model: str, year: int, fuel_type: str = "") -> GeminiResult:
+    async def list_motorisations(
+        self, brand: str, model: str, year: int, fuel_type: str = "",
+        vehicle_type: str = "auto", two_wheeler_type: str = "",
+    ) -> GeminiResult:
         schema = {"type": "ARRAY", "items": {"type": "STRING"}}
         fuel_line = (
             f"Ne liste QUE les motorisations correspondant à l'énergie suivante : {fuel_type}.\n"
             if fuel_type
             else ""
         )
-        prompt = f"""Liste les motorisations/versions commercialisées pour ce véhicule précis :
+
+        if vehicle_type == "deux_roues" and two_wheeler_type == "velo_electrique":
+            what = "moteurs d'assistance électrique"
+            examples = '"Bosch Performance Line CX 85Nm", "Shimano EP8", "Brose Drive S Mag"'
+            extra = (
+                "Le terme \"motorisation\" désigne ici le moteur d'assistance électrique "
+                "(marque + gamme + couple en Nm), pas une motorisation au sens automobile."
+            )
+        elif vehicle_type == "deux_roues":
+            what = "motorisations/versions"
+            examples = '"MT-07 ABS", "MT-07 35kW (A2)", "125 XMAX", "CB500F A2"'
+            extra = (
+                "Distingue bien, quand c'est pertinent, la version pleine puissance de la "
+                "version bridée 35kW compatible permis A2 — une même moto existe souvent "
+                "dans les deux, ce sont deux entrées différentes sur le marché français."
+            )
+        else:
+            what = "motorisations/versions"
+            examples = '"1.5 BlueHDi 130", "1.2 PureTech 130 EAT8", "2.0 HDi 150"'
+            extra = ""
+
+        prompt = f"""Liste les {what} commercialisées pour ce véhicule précis :
 
 Marque : {brand}
 Modèle : {model}
 Année : {year}
 {fuel_line}
-Donne la liste des motorisations disponibles cette année-là, sous la forme
-habituelle du marché français (ex : "1.5 BlueHDi 130", "1.2 PureTech 130
-EAT8", "2.0 HDi 150"). Maximum 20 entrées, sans doublons. Si tu n'es pas
-certain de l'année exacte, donne les motorisations de la génération
-commercialisée à cette période. Réponds uniquement avec le JSON demandé
-(tableau de chaînes), sans texte autour."""
+Donne la liste des {what} disponibles cette année-là, sous la forme
+habituelle du marché français (ex : {examples}). {extra}
+Maximum 20 entrées, sans doublons. Si tu n'es pas certain de l'année
+exacte, donne les {what} de la génération commercialisée à cette période.
+Réponds uniquement avec le JSON demandé (tableau de chaînes), sans texte
+autour."""
         return await self._call(prompt, schema, max_output_tokens=1024)
 
     async def check_recalls(self, brand: str, model: str, motorisation: str, year: int) -> GeminiResult:
