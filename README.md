@@ -1,4 +1,4 @@
-<p align="center"><img src="badge.svg" width="360" height="360" alt="CARnet - Garage Log" /></p>
+<p align="center"><img src="badge.svg" width="180" height="180" alt="CARnet - Garage Log" /></p>
 
 <h1 align="center">CARnet - Garage Log</h1>
 <p align="center">Smart vehicle maintenance logbook for Home Assistant</p>
@@ -19,7 +19,7 @@
 
 **CARnet - Garage Log** is a smart maintenance logbook for **cars,
 motorcycles, scooters and e-bikes** in Home Assistant. It uses **Google
-Gemini** (free tier available) to generate and keep up to date:
+Gemini** (optional, free tier available) to generate and keep up to date:
 a maintenance plan built from a fixed catalog of operations per vehicle
 type, known issues/weak points for the exact model, active manufacturer
 recalls, and a resale value estimate over time — all shown on a dedicated
@@ -29,7 +29,8 @@ French, German, Spanish and Italian.
 Storage is 100% local (no cloud account, no telemetry). The card is
 served directly by the integration — nothing to copy into `www/` — you
 only need to register it as a dashboard resource once (see
-[§4](#4-add-the-card-to-a-dashboard)). 
+[§4](#4-add-the-card-to-a-dashboard)). Gemini is entirely optional: without
+an API key, the integration still works with fully manual data entry.
 
 ### 🌟 Beyond a basic logbook
 
@@ -80,8 +81,8 @@ generic one.
   plate, photo.
 - 🛠️ **Fixed maintenance catalog per vehicle type** (46 operations for a
   car, 26 for a motorcycle/scooter, 15 for an e-bike): oil change, every
-  filter, timing belt/chain and accessory belt as separate entries,
-  front/rear discs and pads as separate entries, battery, A/C,
+  filter, timing belt/chain **and** accessory belt as separate entries,
+  front/rear discs **and** pads as separate entries, battery, A/C,
   DPF/EGR, roadworthiness inspection, manufacturer service schedule,
   motorcycle chain kit, traction battery diagnostics... The AI only
   decides applicability and intervals for each fixed entry — nothing can
@@ -133,7 +134,7 @@ generic one.
      integration's setup screen (see [§3](#3-configure-the-integration)).
      The free tier's daily quota is generous for personal use; if you ever
      hit it, the integration automatically retries with other Gemini
-     models.
+     models (see [§8](#8-troubleshooting)).
 - HACS if you want the "custom repository" route (a manual install works
   just as well, see below).
 
@@ -266,7 +267,8 @@ by the browser. Go through this checklist in order:
 2. Pick **🚗 Car** or **🏍️ Two-wheeler** (motorcycle / scooter / e-bike);
    this decides which maintenance catalog and which brand/model
    suggestions apply — the two never mix.
-3. **Brand**: start typing, an autocomplete dropdown appears.
+3. **Brand**: start typing, an autocomplete dropdown appears (local
+   reference list, editable — see [§7](#7-customize-the-brandmodel-reference-list)).
    You can also type a brand that isn't listed: free text is always
    accepted.
 4. **Model**: the list filters by the chosen brand, same free-text
@@ -329,7 +331,30 @@ Each vehicle's `id` is visible in its sensors' attributes, or by clicking
 the vehicle in the card and inspecting the corresponding device under
 Settings → Devices.
 
-### 7. Troubleshooting
+### 7. Customize the brand/model reference list
+
+`custom_components/carnet_entretien/data/referentiel.json` holds the
+brand/model autocomplete suggestions, split by category (`auto`, `moto`,
+`scooter`, `velo_electrique`) so a motorcycle brand never shows up while
+adding a car and vice versa:
+
+```json
+{
+  "auto": {
+    "YourBrand": ["Model A", "Model B"],
+    "Peugeot": ["208", "2008", "308", "...", "New model"]
+  },
+  "moto": { "Yamaha": ["MT-07", "..."] },
+  "scooter": { "Piaggio": ["Liberty 125", "..."] },
+  "velo_electrique": { "Cube": ["Reaction Hybrid", "..."] }
+}
+```
+
+Restart Home Assistant after editing (the file is loaded once at
+integration startup). Free text entry always remains possible even for a
+model missing from the file.
+
+### 8. Troubleshooting
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
@@ -341,6 +366,23 @@ Settings → Devices.
 | Hidden ("not applicable") items keep reappearing | Historic bug, fixed in v1.3.2 (a settings-save schema was silently rejecting the setting) | Update to the latest version |
 | Text is in the wrong language after switching | Only the interface/catalog translate instantly; AI-generated content (notes, known issues, DIY...) keeps its original language until regenerated | Use "↻ Regenerate plan" / refresh known issues or recalls / a new DIY request |
 | Entities missing after removing a vehicle | Expected, transient | They're removed from the registry automatically on removal |
+
+### 9. Known limitations
+
+- **Brand/model reference list**: deliberately curated, not exhaustive —
+  extend it per [§7](#7-customize-the-brandmodel-reference-list), or
+  replace it with a call to an open vehicle database if you want it fully
+  automated.
+- **Annual mileage estimate**: used to rank due items against each other
+  (`utils.py`), based on the vehicle's mileage history; not very reliable
+  until a few data points exist (falls back to registration-year-based
+  estimate, then a flat default).
+- **No automated tests** included in this project — consider adding some
+  (pytest + `pytest-homeassistant-custom-component`) before a wide public
+  release.
+- **AI content is a summary, not certified data** — known issues, recalls
+  and DIY guidance are Gemini's best synthesis of public information, not
+  a manufacturer source; always double-check anything safety-related.
 
 ### 🤝 Contributing
 
@@ -357,7 +399,7 @@ MIT — see [LICENSE](LICENSE).
 
 **CARnet - Garage Log** est un carnet d'entretien intelligent pour
 **voitures, motos, scooters et vélos électriques** dans Home Assistant.
-Il s'appuie sur **Google Gemini** (un forfait gratuit est
+Il s'appuie sur **Google Gemini** (optionnel, un forfait gratuit est
 disponible) pour générer et tenir à jour : un plan d'entretien basé sur un
 catalogue fixe d'opérations par type de véhicule, les points de vigilance
 connus sur le modèle précis, les rappels constructeur actifs, et une
@@ -369,7 +411,9 @@ l'italien.
 Le stockage est 100 % local (aucun compte cloud, aucune télémétrie). La
 carte est servie directement par l'intégration — rien à copier dans
 `www/` — il suffit de l'enregistrer une fois comme ressource de tableau de
-bord (voir [§4](#4-ajouter-la-carte-au-tableau-de-bord)). 
+bord (voir [§4](#4-ajouter-la-carte-au-tableau-de-bord)). Gemini est
+entièrement optionnel : sans clé API, l'intégration reste utilisable en
+saisie 100 % manuelle.
 
 ### 🌟 Bien plus qu'un carnet basique
 
@@ -426,8 +470,8 @@ véhicule précis, pas un modèle générique.
   en cache), année, kilométrage, plaque, photo.
 - 🛠️ **Catalogue d'entretien fixe par type de véhicule** (46 opérations
   pour une voiture, 26 pour une moto/scooter, 15 pour un vélo électrique) :
-  vidange, tous les filtres, courroie/chaîne de distribution et
-  d'accessoires comme entrées séparées, disques et plaquettes
+  vidange, tous les filtres, courroie/chaîne de distribution **et**
+  d'accessoires comme entrées séparées, disques **et** plaquettes
   avant/arrière comme entrées séparées, batterie, climatisation, FAP/EGR,
   contrôle technique, révision constructeur, kit chaîne moto, diagnostic
   batterie de traction... L'IA ne décide que de l'applicabilité et des
@@ -483,7 +527,7 @@ véhicule précis, pas un modèle générique.
      [§3](#3-configurer-lintégration)). Le quota quotidien du forfait
      gratuit est généreux pour un usage personnel ; si vous l'atteignez
      malgré tout, l'intégration bascule automatiquement sur d'autres
-     modèles Gemini.
+     modèles Gemini (voir [§8](#8-dépannage)).
 - HACS si vous voulez la voie "dépôt personnalisé" (l'installation
   manuelle fonctionne tout aussi bien, voir ci-dessous).
 
@@ -627,7 +671,8 @@ ou mise en cache par le navigateur. Suivez cette liste dans l'ordre :
    suggestions marque/modèle applicables — les deux ne se mélangent
    jamais.
 3. **Marque** : tapez les premières lettres, une liste déroulante
-   d'autocomplétion apparaît. Vous pouvez
+   d'autocomplétion apparaît (référentiel local, éditable — voir
+   [§7](#7-personnaliser-le-référentiel-marquesmodèles)). Vous pouvez
    aussi taper une marque absente de la liste : la saisie libre est
    toujours acceptée.
 4. **Modèle** : la liste se filtre selon la marque choisie, même principe
@@ -690,7 +735,30 @@ L'`id` de chaque véhicule est visible dans les attributs de ses capteurs,
 ou en cliquant sur le véhicule dans la carte puis en inspectant l'appareil
 correspondant dans Paramètres → Appareils.
 
-### 7. Dépannage
+### 7. Personnaliser le référentiel marques/modèles
+
+`custom_components/carnet_entretien/data/referentiel.json` contient les
+suggestions marque/modèle, séparées par catégorie (`auto`, `moto`,
+`scooter`, `velo_electrique`) pour qu'une marque de moto n'apparaisse
+jamais lors de l'ajout d'une voiture, et inversement :
+
+```json
+{
+  "auto": {
+    "VotreMarque": ["Modèle A", "Modèle B"],
+    "Peugeot": ["208", "2008", "308", "...", "Nouveau modèle"]
+  },
+  "moto": { "Yamaha": ["MT-07", "..."] },
+  "scooter": { "Piaggio": ["Liberty 125", "..."] },
+  "velo_electrique": { "Cube": ["Reaction Hybrid", "..."] }
+}
+```
+
+Redémarrez Home Assistant après modification (le fichier est chargé une
+fois au démarrage de l'intégration). La saisie libre reste toujours
+possible même pour un modèle absent du fichier.
+
+### 8. Dépannage
 
 | Symptôme | Cause probable | Solution |
 |---|---|---|
@@ -702,6 +770,25 @@ correspondant dans Paramètres → Appareils.
 | Les entretiens masqués ("non applicables") réapparaissent | Bug historique, corrigé en v1.3.2 (un réglage était silencieusement rejeté à l'enregistrement) | Mettez à jour vers la dernière version |
 | Le texte reste dans la mauvaise langue après changement | Seules l'interface et le catalogue se traduisent instantanément ; le contenu généré par l'IA (notes, points de vigilance, DIY...) garde sa langue d'origine jusqu'à régénération | Utilisez "↻ Regénérer le plan" / rafraîchissez les points de vigilance ou rappels / relancez une demande DIY |
 | Capteurs manquants après suppression d'un véhicule | Normal, transitoire | Ils sont retirés du registre automatiquement au retrait |
+
+### 9. Limites connues
+
+- **Référentiel marques/modèles** : volontairement sélectif, pas
+  exhaustif — étoffez-le selon [§7](#7-personnaliser-le-référentiel-marquesmodèles),
+  ou remplacez-le par un appel à une base de données véhicules ouverte si
+  vous voulez l'automatiser entièrement.
+- **Estimation de kilométrage annuel** : utilisée pour classer les
+  échéances entre elles (`utils.py`), basée sur l'historique de
+  kilométrage du véhicule ; peu fiable tant que peu de points de mesure
+  existent (repli sur une estimation basée sur l'année de mise en
+  circulation, puis une valeur par défaut fixe).
+- **Pas de tests automatisés** inclus dans ce projet — à envisager
+  (pytest + `pytest-homeassistant-custom-component`) avant une diffusion
+  publique large.
+- **Le contenu IA est une synthèse, pas une donnée certifiée** — points
+  de vigilance, rappels et conseils DIY sont la meilleure synthèse de
+  Gemini à partir d'informations publiques, pas une source constructeur ;
+  vérifiez toujours ce qui touche à la sécurité.
 
 ### 🤝 Contribuer
 
