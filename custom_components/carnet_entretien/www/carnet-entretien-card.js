@@ -38,6 +38,10 @@ const I18N = {
     section_upcoming_maintenance: "Entretien à prévoir",
     settings_theme_section: "Thème visuel",
     theme_active_badge: "✓ actif",
+    theme_gt_cuir: "Grand tourisme cuir",
+    theme_horlogerie: "Manufacture horlogère",
+    theme_carbone: "Carbone et titane",
+    theme_vintage: "Atelier vintage",
     settings_notifications_section: "Notifications & affichage",
     setting_notification_desc: "Notification persistante HA quand une échéance est dépassée",
     setting_hide_na_desc: "Masquer les entretiens non applicables dans la liste",
@@ -201,6 +205,10 @@ const I18N = {
     section_upcoming_maintenance: "Upcoming maintenance",
     settings_theme_section: "Visual theme",
     theme_active_badge: "✓ active",
+    theme_gt_cuir: "Grand Tourisme Leather",
+    theme_horlogerie: "Watchmaker's Workshop",
+    theme_carbone: "Carbon & Titanium",
+    theme_vintage: "Vintage Atelier",
     settings_notifications_section: "Notifications & display",
     setting_notification_desc: "Persistent HA notification when a due date is overdue",
     setting_hide_na_desc: "Hide non-applicable maintenance items in the list",
@@ -364,6 +372,10 @@ const I18N = {
     section_upcoming_maintenance: "Anstehende Wartungen",
     settings_theme_section: "Visuelles Thema",
     theme_active_badge: "✓ aktiv",
+    theme_gt_cuir: "Grand-Tourisme-Leder",
+    theme_horlogerie: "Uhrmacherwerkstatt",
+    theme_carbone: "Carbon & Titan",
+    theme_vintage: "Vintage-Atelier",
     settings_notifications_section: "Benachrichtigungen & Anzeige",
     setting_notification_desc: "Dauerhafte HA-Benachrichtigung bei überfälligem Termin",
     setting_hide_na_desc: "Nicht zutreffende Wartungen in der Liste ausblenden",
@@ -527,6 +539,10 @@ const I18N = {
     section_upcoming_maintenance: "Mantenimiento previsto",
     settings_theme_section: "Tema visual",
     theme_active_badge: "✓ activo",
+    theme_gt_cuir: "Cuero Gran Turismo",
+    theme_horlogerie: "Taller de Relojería",
+    theme_carbone: "Carbono y Titanio",
+    theme_vintage: "Atelier Vintage",
     settings_notifications_section: "Notificaciones y visualización",
     setting_notification_desc: "Notificación persistente de HA cuando se supera una fecha límite",
     setting_hide_na_desc: "Ocultar en la lista los mantenimientos no aplicables",
@@ -690,6 +706,10 @@ const I18N = {
     section_upcoming_maintenance: "Manutenzioni da programmare",
     settings_theme_section: "Tema visivo",
     theme_active_badge: "✓ attivo",
+    theme_gt_cuir: "Pelle Gran Turismo",
+    theme_horlogerie: "Bottega dell'Orologiaio",
+    theme_carbone: "Carbonio e Titanio",
+    theme_vintage: "Atelier Vintage",
     settings_notifications_section: "Notifiche e visualizzazione",
     setting_notification_desc: "Notifica persistente HA quando una scadenza è superata",
     setting_hide_na_desc: "Nascondi nell'elenco gli interventi non applicabili",
@@ -1375,7 +1395,7 @@ class CarnetEntretienCard extends HTMLElement {
           (t) => `
           <div class="theme-card ${this._theme === t.id ? "active" : ""}" data-theme-id="${t.id}">
             <div class="theme-card-head">
-              <span>${t.icon} ${esc(t.name)}</span>
+              <span>${t.icon} ${esc(this._t(`theme_${t.id}`))}</span>
               ${this._theme === t.id ? `<span class="accent small">${this._t("theme_active_badge")}</span>` : ""}
             </div>
             <div class="swatches">
@@ -1479,7 +1499,8 @@ class CarnetEntretienCard extends HTMLElement {
           </label>
         </div>
         <label>${this._t("form_photo_label")} <span class="muted">${this._t("form_optional")}</span>
-          <input type="file" id="f-photo" accept="image/*" capture="environment" />
+          <button type="button" class="btn small ghost" id="f-photo-trigger" style="width:fit-content;">📷 ${f.photo ? this._t("photo_change_btn") : this._t("photo_add_btn")}</button>
+          <input type="file" id="f-photo" accept="image/*" capture="environment" style="display:none;" />
         </label>
         <img id="add-photo-preview" class="photo-preview" style="display:${f.photo ? "block" : "none"};" src="${f.photo || ""}" />
         <button type="submit" class="btn primary full">${this._t("form_submit_btn")}</button>
@@ -1985,6 +2006,9 @@ class CarnetEntretienCard extends HTMLElement {
 
       root.getElementById("f-mileage").addEventListener("input", (e) => (this._addForm.mileage = e.target.value));
       root.getElementById("f-plate").addEventListener("input", (e) => (this._addForm.plate = e.target.value));
+      root.getElementById("f-photo-trigger").addEventListener("click", () => {
+        root.getElementById("f-photo").click();
+      });
       root.getElementById("f-photo").addEventListener("change", async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -1994,6 +2018,8 @@ class CarnetEntretienCard extends HTMLElement {
           const preview = root.getElementById("add-photo-preview");
           preview.src = dataUrl;
           preview.style.display = "block";
+          const trigger = root.getElementById("f-photo-trigger");
+          if (trigger) trigger.textContent = `📷 ${this._t("photo_change_btn")}`;
         } catch (err) {
           console.error("carnet_entretien: échec de lecture de l'image", err);
         }

@@ -698,7 +698,26 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
     @websocket_api.async_response
     async def ws_get_vehicles(hass, connection, msg):
         lang = store.get_settings().get("language", "fr")
-        vehicles = [_serialize_vehicle(v, lang) for v in store.vehicles.values()]
+        # Sérialisation véhicule par véhicule, dans un try/except individuel :
+        # avant ce correctif, une exception sur un SEUL véhicule (donnée
+        # ancienne/partielle, item corrompu, etc.) faisait échouer toute la
+        # commande get_vehicles — la carte recevait alors une erreur, gardait
+        # sa liste précédente (souvent vide au premier chargement), et TOUS
+        # les véhicules disparaissaient de la carte alors qu'ils existaient
+        # toujours en stockage et comme appareils Home Assistant. Désormais un
+        # véhicule qui échoue à se sérialiser est simplement omis (et journalisé)
+        # sans jamais masquer les autres.
+        vehicles = []
+        for vehicle_id, v in store.vehicles.items():
+            try:
+                vehicles.append(_serialize_vehicle(v, lang))
+            except Exception:
+                _LOGGER.exception(
+                    "carnet_entretien: échec de sérialisation du véhicule %s, "
+                    "omis de la liste renvoyée à la carte (les autres véhicules "
+                    "restent affichés)",
+                    vehicle_id,
+                )
         connection.send_result(msg["id"], {"vehicles": vehicles, "settings": store.get_settings()})
 
     @websocket_api.websocket_command(
