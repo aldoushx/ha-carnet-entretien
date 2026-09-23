@@ -1,7 +1,7 @@
 <p align="center"><img src="badge.svg" width="300" height="300" alt="CARnet - Garage Log" /></p>
 
 <h1 align="center">CARnet - Garage Log</h1>
-<p align="center">Your vehicles' maintenance, finally figured out for you.</p>
+<p align="center">Le carnet d'entretien qui pense à votre place / Your personal mechanic, right inside Home Assistant</p>
 
 <p align="center">
 <img alt="HACS Custom" src="https://img.shields.io/badge/HACS-Custom-41BDF5?logo=homeassistantcommunitystore&logoColor=white">
@@ -18,8 +18,8 @@
   </a>
 </p>
 <p align="center">
-  🐱 <b>Lina</b> deserves better than bottom-shelf kibble — if this project is useful to you, <a href="https://ko-fi.com/aldoushx">toss her a few treats</a>.<br/>
-  🐱 <b>Lina</b> mérite mieux que de la nourriture bas de gamme — si ce projet vous rend service, <a href="https://ko-fi.com/aldoushx">offrez-lui quelques croquettes</a>.
+  🐱 <b>Lina</b> mérite mieux que de la nourriture bas de gamme — si ce projet vous rend service, <a href="https://ko-fi.com/aldoushx">offrez-lui quelques croquettes</a>.<br/>
+  🐱 <b>Lina</b> deserves better than bottom-shelf kibble — if this project is useful to you, <a href="https://ko-fi.com/aldoushx">toss her a few treats</a>.
 </p>
 
 ---
