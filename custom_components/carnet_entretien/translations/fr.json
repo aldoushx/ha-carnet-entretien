@@ -9,6 +9,9 @@
           "language": "Langue de contenu"
         }
       }
+    },
+    "abort": {
+      "already_configured": "CARnet - Garage Log est déjà configuré. Cette intégration ne peut avoir qu'une seule entrée (tous les véhicules, caches et réglages partagent un seul fichier de stockage) — utilisez Paramètres → Appareils et services → CARnet - Garage Log → Configurer pour changer la clé API ou la langue, plutôt que d'ajouter une nouvelle entrée."
     }
   },
   "options": {

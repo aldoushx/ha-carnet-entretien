@@ -9,6 +9,9 @@
           "language": "Content language"
         }
       }
+    },
+    "abort": {
+      "already_configured": "CARnet - Garage Log is already set up. This integration only supports a single entry (all vehicles, caches and settings share one storage file) — use Settings → Devices & services → CARnet - Garage Log → Configure to change the API key or language instead of adding a new entry."
     }
   },
   "options": {

@@ -35,6 +35,21 @@ class CarnetEntretienConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, user_input: dict | None = None):
+        # Intégration conçue comme un singleton : le stockage
+        # (STORAGE_KEY dans const.py) est une clé globale unique, partagée
+        # par tout HA, pas par config entry — comme le réglage "language"
+        # (voir CONF_LANGUAGE). Une deuxième entrée créerait une deuxième
+        # instance CarnetStore chargeant/réécrivant le MÊME fichier
+        # .storage/carnet_entretien_data de façon indépendante, avec un
+        # risque réel d'écrasement complet des véhicules de la première
+        # entrée au premier `async_save()` de la seconde (vécu en
+        # production : ajout d'un véhicule depuis une 2e entrée -> perte
+        # de tous les véhicules de la 1re). "single_config_entry" dans
+        # manifest.json bloque déjà le bouton "Ajouter une entrée" dans
+        # l'UI sur les versions de HA qui le supportent ; cet abort est une
+        # deuxième barrière explicite, y compris si ce flow est déclenché
+        # autrement (ex. import, ancienne version de HA).
+        self._async_abort_entries_match()
         if user_input is not None:
             return self.async_create_entry(title="Carnet d'entretien", data=user_input)
 

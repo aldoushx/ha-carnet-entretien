@@ -2,6 +2,29 @@
 
 Historique des versions de l'intégration Carnet d'entretien.
 
+## 🐛 Correctif v1.4.2
+
+- **Correctif critique** : le stockage local (`.storage/carnet_entretien_data`)
+  utilise une clé fixe, globale à toute l'installation HA — c'est voulu
+  (les caches IA et le réglage de langue sont partagés), mais rien
+  n'empêchait jusqu'ici de créer une **deuxième entrée** de l'intégration
+  depuis Paramètres → Appareils et services → Ajouter une entrée. Chaque
+  entrée créait sa propre instance de stockage en mémoire pointant vers
+  le **même fichier**, sans aucune synchronisation entre elles : au
+  premier ajout ou modification de véhicule depuis la deuxième entrée,
+  son instantané en mémoire écrasait intégralement le fichier, effaçant
+  au passage tous les véhicules connus de la première entrée (les
+  appareils Home Assistant correspondants, eux, restaient visibles —
+  d'où l'impression trompeuse d'une suppression ciblée et incomplète).
+  L'intégration est maintenant explicitement déclarée en **entrée
+  unique** (`single_config_entry` dans `manifest.json`, plus un
+  `_async_abort_entries_match()` en secours dans `config_flow.py`) : le
+  bouton "Ajouter une entrée" est désactivé dès qu'une entrée existe déjà,
+  et toute tentative malgré tout est refusée avec un message explicite.
+  ⚠️ Ce correctif empêche la récurrence du problème, mais ne restaure pas
+  des données déjà écrasées par ce bug — seule une sauvegarde HA
+  antérieure à l'incident permet de les récupérer.
+
 ## 🆕 Nouveautés v1.4.1
 
 - **Choix de la langue déplacé à l'installation** : la langue de contenu
