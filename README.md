@@ -1,4 +1,4 @@
-<p align="center"><img src="badge.svg" width="220" height="220" alt="CARnet - Garage Log" /></p>
+<p align="center"><img src="badge.svg" width="300" height="300" alt="CARnet - Garage Log" /></p>
 
 <h1 align="center">CARnet - Garage Log</h1>
 <p align="center">Your vehicles' maintenance, finally figured out for you.</p>
@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="https://ko-fi.com/aldoushx">
-    <img src="docs/images/lina.jpg" width="72" height="72" style="border-radius:50%;" alt="Lina" />
+    <img src="docs/images/lina.jpg" width="140" height="140" style="border-radius:50%;" alt="Lina" />
   </a>
 </p>
 <p align="center">
@@ -33,7 +33,7 @@ and it builds a maintenance plan researched for your exact model, flags
 what's coming due, prices out the job both at a garage and DIY, and keeps
 an eye on your vehicle's resale value — all from one dashboard card.
 
-<p align="center"><img src="docs/images/screenshot-overview.png" width="100%" alt="Vehicle overview on the CARnet card" /></p>
+<p align="center"><img src="docs/images/screenshot-overview-en.png" width="100%" alt="Vehicle overview on the CARnet card" /></p>
 
 Everything stays local — no cloud account, no telemetry, no subscription.
 Google Gemini powers the research (a generous free tier is enough for
@@ -67,7 +67,7 @@ your exact vehicle, not a generic one.
   with severity and an indicative repair cost, plus active manufacturer
   recalls checked on creation.
 
-<p align="center"><img src="docs/images/screenshot-maintenance.png" width="100%" alt="Maintenance items on the CARnet card" /></p>
+<p align="center"><img src="docs/images/screenshot-maintenance-en.png" width="100%" alt="Maintenance items on the CARnet card" /></p>
 
 ### ✨ Everything else it does
 
@@ -84,7 +84,7 @@ your exact vehicle, not a generic one.
   an earlier one; due dates recalculate instantly.
 - 🎨 **Four visual themes** to make the card your own.
 
-<p align="center"><img src="docs/images/screenshot-settings.png" width="100%" alt="The theme, language and notification settings panel" /></p>
+<p align="center"><img src="docs/images/screenshot-settings-en.png" width="100%" alt="The theme, language and notification settings panel" /></p>
 
 - 🌍 **Five languages** — English, French, German, Spanish, Italian —
   covering the card, the catalog, everything Gemini generates and every
