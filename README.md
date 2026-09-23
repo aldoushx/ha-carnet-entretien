@@ -1,7 +1,7 @@
 <p align="center"><img src="badge.svg" width="300" height="300" alt="CARnet - Garage Log" /></p>
 
 <h1 align="center">CARnet - Garage Log</h1>
-<p align="center">Your vehicles' maintenance, finally figured out for you.</p>
+<p align="center">Le carnet d'entretien qui pense à votre place / Your personal mechanic, right inside Home Assistant</p>
 
 <p align="center">
 <img alt="HACS Custom" src="https://img.shields.io/badge/HACS-Custom-41BDF5?logo=homeassistantcommunitystore&logoColor=white">
@@ -18,8 +18,8 @@
   </a>
 </p>
 <p align="center">
-  🐱 <b>Lina</b> deserves better than bottom-shelf kibble — if this project is useful to you, <a href="https://ko-fi.com/aldoushx">toss her a few treats</a>.<br/>
-  🐱 <b>Lina</b> mérite mieux que de la nourriture bas de gamme — si ce projet vous rend service, <a href="https://ko-fi.com/aldoushx">offrez-lui quelques croquettes</a>.
+  🐱 <b>Lina</b> mérite mieux que de la nourriture bas de gamme — si ce projet vous rend service, <a href="https://ko-fi.com/aldoushx">offrez-lui quelques croquettes</a>.<br/>
+  🐱 <b>Lina</b> deserves better than bottom-shelf kibble — if this project is useful to you, <a href="https://ko-fi.com/aldoushx">toss her a few treats</a>.
 </p>
 
 ---
@@ -232,25 +232,7 @@ action:
 A vehicle's `id` is visible in its sensors' attributes, or under the
 matching device in Settings → Devices.
 
-### 7. Customize the brand/model suggestions
-
-`custom_components/carnet_entretien/data/referentiel.json` holds the
-autocomplete suggestions, split by category so a motorcycle brand never
-shows up while adding a car:
-
-```json
-{
-  "auto": { "Peugeot": ["208", "308", "New model"] },
-  "moto": { "Yamaha": ["MT-07"] },
-  "scooter": { "Piaggio": ["Liberty 125"] },
-  "velo_electrique": { "Cube": ["Reaction Hybrid"] }
-}
-```
-
-Restart Home Assistant after editing. Free-text entry always works even
-for a model missing from the file.
-
-### 8. Troubleshooting
+### 7. Troubleshooting
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
@@ -259,15 +241,6 @@ for a model missing from the file.
 | "rate_limited" / "Quota exceeded" | Daily Gemini quota reached | Wait or retry — CARnet falls back to other models automatically |
 | "timeout" | Gemini API slow or overloaded | Retry with "↻ Regenerate" |
 | Text stays in the wrong language after switching | Interface and catalog translate instantly; AI-generated content keeps its original language until regenerated | Regenerate the plan / known issues / recalls, or ask for a new DIY explanation |
-
-### 9. Good to know
-
-- The brand/model list is curated, not exhaustive — extend it per
-  [§7](#7-customize-the-brandmodel-suggestions).
-- The annual mileage estimate used to rank due items gets more accurate
-  as you log more mileage history.
-- AI content is a synthesis of public information, not certified
-  manufacturer data — always double-check anything safety-related.
 
 ### 🤝 Contributing
 
@@ -504,25 +477,7 @@ action:
 L'`id` d'un véhicule est visible dans les attributs de ses capteurs, ou
 sous l'appareil correspondant dans Paramètres → Appareils.
 
-### 7. Personnaliser les suggestions marque/modèle
-
-`custom_components/carnet_entretien/data/referentiel.json` contient les
-suggestions d'autocomplétion, séparées par catégorie pour qu'une marque
-de moto n'apparaisse jamais lors de l'ajout d'une voiture :
-
-```json
-{
-  "auto": { "Peugeot": ["208", "308", "Nouveau modèle"] },
-  "moto": { "Yamaha": ["MT-07"] },
-  "scooter": { "Piaggio": ["Liberty 125"] },
-  "velo_electrique": { "Cube": ["Reaction Hybrid"] }
-}
-```
-
-Redémarrez Home Assistant après modification. La saisie libre reste
-toujours possible pour un modèle absent du fichier.
-
-### 8. Dépannage
+### 7. Dépannage
 
 | Symptôme | Cause probable | Solution |
 |---|---|---|
@@ -531,16 +486,6 @@ toujours possible pour un modèle absent du fichier.
 | "rate_limited" / "Quota dépassé" | Quota Gemini quotidien atteint | Patientez ou réessayez — CARnet bascule automatiquement sur d'autres modèles |
 | "timeout" | API Gemini lente ou surchargée | Réessayez avec "↻ Regénérer" |
 | Le texte reste dans la mauvaise langue après changement | L'interface et le catalogue se traduisent instantanément ; le contenu généré par l'IA garde sa langue d'origine jusqu'à régénération | Régénérez le plan / les points de vigilance / les rappels, ou relancez une demande DIY |
-
-### 9. Bon à savoir
-
-- Le référentiel marque/modèle est sélectif, pas exhaustif — étoffez-le
-  selon [§7](#7-personnaliser-les-suggestions-marquemodèle).
-- L'estimation de kilométrage annuel utilisée pour classer les échéances
-  s'affine à mesure que vous enregistrez de l'historique.
-- Le contenu IA est une synthèse d'informations publiques, pas une
-  donnée constructeur certifiée — vérifiez toujours ce qui touche à la
-  sécurité.
 
 ### 🤝 Contribuer
 
