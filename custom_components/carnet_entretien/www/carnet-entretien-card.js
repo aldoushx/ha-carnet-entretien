@@ -42,6 +42,8 @@ const I18N = {
     theme_horlogerie: "Manufacture horlogère",
     theme_carbone: "Carbone et titane",
     theme_vintage: "Atelier vintage",
+    theme_ha_light: "Home Assistant clair",
+    theme_ha_dark: "Home Assistant nuit",
     settings_notifications_section: "Notifications & affichage",
     setting_notification_desc: "Notification persistante HA quand une échéance est dépassée",
     setting_hide_na_desc: "Masquer les entretiens non applicables dans la liste",
@@ -90,6 +92,7 @@ const I18N = {
     photo_remove_btn: "Retirer",
     tab_maintenance: "🔧 Entretien",
     tab_history: "📓 Historique",
+    tab_invoices: "🧾 Factures",
     mileage_linked_to: "lié à {entity}",
     mileage_unlink_btn: "Délier",
     mileage_label_colon: "Kilométrage :",
@@ -183,6 +186,28 @@ const I18N = {
     alert_missing_item_name: "Donnez un nom à cet entretien.",
     prompt_intervention_done: "Intervention réalisée :",
     prompt_mileage: "Kilométrage :",
+    prompt_notes: "Commentaire (facultatif) :",
+    label_note_optional: "Commentaire (facultatif)",
+    placeholder_note_example: "ex : essuie-glaces vérifiés, ampoule de phare changée, pneu avant droit remplacé (crevaison)…",
+    multi_select_toggle_btn: "☑️ Entretiens multiples",
+    multi_select_cancel_btn: "✕ Annuler la sélection",
+    batch_panel_title_one: "1 entretien sélectionné",
+    batch_panel_title_other: "{n} entretiens sélectionnés",
+    batch_empty_hint: "Cochez les entretiens réalisés en même temps (même passage au garage).",
+    batch_save_btn_one: "Enregistrer cet entretien",
+    batch_save_btn_other: "Enregistrer les {n} entretiens",
+    invoice_add_btn: "📎 Ajouter une facture",
+    invoice_naming_hint: "Les fichiers sont classés automatiquement (date + nom + identifiant), dans un dossier dédié à ce véhicule.",
+    invoice_empty: "Aucune facture pour ce véhicule.",
+    invoice_remove_btn: "Supprimer",
+    invoice_unlink_btn: "Délier",
+    link_invoice_btn: "🧾 Lier une facture existante",
+    link_invoice_none: "Aucune facture enregistrée pour ce véhicule — ajoutez-en depuis l'onglet Factures.",
+    prompt_invoice_label: "Intitulé (facultatif) :",
+    confirm_remove_invoice: "Supprimer définitivement cette facture ?",
+    alert_invoice_too_large: "Fichier trop volumineux (10 Mo max).",
+    alert_invoice_bad_type: "Type de fichier non supporté (PDF ou photo/image uniquement).",
+    alert_invoice_upload_failed: "Échec de l'envoi de la facture : {msg}",
   },
   en: {
     settings_language_readonly_note: "set when the integration is installed, or from its Options (Settings → Devices & services → CARnet → Configure).",
@@ -209,6 +234,8 @@ const I18N = {
     theme_horlogerie: "Watchmaker's Workshop",
     theme_carbone: "Carbon & Titanium",
     theme_vintage: "Vintage Atelier",
+    theme_ha_light: "Home Assistant Light",
+    theme_ha_dark: "Home Assistant Dark",
     settings_notifications_section: "Notifications & display",
     setting_notification_desc: "Persistent HA notification when a due date is overdue",
     setting_hide_na_desc: "Hide non-applicable maintenance items in the list",
@@ -257,6 +284,7 @@ const I18N = {
     photo_remove_btn: "Remove",
     tab_maintenance: "🔧 Maintenance",
     tab_history: "📓 History",
+    tab_invoices: "🧾 Invoices",
     mileage_linked_to: "linked to {entity}",
     mileage_unlink_btn: "Unlink",
     mileage_label_colon: "Mileage:",
@@ -350,6 +378,28 @@ const I18N = {
     alert_missing_item_name: "Give this item a name.",
     prompt_intervention_done: "Service performed:",
     prompt_mileage: "Mileage:",
+    prompt_notes: "Comment (optional):",
+    label_note_optional: "Comment (optional)",
+    placeholder_note_example: "e.g. wipers checked, headlight bulb replaced, front right tire changed (puncture)…",
+    multi_select_toggle_btn: "☑️ Multiple services",
+    multi_select_cancel_btn: "✕ Cancel selection",
+    batch_panel_title_one: "1 item selected",
+    batch_panel_title_other: "{n} items selected",
+    batch_empty_hint: "Check the items done together (same garage visit).",
+    batch_save_btn_one: "Log this item",
+    batch_save_btn_other: "Log these {n} items",
+    invoice_add_btn: "📎 Add an invoice",
+    invoice_naming_hint: "Files are named automatically (date + name + id) and kept in a folder dedicated to this vehicle.",
+    invoice_empty: "No invoices for this vehicle yet.",
+    invoice_remove_btn: "Delete",
+    invoice_unlink_btn: "Unlink",
+    link_invoice_btn: "🧾 Link an existing invoice",
+    link_invoice_none: "No invoices saved for this vehicle yet — add one from the Invoices tab.",
+    prompt_invoice_label: "Label (optional):",
+    confirm_remove_invoice: "Permanently delete this invoice?",
+    alert_invoice_too_large: "File too large (10 MB max).",
+    alert_invoice_bad_type: "Unsupported file type (PDF or photo/image only).",
+    alert_invoice_upload_failed: "Failed to upload the invoice: {msg}",
   },
   de: {
     settings_language_readonly_note: "bei der Installation der Integration festgelegt oder über ihre Optionen (Einstellungen → Geräte & Dienste → CARnet → Konfigurieren).",
@@ -376,6 +426,8 @@ const I18N = {
     theme_horlogerie: "Uhrmacherwerkstatt",
     theme_carbone: "Carbon & Titan",
     theme_vintage: "Vintage-Atelier",
+    theme_ha_light: "Home Assistant hell",
+    theme_ha_dark: "Home Assistant dunkel",
     settings_notifications_section: "Benachrichtigungen & Anzeige",
     setting_notification_desc: "Dauerhafte HA-Benachrichtigung bei überfälligem Termin",
     setting_hide_na_desc: "Nicht zutreffende Wartungen in der Liste ausblenden",
@@ -424,6 +476,7 @@ const I18N = {
     photo_remove_btn: "Entfernen",
     tab_maintenance: "🔧 Wartung",
     tab_history: "📓 Verlauf",
+    tab_invoices: "🧾 Rechnungen",
     mileage_linked_to: "verknüpft mit {entity}",
     mileage_unlink_btn: "Trennen",
     mileage_label_colon: "Kilometerstand:",
@@ -517,6 +570,28 @@ const I18N = {
     alert_missing_item_name: "Geben Sie dieser Wartung einen Namen.",
     prompt_intervention_done: "Durchgeführte Wartung:",
     prompt_mileage: "Kilometerstand:",
+    prompt_notes: "Kommentar (optional):",
+    label_note_optional: "Kommentar (optional)",
+    placeholder_note_example: "z. B. Scheibenwischer geprüft, Scheinwerferlampe gewechselt, rechter Vorderreifen ersetzt (Reifenpanne)…",
+    multi_select_toggle_btn: "☑️ Mehrere Wartungen",
+    multi_select_cancel_btn: "✕ Auswahl abbrechen",
+    batch_panel_title_one: "1 Eintrag ausgewählt",
+    batch_panel_title_other: "{n} Einträge ausgewählt",
+    batch_empty_hint: "Wählen Sie die gleichzeitig durchgeführten Arbeiten aus (gleicher Werkstattbesuch).",
+    batch_save_btn_one: "Diesen Eintrag speichern",
+    batch_save_btn_other: "Diese {n} Einträge speichern",
+    invoice_add_btn: "📎 Rechnung hinzufügen",
+    invoice_naming_hint: "Dateien werden automatisch benannt (Datum + Name + ID) und in einem eigenen Ordner für dieses Fahrzeug abgelegt.",
+    invoice_empty: "Noch keine Rechnungen für dieses Fahrzeug.",
+    invoice_remove_btn: "Löschen",
+    invoice_unlink_btn: "Verknüpfung lösen",
+    link_invoice_btn: "🧾 Vorhandene Rechnung verknüpfen",
+    link_invoice_none: "Noch keine Rechnung für dieses Fahrzeug gespeichert — fügen Sie eine im Tab Rechnungen hinzu.",
+    prompt_invoice_label: "Bezeichnung (optional):",
+    confirm_remove_invoice: "Diese Rechnung endgültig löschen?",
+    alert_invoice_too_large: "Datei zu groß (max. 10 MB).",
+    alert_invoice_bad_type: "Dateityp nicht unterstützt (nur PDF oder Foto/Bild).",
+    alert_invoice_upload_failed: "Hochladen der Rechnung fehlgeschlagen: {msg}",
   },
   es: {
     settings_language_readonly_note: "se define al instalar la integración, o desde sus Opciones (Ajustes → Dispositivos y servicios → CARnet → Configurar).",
@@ -543,6 +618,8 @@ const I18N = {
     theme_horlogerie: "Taller de Relojería",
     theme_carbone: "Carbono y Titanio",
     theme_vintage: "Atelier Vintage",
+    theme_ha_light: "Home Assistant claro",
+    theme_ha_dark: "Home Assistant oscuro",
     settings_notifications_section: "Notificaciones y visualización",
     setting_notification_desc: "Notificación persistente de HA cuando se supera una fecha límite",
     setting_hide_na_desc: "Ocultar en la lista los mantenimientos no aplicables",
@@ -591,6 +668,7 @@ const I18N = {
     photo_remove_btn: "Quitar",
     tab_maintenance: "🔧 Mantenimiento",
     tab_history: "📓 Historial",
+    tab_invoices: "🧾 Facturas",
     mileage_linked_to: "vinculado a {entity}",
     mileage_unlink_btn: "Desvincular",
     mileage_label_colon: "Kilometraje:",
@@ -684,6 +762,28 @@ const I18N = {
     alert_missing_item_name: "Ponga un nombre a este mantenimiento.",
     prompt_intervention_done: "Intervención realizada:",
     prompt_mileage: "Kilometraje:",
+    prompt_notes: "Comentario (opcional):",
+    label_note_optional: "Comentario (opcional)",
+    placeholder_note_example: "ej.: escobillas revisadas, bombilla del faro cambiada, neumático delantero derecho sustituido (pinchazo)…",
+    multi_select_toggle_btn: "☑️ Varias intervenciones",
+    multi_select_cancel_btn: "✕ Cancelar selección",
+    batch_panel_title_one: "1 intervención seleccionada",
+    batch_panel_title_other: "{n} intervenciones seleccionadas",
+    batch_empty_hint: "Marque las intervenciones realizadas juntas (misma visita al taller).",
+    batch_save_btn_one: "Guardar esta intervención",
+    batch_save_btn_other: "Guardar estas {n} intervenciones",
+    invoice_add_btn: "📎 Añadir una factura",
+    invoice_naming_hint: "Los archivos se nombran automáticamente (fecha + nombre + id) en una carpeta dedicada a este vehículo.",
+    invoice_empty: "Todavía no hay facturas para este vehículo.",
+    invoice_remove_btn: "Eliminar",
+    invoice_unlink_btn: "Desvincular",
+    link_invoice_btn: "🧾 Vincular una factura existente",
+    link_invoice_none: "Aún no hay facturas guardadas para este vehículo — añade una desde la pestaña Facturas.",
+    prompt_invoice_label: "Etiqueta (opcional):",
+    confirm_remove_invoice: "¿Eliminar definitivamente esta factura?",
+    alert_invoice_too_large: "Archivo demasiado grande (10 MB máx.).",
+    alert_invoice_bad_type: "Tipo de archivo no compatible (solo PDF o foto/imagen).",
+    alert_invoice_upload_failed: "Error al subir la factura: {msg}",
   },
   it: {
     settings_language_readonly_note: "impostata all'installazione dell'integrazione, oppure dalle sue Opzioni (Impostazioni → Dispositivi e servizi → CARnet → Configura).",
@@ -710,6 +810,8 @@ const I18N = {
     theme_horlogerie: "Bottega dell'Orologiaio",
     theme_carbone: "Carbonio e Titanio",
     theme_vintage: "Atelier Vintage",
+    theme_ha_light: "Home Assistant chiaro",
+    theme_ha_dark: "Home Assistant scuro",
     settings_notifications_section: "Notifiche e visualizzazione",
     setting_notification_desc: "Notifica persistente HA quando una scadenza è superata",
     setting_hide_na_desc: "Nascondi nell'elenco gli interventi non applicabili",
@@ -758,6 +860,7 @@ const I18N = {
     photo_remove_btn: "Rimuovi",
     tab_maintenance: "🔧 Manutenzione",
     tab_history: "📓 Cronologia",
+    tab_invoices: "🧾 Fatture",
     mileage_linked_to: "collegato a {entity}",
     mileage_unlink_btn: "Scollega",
     mileage_label_colon: "Chilometraggio:",
@@ -851,6 +954,28 @@ const I18N = {
     alert_missing_item_name: "Assegnate un nome a questo intervento.",
     prompt_intervention_done: "Intervento eseguito:",
     prompt_mileage: "Chilometraggio:",
+    prompt_notes: "Commento (facoltativo):",
+    label_note_optional: "Commento (facoltativo)",
+    placeholder_note_example: "es.: tergicristalli controllati, lampadina del faro sostituita, pneumatico anteriore destro cambiato (foratura)…",
+    multi_select_toggle_btn: "☑️ Interventi multipli",
+    multi_select_cancel_btn: "✕ Annulla selezione",
+    batch_panel_title_one: "1 intervento selezionato",
+    batch_panel_title_other: "{n} interventi selezionati",
+    batch_empty_hint: "Seleziona gli interventi eseguiti insieme (stessa visita in officina).",
+    batch_save_btn_one: "Salva questo intervento",
+    batch_save_btn_other: "Salva questi {n} interventi",
+    invoice_add_btn: "📎 Aggiungi una fattura",
+    invoice_naming_hint: "I file vengono nominati automaticamente (data + nome + id) in una cartella dedicata a questo veicolo.",
+    invoice_empty: "Nessuna fattura per questo veicolo.",
+    invoice_remove_btn: "Elimina",
+    invoice_unlink_btn: "Scollega",
+    link_invoice_btn: "🧾 Collega una fattura esistente",
+    link_invoice_none: "Nessuna fattura salvata per questo veicolo — aggiungine una dalla scheda Fatture.",
+    prompt_invoice_label: "Etichetta (facoltativa):",
+    confirm_remove_invoice: "Eliminare definitivamente questa fattura?",
+    alert_invoice_too_large: "File troppo grande (10 MB max).",
+    alert_invoice_bad_type: "Tipo di file non supportato (solo PDF o foto/immagine).",
+    alert_invoice_upload_failed: "Caricamento della fattura non riuscito: {msg}",
   },
 };
 
@@ -871,8 +996,14 @@ const THEMES_META = [
   { id: "horlogerie", name: "Manufacture horlogère", icon: "⏱️", swatches: ["#0F1B2E", "#8A94A6", "#A6192E", "#C9CDD3"] },
   { id: "carbone", name: "Carbone et titane", icon: "⚡", swatches: ["#0B0C0E", "#4A5560", "#35D0E0", "#9AA3AC"] },
   { id: "vintage", name: "Atelier vintage", icon: "🧭", swatches: ["#EDE6D6", "#5B3A29", "#14532D", "#B08D57"] },
+  { id: "ha_light", name: "Home Assistant clair", icon: "☀️", swatches: ["#FAFAFA", "#03A9F4", "#212121", "#E0E0E0"] },
+  { id: "ha_dark", name: "Home Assistant nuit", icon: "🌙", swatches: ["#1C1C1C", "#58A6FF", "#E1E1E1", "#383838"] },
 ];
 const VALID_THEME_IDS = THEMES_META.map((t) => t.id);
+// Garde-fou côté client, cohérent avec MAX_INVOICE_SIZE_BYTES côté backend
+// (invoices.py) — évite d'attendre l'aller-retour réseau pour un fichier
+// de toute façon rejeté par le serveur.
+const MAX_INVOICE_CLIENT_BYTES = 10 * 1024 * 1024;
 const LANGUAGES_META = [
   { id: "fr", name: "Français", flag: "🇫🇷" },
   { id: "en", name: "English", flag: "🇬🇧" },
@@ -921,6 +1052,8 @@ class CarnetEntretienCard extends HTMLElement {
     // entretiens actuellement dépliés pour reproduire l'attribut "open" à
     // chaque rendu, quelle que soit l'action qui l'a déclenché.
     this._expandedItemIds = new Set();
+    this._multiSelectMode = false; // "entretiens multiples" : coche plusieurs échéances pour les enregistrer en une fois
+    this._selectedBatchItemIds = new Set();
   }
 
   setConfig(config) {
@@ -1281,6 +1414,39 @@ class CarnetEntretienCard extends HTMLElement {
     await this._fetchVehicles();
   }
 
+  async _addInvoice(vehicleId, file, label) {
+    if (file.size > MAX_INVOICE_CLIENT_BYTES) {
+      alert(this._t("alert_invoice_too_large"));
+      return;
+    }
+    const isImage = file.type.startsWith("image/");
+    if (!isImage && file.type !== "application/pdf") {
+      alert(this._t("alert_invoice_bad_type"));
+      return;
+    }
+    // Compression plus légère que la photo véhicule (1600px / qualité 0.85
+    // au lieu de 480px / 0.72) : une facture doit rester lisible (montants,
+    // références), contrairement à une simple vignette.
+    const data = isImage ? await fileToCompressedDataUrl(file, 1600, 0.85) : await fileToDataUrl(file);
+    const mime = isImage ? "image/jpeg" : file.type;
+    await this._ws({
+      type: "add_invoice",
+      data: { vehicle_id: vehicleId, filename: file.name, mime, data, label },
+    });
+    await this._fetchVehicles();
+  }
+
+  async _removeInvoice(vehicleId, invoiceId) {
+    if (!confirm(this._t("confirm_remove_invoice"))) return;
+    await this._ws({ type: "remove_invoice", data: { vehicle_id: vehicleId, invoice_id: invoiceId } });
+    await this._fetchVehicles();
+  }
+
+  async _setLogEntryInvoices(vehicleId, entryId, invoiceIds) {
+    await this._ws({ type: "set_log_entry_invoices", data: { vehicle_id: vehicleId, entry_id: entryId, invoice_ids: invoiceIds } });
+    await this._fetchVehicles();
+  }
+
   async _selectTheme(themeId) {
     if (themeId === this._theme) return;
     this._theme = themeId;
@@ -1512,6 +1678,7 @@ class CarnetEntretienCard extends HTMLElement {
     const tabs = [
       ["entretien", this._t("tab_maintenance")],
       ["historique", this._t("tab_history")],
+      ["factures", this._t("tab_invoices")],
     ];
     return `
       <div class="detail-header">
@@ -1553,7 +1720,7 @@ class CarnetEntretienCard extends HTMLElement {
         ${tabs.map(([id, label]) => `<div class="tab ${this._tab === id ? "active" : ""}" data-tab="${id}">${label}</div>`).join("")}
       </div>
       <div class="tab-content">
-        ${this._tab === "entretien" ? this._renderTabEntretien(v) : this._renderTabHistorique(v)}
+        ${this._tab === "entretien" ? this._renderTabEntretien(v) : this._tab === "historique" ? this._renderTabHistorique(v) : this._renderTabFactures(v)}
       </div>
     `;
   }
@@ -1731,15 +1898,68 @@ class CarnetEntretienCard extends HTMLElement {
     return `
       <div class="toolbar">
         <button class="btn small ghost" id="refresh-plan-btn">${this._t("plan_regenerate_btn")}</button>
-        ${annualKm ? `<span class="muted small">${this._t("plan_annual_km", { km: fmtKm(annualKm) })}</span>` : ""}
+        <span style="display:flex;align-items:center;gap:6px;">
+          ${annualKm ? `<span class="muted small">${this._t("plan_annual_km", { km: fmtKm(annualKm) })}</span>` : ""}
+          <button class="btn small ${this._multiSelectMode ? "primary" : "ghost"}" id="multi-select-toggle-btn">${
+            this._multiSelectMode ? this._t("multi_select_cancel_btn") : this._t("multi_select_toggle_btn")
+          }</button>
+        </span>
       </div>
       ${hiddenCount ? `<div class="muted small" style="margin-bottom:8px;">${this._t("plan_hidden_count", { n: hiddenCount })}</div>` : ""}
+      ${this._renderBatchPanel(v)}
       <div class="plan-list">
         ${items.map((it) => this._renderPlanRow(it, v)).join("")}
       </div>
       <button class="btn small ghost full" id="add-item-btn" style="margin-top:10px;">${this._t("plan_add_item_btn")}</button>
       <div id="add-item-form" class="add-item-form" style="display:none;"></div>
     `;
+  }
+
+  _renderBatchPanel(v) {
+    if (!this._multiSelectMode) return "";
+    const allItems = v.maintenance_plan || [];
+    const selected = allItems.filter((it) => this._selectedBatchItemIds.has(it.id));
+    if (!selected.length) {
+      return `<div class="batch-panel muted small">${this._t("batch_empty_hint")}</div>`;
+    }
+    return `
+      <div class="batch-panel">
+        <div class="batch-panel-head">${this._t(selected.length > 1 ? "batch_panel_title_other" : "batch_panel_title_one", { n: selected.length })}</div>
+        <div class="muted small" style="margin-bottom:8px;">${selected.map((it) => esc(it.name)).join(" · ")}</div>
+        <div class="row-2">
+          <label>${this._t("label_intervention_date")}
+            <input type="date" id="batch-date-input" value="${todayIso()}" max="${todayIso()}" />
+          </label>
+          <label>${this._t("generic_mileage_label")}
+            <input type="number" id="batch-km-input" value="${v.mileage}" min="0" />
+          </label>
+        </div>
+        <label class="full-label">${this._t("label_note_optional")}
+          <textarea id="batch-notes-input" rows="2" placeholder="${this._t("placeholder_note_example")}"></textarea>
+        </label>
+        ${this._renderInvoicePicker(v, "batch", [])}
+        <button class="btn primary full" id="batch-save-btn">${this._t(selected.length > 1 ? "batch_save_btn_other" : "batch_save_btn_one", { n: selected.length })}</button>
+      </div>`;
+  }
+
+  _renderInvoicePicker(v, itemId, selectedIds) {
+    const invoices = (v.invoices || []).slice().sort((a, b) => (b.uploaded_at || 0) - (a.uploaded_at || 0));
+    if (!invoices.length) {
+      return `<div class="muted small" style="margin-bottom:8px;">${this._t("link_invoice_none")}</div>`;
+    }
+    return `
+      <div class="invoice-picker">
+        <div class="section-label" style="margin:4px 2px 6px;">${this._t("link_invoice_btn")}</div>
+        ${invoices
+          .map(
+            (inv) => `
+          <label class="invoice-picker-row">
+            <input type="checkbox" class="log-invoice-cb" data-item-id="${itemId}" data-invoice-id="${inv.id}" ${selectedIds.includes(inv.id) ? "checked" : ""} />
+            <span>${inv.mime === "application/pdf" ? "📄" : "🖼️"} ${esc(inv.label || inv.original_filename)}</span>
+          </label>`
+          )
+          .join("")}
+      </div>`;
   }
 
   _renderPlanRow(it, v) {
@@ -1785,7 +2005,8 @@ class CarnetEntretienCard extends HTMLElement {
     }
 
     const isOpen = this._expandedItemIds.has(it.id);
-    return `
+    const showBatchCb = this._multiSelectMode && !isNA;
+    const details = `
       <details class="plan-row ${isNA ? "na" : ""}" data-item-id="${it.id}" ${isOpen ? "open" : ""}>
         <summary class="plan-row-summary">${summaryBody}</summary>
         <div class="plan-row-edit">
@@ -1802,6 +2023,10 @@ class CarnetEntretienCard extends HTMLElement {
           <div class="muted small" style="margin-bottom:10px;">
             🔧 ${it.last_done_date ? `<b>${fmtDate(it.last_done_date)}</b> — <b>${fmtKm(it.last_done_km)}</b>` : this._t("last_done_unset")}
           </div>
+          <label class="full-label">${this._t("label_note_optional")}
+            <textarea class="log-notes-input" data-item-id="${it.id}" rows="2" placeholder="${this._t("placeholder_note_example")}"></textarea>
+          </label>
+          ${this._renderInvoicePicker(v, it.id, [])}
           <button class="btn primary full done-today-btn" data-item-id="${it.id}" data-item-name="${esc(it.name)}">${this._t("done_today_btn", { km: fmtKm(v.mileage) })}</button>
           <div class="edit-divider"><span>${this._t("section_earlier_date")}</span></div>
           <div class="row-2">
@@ -1832,6 +2057,15 @@ class CarnetEntretienCard extends HTMLElement {
           }
         </div>
       </details>`;
+    if (!showBatchCb) return details;
+    const checked = this._selectedBatchItemIds.has(it.id);
+    return `
+      <div class="plan-row-wrap">
+        <label class="batch-select" title="${this._t("multi_select_toggle_btn")}">
+          <input type="checkbox" class="batch-select-cb" data-item-id="${it.id}" data-item-name="${esc(it.name)}" ${checked ? "checked" : ""} />
+        </label>
+        <div class="plan-row-wrap-details">${details}</div>
+      </div>`;
   }
 
   _renderDiySection(it) {
@@ -1864,23 +2098,69 @@ class CarnetEntretienCard extends HTMLElement {
 
   _renderTabHistorique(v) {
     const log = (v.maintenance_log || []).slice().reverse();
+    const invoicesById = Object.fromEntries((v.invoices || []).map((inv) => [inv.id, inv]));
     return `
       <div class="toolbar"><button class="btn small ghost" id="add-log-btn">${this._t("history_add_btn")}</button></div>
       ${
         log.length
           ? `<div class="log-list">${log
-              .map(
-                (l) => `
+              .map((l) => {
+                const linkedInvoices = (l.invoice_ids || []).map((id) => invoicesById[id]).filter(Boolean);
+                return `
             <div class="log-item">
               <div><b>${esc(l.item_name) || this._t("history_default_item_name")}</b> — ${fmtKm(l.km)}</div>
               <div class="muted small">${new Date(l.date * 1000).toLocaleDateString("fr-FR")}${l.garage ? " · " + esc(l.garage) : ""}${l.cost ? " · " + l.cost + " €" : ""}</div>
               ${l.notes ? `<div class="small">${esc(l.notes)}</div>` : ""}
-            </div>`
-              )
+              ${
+                linkedInvoices.length
+                  ? `<div class="log-item-invoices">
+                      ${linkedInvoices
+                        .map(
+                          (inv) => `
+                        <span class="invoice-chip">
+                          <a href="/api/carnet_entretien/invoice/${inv.id}" target="_blank" rel="noopener">${inv.mime === "application/pdf" ? "📄" : "🖼️"} ${esc(inv.label || inv.original_filename)}</a>
+                          <button class="invoice-chip-unlink" data-entry-id="${l.id}" data-invoice-id="${inv.id}" title="${this._t("invoice_unlink_btn")}">✕</button>
+                        </span>`
+                        )
+                        .join("")}
+                    </div>`
+                  : ""
+              }
+            </div>`;
+              })
               .join("")}</div>`
           : `<div class="empty">${this._t("history_empty")}</div>`
       }
     `;
+  }
+
+  _renderTabFactures(v) {
+    const invoices = (v.invoices || []).slice().sort((a, b) => (b.uploaded_at || 0) - (a.uploaded_at || 0));
+    return `
+      <div class="toolbar"><button class="btn small primary" id="invoice-add-btn">${this._t("invoice_add_btn")}</button></div>
+      <input type="file" id="invoice-input" accept="application/pdf,image/*" style="display:none;" />
+      <div class="muted small" style="margin:2px 0 12px;">${this._t("invoice_naming_hint")}</div>
+      ${
+        invoices.length
+          ? `<div class="invoice-list">${invoices.map((inv) => this._renderInvoiceRow(inv)).join("")}</div>`
+          : `<div class="empty">${this._t("invoice_empty")}</div>`
+      }
+    `;
+  }
+
+  _renderInvoiceRow(inv) {
+    const icon = inv.mime === "application/pdf" ? "📄" : "🖼️";
+    return `
+      <div class="invoice-row">
+        <a class="invoice-link" href="/api/carnet_entretien/invoice/${inv.id}" target="_blank" rel="noopener">
+          <span class="invoice-icon">${icon}</span>
+          <span class="invoice-info">
+            <span class="invoice-name">${esc(inv.label || inv.original_filename)}</span>
+            <span class="muted small">${fmtDate(inv.uploaded_at)} · ${fmtBytes(inv.size)}</span>
+          </span>
+        </a>
+        <button class="link-btn invoice-remove-btn" data-invoice-id="${inv.id}">${this._t("invoice_remove_btn")}</button>
+      </div>`;
   }
 
   // ---------------------------------------------------------------- events
@@ -2076,11 +2356,17 @@ class CarnetEntretienCard extends HTMLElement {
 
     root.querySelectorAll(".done-today-btn").forEach((btn) =>
       btn.addEventListener("click", () => {
+        const itemId = btn.dataset.itemId;
+        const notesInput = root.querySelector(`.log-notes-input[data-item-id="${itemId}"]`);
+        const notes = notesInput && notesInput.value.trim() ? notesInput.value.trim() : undefined;
+        const invoice_ids = Array.from(root.querySelectorAll(`.log-invoice-cb[data-item-id="${itemId}"]:checked`)).map((cb) => cb.dataset.invoiceId);
         this._logMaintenance(this._selectedId, {
-          item_id: btn.dataset.itemId,
+          item_id: itemId,
           item_name: btn.dataset.itemName,
           km: this._selectedVehicle.mileage,
           date: Math.floor(Date.now() / 1000),
+          notes,
+          invoice_ids: invoice_ids.length ? invoice_ids : undefined,
         });
       })
     );
@@ -2090,15 +2376,54 @@ class CarnetEntretienCard extends HTMLElement {
         const itemName = btn.dataset.itemName;
         const dateInput = root.querySelector(`.log-date-input[data-item-id="${itemId}"]`);
         const kmInput = root.querySelector(`.log-km-input[data-item-id="${itemId}"]`);
+        const notesInput = root.querySelector(`.log-notes-input[data-item-id="${itemId}"]`);
         const km = parseInt(kmInput.value, 10);
         if (!dateInput.value || isNaN(km)) {
           alert(this._t("alert_invalid_date_km"));
           return;
         }
         const dateTs = Math.floor(new Date(dateInput.value + "T12:00:00").getTime() / 1000);
-        this._logMaintenance(this._selectedId, { item_id: itemId, item_name: itemName, km, date: dateTs });
+        const notes = notesInput && notesInput.value.trim() ? notesInput.value.trim() : undefined;
+        const invoice_ids = Array.from(root.querySelectorAll(`.log-invoice-cb[data-item-id="${itemId}"]:checked`)).map((cb) => cb.dataset.invoiceId);
+        this._logMaintenance(this._selectedId, { item_id: itemId, item_name: itemName, km, date: dateTs, notes, invoice_ids: invoice_ids.length ? invoice_ids : undefined });
       })
     );
+
+    // ---- Entretiens multiples : sélection groupée + enregistrement en une fois ----
+    root.getElementById("multi-select-toggle-btn")?.addEventListener("click", () => {
+      this._multiSelectMode = !this._multiSelectMode;
+      if (!this._multiSelectMode) this._selectedBatchItemIds.clear();
+      this._render();
+    });
+    root.querySelectorAll(".batch-select-cb").forEach((cb) =>
+      cb.addEventListener("change", (e) => {
+        const id = e.target.dataset.itemId;
+        if (e.target.checked) this._selectedBatchItemIds.add(id);
+        else this._selectedBatchItemIds.delete(id);
+        this._render();
+      })
+    );
+    root.getElementById("batch-save-btn")?.addEventListener("click", async () => {
+      const dateInput = root.getElementById("batch-date-input");
+      const kmInput = root.getElementById("batch-km-input");
+      const notesInput = root.getElementById("batch-notes-input");
+      const km = parseInt(kmInput.value, 10);
+      if (!dateInput.value || isNaN(km)) {
+        alert(this._t("alert_invalid_date_km"));
+        return;
+      }
+      const dateTs = Math.floor(new Date(dateInput.value + "T12:00:00").getTime() / 1000);
+      const notes = notesInput.value.trim() ? notesInput.value.trim() : undefined;
+      const invoiceIds = Array.from(root.querySelectorAll(`.log-invoice-cb[data-item-id="batch"]:checked`)).map((cb) => cb.dataset.invoiceId);
+      const allItems = this._selectedVehicle.maintenance_plan || [];
+      const selected = allItems.filter((it) => this._selectedBatchItemIds.has(it.id));
+      for (const it of selected) {
+        await this._logMaintenance(this._selectedId, { item_id: it.id, item_name: it.name, km, date: dateTs, notes, invoice_ids: invoiceIds.length ? invoiceIds : undefined });
+      }
+      this._selectedBatchItemIds.clear();
+      this._multiSelectMode = false;
+      this._render();
+    });
 
     // Mémorise l'ouverture/fermeture manuelle de chaque encart d'entretien
     // pour la reproduire au prochain _render() (voir _expandedItemIds dans
@@ -2170,8 +2495,37 @@ class CarnetEntretienCard extends HTMLElement {
       if (!item_name) return;
       const km = prompt(this._t("prompt_mileage"), this._selectedVehicle.mileage);
       if (km === null) return;
-      this._logMaintenance(this._selectedId, { item_name, km: parseInt(km, 10) });
+      const notesRaw = prompt(this._t("prompt_notes"));
+      const notes = notesRaw && notesRaw.trim() ? notesRaw.trim() : undefined;
+      this._logMaintenance(this._selectedId, { item_name, km: parseInt(km, 10), notes });
     });
+
+    // ---- Onglet Factures ----
+    root.getElementById("invoice-add-btn")?.addEventListener("click", () => {
+      root.getElementById("invoice-input")?.click();
+    });
+    root.getElementById("invoice-input")?.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      e.target.value = ""; // permet de re-sélectionner le même fichier ensuite
+      if (!file) return;
+      const labelRaw = prompt(this._t("prompt_invoice_label"), file.name.replace(/\.[a-zA-Z0-9]+$/, ""));
+      if (labelRaw === null) return; // annulé
+      try {
+        await this._addInvoice(this._selectedId, file, labelRaw.trim() ? labelRaw.trim() : undefined);
+      } catch (err) {
+        alert(this._t("alert_invoice_upload_failed", { msg: err.message || err.code || err }));
+      }
+    });
+    root.querySelectorAll(".invoice-remove-btn").forEach((btn) =>
+      btn.addEventListener("click", () => this._removeInvoice(this._selectedId, btn.dataset.invoiceId))
+    );
+    root.querySelectorAll(".invoice-chip-unlink").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const entry = (this._selectedVehicle.maintenance_log || []).find((l) => l.id === btn.dataset.entryId);
+        const remaining = (entry?.invoice_ids || []).filter((id) => id !== btn.dataset.invoiceId);
+        this._setLogEntryInvoices(this._selectedId, btn.dataset.entryId, remaining);
+      })
+    );
 
     this._mountEntityPicker();
   }
@@ -2230,6 +2584,23 @@ function todayIso() {
 }
 function isoDateFromUnix(unixSeconds) {
   return new Date(unixSeconds * 1000).toISOString().slice(0, 10);
+}
+function fmtBytes(n) {
+  if (n == null) return "";
+  if (n < 1024) return `${n} o`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} Ko`;
+  return `${(n / (1024 * 1024)).toFixed(1)} Mo`;
+}
+// Lecture brute en base64 (sans passer par un <canvas>, contrairement à
+// fileToCompressedDataUrl) : utilisée pour les PDF, qu'on ne peut pas
+// redimensionner comme une image.
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 // Compresse/redimensionne une image côté navigateur avant envoi, pour ne
@@ -2393,7 +2764,55 @@ const STYLE = `
   .plan-row-meta { margin-top:5px; }
   .plan-row-edit { padding: 12px 2px 4px; }
   .plan-row-edit label { display:flex; flex-direction:column; gap:4px; font-size:0.8em; color: var(--ce-text-muted); margin-bottom:8px; }
-  .plan-row-edit input { padding: 7px 9px; border-radius: 8px; border: 1px solid var(--ce-border); background: var(--ce-surface-2); color: var(--ce-text); font-size: 0.9em; width:100%; box-sizing:border-box; }
+  .plan-row-edit input, .plan-row-edit textarea, .batch-panel input, .batch-panel textarea {
+    padding: 7px 9px; border-radius: 8px; border: 1px solid var(--ce-border); background: var(--ce-surface-2);
+    color: var(--ce-text); font-size: 0.9em; width:100%; box-sizing:border-box; font-family: inherit; resize: vertical;
+  }
+  .full-label { display:flex; flex-direction:column; gap:4px; font-size:0.8em; color: var(--ce-text-muted); margin-bottom:8px; }
+
+  /* ---------------- Entretiens multiples ---------------- */
+  .plan-row-wrap { display:flex; align-items:flex-start; gap:6px; }
+  .plan-row-wrap-details { flex:1; min-width:0; }
+  .batch-select { padding-top: 14px; flex-shrink:0; }
+  .batch-select input { width:18px; height:18px; accent-color: var(--ce-accent); }
+  .batch-panel {
+    background: var(--ce-surface); border: 1px solid var(--ce-accent); border-radius: 10px;
+    padding: 10px 12px; margin-bottom: 10px;
+  }
+  .batch-panel-head { font-weight:600; font-size:0.9em; margin-bottom:4px; }
+  .batch-panel .row-2 { margin-bottom: 8px; }
+  .batch-panel label { display:flex; flex-direction:column; gap:4px; font-size:0.8em; color: var(--ce-text-muted); }
+
+  /* ---------------- Factures ---------------- */
+  .invoice-list { display:flex; flex-direction:column; gap:8px; }
+  .invoice-row {
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background: var(--ce-surface); border:1px solid var(--ce-border); border-radius:10px; padding:8px 10px;
+  }
+  .invoice-link { display:flex; align-items:center; gap:10px; text-decoration:none; color: var(--ce-text); min-width:0; flex:1; }
+  .invoice-icon { font-size:1.3em; flex-shrink:0; }
+  .invoice-info { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .invoice-name { font-size:0.9em; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .invoice-remove-btn { flex-shrink:0; }
+
+  .invoice-picker { margin-bottom:8px; }
+  .invoice-picker-row {
+    display:flex; align-items:center; gap:8px; font-size:0.85em; color: var(--ce-text);
+    padding:4px 2px; cursor:pointer;
+  }
+  .invoice-picker-row input { width:16px; height:16px; accent-color: var(--ce-accent); flex-shrink:0; }
+
+  .log-item-invoices { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .invoice-chip {
+    display:inline-flex; align-items:center; gap:4px; background: var(--ce-surface-2);
+    border:1px solid var(--ce-border); border-radius:999px; padding:3px 8px; font-size:0.78em;
+  }
+  .invoice-chip a { color: var(--ce-accent); text-decoration:none; }
+  .invoice-chip-unlink {
+    background:none; border:none; padding:0; margin:0; color: var(--ce-text-dim); cursor:pointer;
+    font-size:1em; line-height:1; font-family:inherit;
+  }
+  .invoice-chip-unlink:hover { color: var(--ce-danger-text); }
   .edit-divider { display:flex; align-items:center; gap:8px; margin:12px 0; font-size:0.7em; color: var(--ce-text-dim); }
   .edit-divider::before, .edit-divider::after { content:""; flex:1; height:1px; background: var(--ce-border); }
   .bar { height:5px; border-radius:3px; background: var(--ce-border); overflow:hidden; }
@@ -2455,6 +2874,38 @@ const STYLE = `
     --ce-font-header: Georgia, 'Times New Roman', serif;
     --ce-status-ok:#14532D; --ce-status-bientot:#B08D57; --ce-status-echue:#8C2F2F; --ce-status-non_applicable:#A8987C;
     --ce-severity-mineur:#14532D; --ce-severity-majeur:#B08D57; --ce-severity-securite:#8C2F2F;
+  }
+
+  /* Thèmes "natifs" : ne fixent pas de couleurs en dur, ils reprennent les
+     variables CSS exposées par le thème Home Assistant actif du tableau de
+     bord (--primary-color, --card-background-color...), avec un repli sur
+     la palette Material par défaut de HA si une variable n'est pas définie
+     (dashboard sans thème personnalisé). "clair" et "nuit" utilisent les
+     mêmes variables : c'est le thème HA choisi par l'utilisateur (ou le
+     mode clair/sombre du navigateur en mode auto) qui détermine le rendu
+     réel, exactement comme le reste du tableau de bord. */
+  ha-card[data-theme="ha_light"], ha-card[data-theme="ha_dark"] {
+    --ce-bg: var(--ha-card-background, var(--card-background-color, #FAFAFA));
+    --ce-surface: var(--ha-card-background, var(--card-background-color, #FFFFFF));
+    --ce-surface-2: var(--secondary-background-color, #F0F0F0);
+    --ce-border: var(--divider-color, #E0E0E0);
+    --ce-divider-style: solid;
+    --ce-accent: var(--primary-color, #03A9F4);
+    --ce-accent-contrast: var(--text-primary-color, #FFFFFF);
+    --ce-text: var(--primary-text-color, #212121);
+    --ce-text-muted: var(--secondary-text-color, #727272);
+    --ce-text-dim: var(--disabled-text-color, #BDBDBD);
+    --ce-chip-text: var(--text-primary-color, #FFFFFF);
+    --ce-danger: var(--error-color, #DB4437);
+    --ce-danger-text: var(--error-color, #DB4437);
+    --ce-font-header: var(--paper-font-headline_-_font-family, var(--primary-font-family, Roboto, "Noto Sans", sans-serif));
+    --ce-status-ok: var(--success-color, #43A047);
+    --ce-status-bientot: var(--warning-color, #FF9800);
+    --ce-status-echue: var(--error-color, #DB4437);
+    --ce-status-non_applicable: var(--disabled-text-color, #BDBDBD);
+    --ce-severity-mineur: var(--success-color, #43A047);
+    --ce-severity-majeur: var(--warning-color, #FF9800);
+    --ce-severity-securite: var(--error-color, #DB4437);
   }
 `;
 
