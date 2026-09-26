@@ -8,16 +8,20 @@ Architecture :
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 import logging
+import shutil
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import voluptuous as vol
+from aiohttp import web
 
 from homeassistant.components import persistent_notification, websocket_api
-from homeassistant.components.http import StaticPathConfig
+from homeassistant.components.http import HomeAssistantView, StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
@@ -39,6 +43,7 @@ from .const import (
     STORAGE_VERSION,
 )
 from .gemini_client import GeminiClient, GeminiError
+from .invoices import ALLOWED_MIME_EXTENSIONS, MAX_INVOICE_SIZE_BYTES, build_stored_filename, vehicle_invoice_dir
 from .maintenance_catalog import get_catalog
 from .storage import CarnetStore
 from .utils import compute_plan_status, estimate_annual_km
@@ -120,6 +125,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _async_register_websocket_api(hass, entry)
     _async_register_services(hass, entry)
     await _async_register_static_path(hass)
+    _async_register_invoice_view(hass)
 
     for vehicle_id in list(store.vehicles.keys()):
         _async_sync_mileage_listener(hass, entry, vehicle_id)
@@ -315,6 +321,63 @@ def _async_sync_mileage_listener(hass: HomeAssistant, entry: ConfigEntry, vehicl
             return
         if vehicle.get("mileage") != mileage:
             hass.async_create_task(store.async_update_mileage(vehicle_id, mileage))
+
+
+class InvoiceView(HomeAssistantView):
+    """Sert un fichier de facture déjà uploadé, à une URL stable
+    /api/carnet_entretien/invoice/<invoice_id>.
+
+    Volontairement une HomeAssistantView (authentification exigée par
+    défaut) plutôt qu'un chemin statique façon CARD_URL ci-dessus : ces
+    fichiers contiennent des données personnelles (nom, adresse, montants)
+    et ne doivent pas être accessibles sans session HA valide, contrairement
+    au JS de la carte qui peut rester public sans conséquence.
+    """
+
+    url = "/api/carnet_entretien/invoice/{invoice_id}"
+    name = "api:carnet_entretien:invoice"
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        self._hass = hass
+
+    def _find(self, invoice_id: str) -> tuple[str, dict[str, Any]] | None:
+        for entry_data in self._hass.data.get(DOMAIN, {}).values():
+            if not isinstance(entry_data, dict):
+                continue  # ignore les flags simples (_static_registered...)
+            store: CarnetStore | None = entry_data.get("store")
+            if not store:
+                continue
+            for vehicle_id, vehicle in store.vehicles.items():
+                for invoice in vehicle.get("invoices", []):
+                    if invoice.get("id") == invoice_id:
+                        return vehicle_id, invoice
+        return None
+
+    async def get(self, request: web.Request, invoice_id: str) -> web.Response:
+        found = self._find(invoice_id)
+        if not found:
+            return web.Response(status=404)
+        vehicle_id, invoice = found
+        stored_filename = invoice.get("stored_filename", "")
+        path = vehicle_invoice_dir(self._hass, vehicle_id) / stored_filename
+        exists = await self._hass.async_add_executor_job(path.is_file)
+        if not exists:
+            return web.Response(status=404)
+        # Nom de téléchargement construit à partir du nom stocké (déjà
+        # assaini par build_stored_filename), jamais du nom d'origine tel
+        # quel : celui-ci vient du navigateur de l'utilisateur et pourrait
+        # contenir des caractères cassant l'en-tête HTTP.
+        return web.FileResponse(
+            path,
+            headers={"Content-Disposition": f'inline; filename="{stored_filename}"'},
+        )
+
+
+def _async_register_invoice_view(hass: HomeAssistant) -> None:
+    if hass.data[DOMAIN].get("_invoice_view_registered"):
+        return
+    hass.http.register_view(InvoiceView(hass))
+    hass.data[DOMAIN]["_invoice_view_registered"] = True
 
 
 async def _async_register_static_path(hass: HomeAssistant) -> None:
@@ -647,6 +710,19 @@ async def _remove_vehicle(hass: HomeAssistant, entry: ConfigEntry, store: Carnet
     if unsub:
         unsub()
     await store.async_remove_vehicle(vehicle_id)
+
+    # Le dossier de factures n'est pas dans le Store JSON (voir invoices.py) :
+    # sa suppression doit donc être gérée explicitement ici, sinon les
+    # fichiers survivraient indéfiniment sur disque à la suppression du
+    # véhicule.
+    directory = vehicle_invoice_dir(hass, vehicle_id)
+
+    def _rmtree() -> None:
+        if directory.is_dir():
+            shutil.rmtree(directory, ignore_errors=True)
+
+    await hass.async_add_executor_job(_rmtree)
+
     async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
 
 
@@ -899,6 +975,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
             vol.Optional("cost"): vol.Coerce(float),
             vol.Optional("garage"): str,
             vol.Optional("notes"): str,
+            vol.Optional("invoice_ids"): [str],
         }
     )
     @websocket_api.async_response
@@ -1045,7 +1122,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
     @websocket_api.websocket_command(
         {
             vol.Required("type"): f"{DOMAIN}/set_settings",
-            vol.Optional("theme"): vol.In(["gt_cuir", "horlogerie", "carbone", "vintage"]),
+            vol.Optional("theme"): vol.In(["gt_cuir", "horlogerie", "carbone", "vintage", "ha_light", "ha_dark"]),
             # BUG CORRIGÉ (v1.3.2) : seule la clé "theme" était déclarée ici.
             # Le schéma voluptuous d'une commande websocket_api est strict par
             # défaut (extra keys not allowed) — tout réglage envoyé par la
@@ -1096,6 +1173,111 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
         connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(vehicle, store.get_settings().get("language", "fr")) if vehicle else None})
 
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): f"{DOMAIN}/add_invoice",
+            vol.Required("vehicle_id"): str,
+            vol.Required("filename"): str,
+            vol.Required("mime"): str,
+            vol.Required("data"): str,  # base64, avec ou sans préfixe "data:...;base64,"
+            vol.Optional("label"): str,
+            # Si fourni, lie immédiatement le document à cette intervention
+            # déjà enregistrée (utilisé par l'onglet Historique) ; l'ajout
+            # depuis l'onglet Factures laisse ce champ vide.
+            vol.Optional("entry_id"): str,
+        }
+    )
+    @websocket_api.async_response
+    async def ws_add_invoice(hass, connection, msg):
+        vehicle = store.get_vehicle(msg["vehicle_id"])
+        if not vehicle:
+            connection.send_error(msg["id"], "not_found", "Véhicule inconnu")
+            return
+        mime = msg["mime"]
+        if mime not in ALLOWED_MIME_EXTENSIONS:
+            connection.send_error(msg["id"], "invalid_format", "Type de fichier non supporté (PDF ou photo uniquement)")
+            return
+        raw = msg["data"]
+        if raw.strip().lower().startswith("data:") and "," in raw:
+            raw = raw.split(",", 1)[1]
+        try:
+            file_bytes = base64.b64decode(raw, validate=True)
+        except (binascii.Error, ValueError):
+            connection.send_error(msg["id"], "invalid_format", "Fichier illisible")
+            return
+        if len(file_bytes) > MAX_INVOICE_SIZE_BYTES:
+            connection.send_error(msg["id"], "too_large", "Fichier trop volumineux (10 Mo max)")
+            return
+        try:
+            stored_filename = build_stored_filename(msg["filename"], mime)
+        except ValueError:
+            connection.send_error(msg["id"], "invalid_format", "Type de fichier non supporté")
+            return
+        directory = vehicle_invoice_dir(hass, msg["vehicle_id"])
+
+        def _write() -> None:
+            directory.mkdir(parents=True, exist_ok=True)
+            (directory / stored_filename).write_bytes(file_bytes)
+
+        try:
+            await hass.async_add_executor_job(_write)
+        except OSError:
+            _LOGGER.exception("Échec de l'écriture de la facture sur disque (%s)", directory)
+            connection.send_error(msg["id"], "write_failed", "Échec de l'enregistrement du fichier")
+            return
+
+        invoice = await store.async_add_invoice(
+            msg["vehicle_id"],
+            {
+                "stored_filename": stored_filename,
+                "original_filename": msg["filename"],
+                "mime": mime,
+                "size": len(file_bytes),
+                "label": msg.get("label", ""),
+            },
+        )
+        if msg.get("entry_id") and invoice:
+            entry = next((e for e in vehicle.get("maintenance_log", []) if e.get("id") == msg["entry_id"]), None)
+            if entry is not None:
+                ids = list(entry.get("invoice_ids") or []) + [invoice["id"]]
+                await store.async_set_log_entry_invoices(msg["vehicle_id"], msg["entry_id"], ids)
+        async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        connection.send_result(msg["id"], {"invoice": invoice})
+
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): f"{DOMAIN}/remove_invoice",
+            vol.Required("vehicle_id"): str,
+            vol.Required("invoice_id"): str,
+        }
+    )
+    @websocket_api.async_response
+    async def ws_remove_invoice(hass, connection, msg):
+        removed = await store.async_remove_invoice(msg["vehicle_id"], msg["invoice_id"])
+        if removed:
+            path = vehicle_invoice_dir(hass, msg["vehicle_id"]) / removed.get("stored_filename", "")
+
+            def _delete() -> None:
+                path.unlink(missing_ok=True)
+
+            await hass.async_add_executor_job(_delete)
+        async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        connection.send_result(msg["id"], {"ok": removed is not None})
+
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): f"{DOMAIN}/set_log_entry_invoices",
+            vol.Required("vehicle_id"): str,
+            vol.Required("entry_id"): str,
+            vol.Required("invoice_ids"): [str],
+        }
+    )
+    @websocket_api.async_response
+    async def ws_set_log_entry_invoices(hass, connection, msg):
+        entry = await store.async_set_log_entry_invoices(msg["vehicle_id"], msg["entry_id"], msg["invoice_ids"])
+        async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        connection.send_result(msg["id"], {"entry": entry})
+
     for handler in (
         ws_get_vehicles, ws_search_referentiel, ws_search_motorisations, ws_add_vehicle, ws_remove_vehicle,
         ws_update_mileage, ws_set_mileage_source, ws_refresh_plan, ws_refresh_known_issues,
@@ -1103,6 +1285,6 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         ws_set_item_applicable, ws_set_item_override, ws_add_plan_item, ws_remove_plan_item,
         ws_generate_diy_explanation,
         ws_value_snapshot, ws_log_maintenance, ws_ai_usage, ws_get_settings, ws_set_settings,
-        ws_set_photo,
+        ws_set_photo, ws_add_invoice, ws_remove_invoice, ws_set_log_entry_invoices,
     ):
         websocket_api.async_register_command(hass, handler)

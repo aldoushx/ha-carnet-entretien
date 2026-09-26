@@ -109,6 +109,7 @@ class CarnetStore:
             "fuel_type": "",
             "vehicle_type": "auto",
             "two_wheeler_type": "",
+            "invoices": [],  # [{id, stored_filename, original_filename, mime, size, uploaded_at, label}]
             **vehicle,
         }
         vehicle["id"] = vehicle_id  # au cas où **vehicle contenait déjà "id"
@@ -159,6 +160,57 @@ class CarnetStore:
         vehicle["photo"] = photo
         await self.async_save()
         return vehicle
+
+    # ---------- Factures ----------
+    # Contrairement à la photo véhicule (data URL en base64 dans ce même
+    # JSON), les factures sont écrites sur disque par __init__.py — seule
+    # leur métadonnée vit ici, sinon ce fichier grossirait sans limite et
+    # serait relu/réécrit en entier à chaque sauvegarde. Voir invoices.py.
+
+    async def async_add_invoice(self, vehicle_id: str, invoice: dict[str, Any]) -> dict[str, Any] | None:
+        vehicle = self.vehicles.get(vehicle_id)
+        if not vehicle:
+            return None
+        invoice = {"id": new_id(), "uploaded_at": now_ts(), **invoice}
+        vehicle.setdefault("invoices", []).append(invoice)
+        await self.async_save()
+        return invoice
+
+    async def async_remove_invoice(self, vehicle_id: str, invoice_id: str) -> dict[str, Any] | None:
+        """Retire la métadonnée et renvoie l'entrée retirée (pour que l'appelant
+        supprime le fichier correspondant sur disque) — et détache cette
+        facture de toute échéance d'entretien qui la référençait, pour ne
+        jamais laisser un lien mort dans l'historique.
+        """
+        vehicle = self.vehicles.get(vehicle_id)
+        if not vehicle:
+            return None
+        invoices = vehicle.get("invoices", [])
+        removed = next((i for i in invoices if i.get("id") == invoice_id), None)
+        if removed is None:
+            return None
+        vehicle["invoices"] = [i for i in invoices if i.get("id") != invoice_id]
+        for entry in vehicle.get("maintenance_log", []):
+            if invoice_id in (entry.get("invoice_ids") or []):
+                entry["invoice_ids"] = [i for i in entry["invoice_ids"] if i != invoice_id]
+        await self.async_save()
+        return removed
+
+    async def async_set_log_entry_invoices(
+        self, vehicle_id: str, entry_id: str, invoice_ids: list[str]
+    ) -> dict[str, Any] | None:
+        """Lie/délie des factures existantes à une intervention déjà enregistrée
+        (depuis l'onglet Historique) — remplace la liste, ne l'additionne pas.
+        """
+        vehicle = self.vehicles.get(vehicle_id)
+        if not vehicle:
+            return None
+        for entry in vehicle.get("maintenance_log", []):
+            if entry.get("id") == entry_id:
+                entry["invoice_ids"] = invoice_ids
+                await self.async_save()
+                return entry
+        return None
 
     async def async_set_plan(
         self, vehicle_id: str, plan: list[dict[str, Any]], sources_summary: str = ""
