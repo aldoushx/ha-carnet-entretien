@@ -42,8 +42,7 @@ const I18N = {
     theme_horlogerie: "Manufacture horlogère",
     theme_carbone: "Carbone et titane",
     theme_vintage: "Atelier vintage",
-    theme_ha_light: "Home Assistant clair",
-    theme_ha_dark: "Home Assistant nuit",
+    theme_ha_native: "Home Assistant (thème courant)",
     settings_notifications_section: "Notifications & affichage",
     setting_notification_desc: "Notification persistante HA quand une échéance est dépassée",
     setting_hide_na_desc: "Masquer les entretiens non applicables dans la liste",
@@ -158,6 +157,9 @@ const I18N = {
     diy_retry_btn: "🔄 Réessayer",
     diy_generate_btn: "🔧 Comment le faire soi-même ?",
     history_add_btn: "+ Ajouter une intervention",
+    history_delete_btn: "Supprimer cette intervention",
+    confirm_delete_log_entry: "Supprimer définitivement « {name} » de l'historique ? La prochaine échéance de cet entretien sera recalculée en conséquence.",
+    log_link_save_btn: "Enregistrer les liens",
     history_default_item_name: "Intervention",
     history_empty: "Aucune intervention enregistrée.",
     new_item_name_label: "Nom de l'entretien",
@@ -196,7 +198,8 @@ const I18N = {
     batch_empty_hint: "Cochez les entretiens réalisés en même temps (même passage au garage).",
     batch_save_btn_one: "Enregistrer cet entretien",
     batch_save_btn_other: "Enregistrer les {n} entretiens",
-    invoice_add_btn: "📎 Ajouter une facture",
+    invoice_camera_btn: "📷 Prendre une photo",
+    invoice_add_btn: "📎 Importer un fichier",
     invoice_naming_hint: "Les fichiers sont classés automatiquement (date + nom + identifiant), dans un dossier dédié à ce véhicule.",
     invoice_empty: "Aucune facture pour ce véhicule.",
     invoice_remove_btn: "Supprimer",
@@ -208,6 +211,7 @@ const I18N = {
     alert_invoice_too_large: "Fichier trop volumineux (10 Mo max).",
     alert_invoice_bad_type: "Type de fichier non supporté (PDF ou photo/image uniquement).",
     alert_invoice_upload_failed: "Échec de l'envoi de la facture : {msg}",
+    alert_invoice_open_failed: "Impossible d'ouvrir ce document pour le moment. Réessayez, ou vérifiez que Home Assistant est bien accessible.",
   },
   en: {
     settings_language_readonly_note: "set when the integration is installed, or from its Options (Settings → Devices & services → CARnet → Configure).",
@@ -234,8 +238,7 @@ const I18N = {
     theme_horlogerie: "Watchmaker's Workshop",
     theme_carbone: "Carbon & Titanium",
     theme_vintage: "Vintage Atelier",
-    theme_ha_light: "Home Assistant Light",
-    theme_ha_dark: "Home Assistant Dark",
+    theme_ha_native: "Home Assistant (current theme)",
     settings_notifications_section: "Notifications & display",
     setting_notification_desc: "Persistent HA notification when a due date is overdue",
     setting_hide_na_desc: "Hide non-applicable maintenance items in the list",
@@ -350,6 +353,9 @@ const I18N = {
     diy_retry_btn: "🔄 Retry",
     diy_generate_btn: "🔧 How do I do it myself?",
     history_add_btn: "+ Add a service",
+    history_delete_btn: "Delete this service",
+    confirm_delete_log_entry: "Permanently delete “{name}” from the history? The next due date for this item will be recalculated accordingly.",
+    log_link_save_btn: "Save links",
     history_default_item_name: "Service",
     history_empty: "No service recorded.",
     new_item_name_label: "Item name",
@@ -388,7 +394,8 @@ const I18N = {
     batch_empty_hint: "Check the items done together (same garage visit).",
     batch_save_btn_one: "Log this item",
     batch_save_btn_other: "Log these {n} items",
-    invoice_add_btn: "📎 Add an invoice",
+    invoice_camera_btn: "📷 Take a photo",
+    invoice_add_btn: "📎 Import a file",
     invoice_naming_hint: "Files are named automatically (date + name + id) and kept in a folder dedicated to this vehicle.",
     invoice_empty: "No invoices for this vehicle yet.",
     invoice_remove_btn: "Delete",
@@ -400,6 +407,7 @@ const I18N = {
     alert_invoice_too_large: "File too large (10 MB max).",
     alert_invoice_bad_type: "Unsupported file type (PDF or photo/image only).",
     alert_invoice_upload_failed: "Failed to upload the invoice: {msg}",
+    alert_invoice_open_failed: "Could not open this document right now. Please try again, or check that Home Assistant is reachable.",
   },
   de: {
     settings_language_readonly_note: "bei der Installation der Integration festgelegt oder über ihre Optionen (Einstellungen → Geräte & Dienste → CARnet → Konfigurieren).",
@@ -426,8 +434,7 @@ const I18N = {
     theme_horlogerie: "Uhrmacherwerkstatt",
     theme_carbone: "Carbon & Titan",
     theme_vintage: "Vintage-Atelier",
-    theme_ha_light: "Home Assistant hell",
-    theme_ha_dark: "Home Assistant dunkel",
+    theme_ha_native: "Home Assistant (aktuelles Thema)",
     settings_notifications_section: "Benachrichtigungen & Anzeige",
     setting_notification_desc: "Dauerhafte HA-Benachrichtigung bei überfälligem Termin",
     setting_hide_na_desc: "Nicht zutreffende Wartungen in der Liste ausblenden",
@@ -542,6 +549,9 @@ const I18N = {
     diy_retry_btn: "🔄 Erneut versuchen",
     diy_generate_btn: "🔧 Wie mache ich das selbst?",
     history_add_btn: "+ Durchführung hinzufügen",
+    history_delete_btn: "Diese Durchführung löschen",
+    confirm_delete_log_entry: "„{name}“ endgültig aus dem Verlauf löschen? Die nächste Fälligkeit für diesen Punkt wird entsprechend neu berechnet.",
+    log_link_save_btn: "Verknüpfungen speichern",
     history_default_item_name: "Durchführung",
     history_empty: "Keine Durchführung erfasst.",
     new_item_name_label: "Name der Wartung",
@@ -580,7 +590,8 @@ const I18N = {
     batch_empty_hint: "Wählen Sie die gleichzeitig durchgeführten Arbeiten aus (gleicher Werkstattbesuch).",
     batch_save_btn_one: "Diesen Eintrag speichern",
     batch_save_btn_other: "Diese {n} Einträge speichern",
-    invoice_add_btn: "📎 Rechnung hinzufügen",
+    invoice_camera_btn: "📷 Foto aufnehmen",
+    invoice_add_btn: "📎 Datei importieren",
     invoice_naming_hint: "Dateien werden automatisch benannt (Datum + Name + ID) und in einem eigenen Ordner für dieses Fahrzeug abgelegt.",
     invoice_empty: "Noch keine Rechnungen für dieses Fahrzeug.",
     invoice_remove_btn: "Löschen",
@@ -592,6 +603,7 @@ const I18N = {
     alert_invoice_too_large: "Datei zu groß (max. 10 MB).",
     alert_invoice_bad_type: "Dateityp nicht unterstützt (nur PDF oder Foto/Bild).",
     alert_invoice_upload_failed: "Hochladen der Rechnung fehlgeschlagen: {msg}",
+    alert_invoice_open_failed: "Dieses Dokument konnte gerade nicht geöffnet werden. Bitte erneut versuchen oder prüfen, ob Home Assistant erreichbar ist.",
   },
   es: {
     settings_language_readonly_note: "se define al instalar la integración, o desde sus Opciones (Ajustes → Dispositivos y servicios → CARnet → Configurar).",
@@ -618,8 +630,7 @@ const I18N = {
     theme_horlogerie: "Taller de Relojería",
     theme_carbone: "Carbono y Titanio",
     theme_vintage: "Atelier Vintage",
-    theme_ha_light: "Home Assistant claro",
-    theme_ha_dark: "Home Assistant oscuro",
+    theme_ha_native: "Home Assistant (tema actual)",
     settings_notifications_section: "Notificaciones y visualización",
     setting_notification_desc: "Notificación persistente de HA cuando se supera una fecha límite",
     setting_hide_na_desc: "Ocultar en la lista los mantenimientos no aplicables",
@@ -734,6 +745,9 @@ const I18N = {
     diy_retry_btn: "🔄 Reintentar",
     diy_generate_btn: "🔧 ¿Cómo hacerlo uno mismo?",
     history_add_btn: "+ Añadir una intervención",
+    history_delete_btn: "Eliminar esta intervención",
+    confirm_delete_log_entry: "¿Eliminar definitivamente «{name}» del historial? El próximo vencimiento de esta intervención se recalculará en consecuencia.",
+    log_link_save_btn: "Guardar vínculos",
     history_default_item_name: "Intervención",
     history_empty: "No se ha registrado ninguna intervención.",
     new_item_name_label: "Nombre del mantenimiento",
@@ -772,7 +786,8 @@ const I18N = {
     batch_empty_hint: "Marque las intervenciones realizadas juntas (misma visita al taller).",
     batch_save_btn_one: "Guardar esta intervención",
     batch_save_btn_other: "Guardar estas {n} intervenciones",
-    invoice_add_btn: "📎 Añadir una factura",
+    invoice_camera_btn: "📷 Hacer una foto",
+    invoice_add_btn: "📎 Importar un archivo",
     invoice_naming_hint: "Los archivos se nombran automáticamente (fecha + nombre + id) en una carpeta dedicada a este vehículo.",
     invoice_empty: "Todavía no hay facturas para este vehículo.",
     invoice_remove_btn: "Eliminar",
@@ -784,6 +799,7 @@ const I18N = {
     alert_invoice_too_large: "Archivo demasiado grande (10 MB máx.).",
     alert_invoice_bad_type: "Tipo de archivo no compatible (solo PDF o foto/imagen).",
     alert_invoice_upload_failed: "Error al subir la factura: {msg}",
+    alert_invoice_open_failed: "No se pudo abrir este documento por ahora. Inténtalo de nuevo o comprueba que Home Assistant esté accesible.",
   },
   it: {
     settings_language_readonly_note: "impostata all'installazione dell'integrazione, oppure dalle sue Opzioni (Impostazioni → Dispositivi e servizi → CARnet → Configura).",
@@ -810,8 +826,7 @@ const I18N = {
     theme_horlogerie: "Bottega dell'Orologiaio",
     theme_carbone: "Carbonio e Titanio",
     theme_vintage: "Atelier Vintage",
-    theme_ha_light: "Home Assistant chiaro",
-    theme_ha_dark: "Home Assistant scuro",
+    theme_ha_native: "Home Assistant (tema attuale)",
     settings_notifications_section: "Notifiche e visualizzazione",
     setting_notification_desc: "Notifica persistente HA quando una scadenza è superata",
     setting_hide_na_desc: "Nascondi nell'elenco gli interventi non applicabili",
@@ -926,6 +941,9 @@ const I18N = {
     diy_retry_btn: "🔄 Riprova",
     diy_generate_btn: "🔧 Come farlo da soli?",
     history_add_btn: "+ Aggiungi un intervento",
+    history_delete_btn: "Elimina questo intervento",
+    confirm_delete_log_entry: "Eliminare definitivamente «{name}» dalla cronologia? La prossima scadenza di questo intervento verrà ricalcolata di conseguenza.",
+    log_link_save_btn: "Salva collegamenti",
     history_default_item_name: "Intervento",
     history_empty: "Nessun intervento registrato.",
     new_item_name_label: "Nome dell'intervento",
@@ -964,7 +982,8 @@ const I18N = {
     batch_empty_hint: "Seleziona gli interventi eseguiti insieme (stessa visita in officina).",
     batch_save_btn_one: "Salva questo intervento",
     batch_save_btn_other: "Salva questi {n} interventi",
-    invoice_add_btn: "📎 Aggiungi una fattura",
+    invoice_camera_btn: "📷 Scatta una foto",
+    invoice_add_btn: "📎 Importa un file",
     invoice_naming_hint: "I file vengono nominati automaticamente (data + nome + id) in una cartella dedicata a questo veicolo.",
     invoice_empty: "Nessuna fattura per questo veicolo.",
     invoice_remove_btn: "Elimina",
@@ -976,6 +995,7 @@ const I18N = {
     alert_invoice_too_large: "File troppo grande (10 MB max).",
     alert_invoice_bad_type: "Tipo di file non supportato (solo PDF o foto/immagine).",
     alert_invoice_upload_failed: "Caricamento della fattura non riuscito: {msg}",
+    alert_invoice_open_failed: "Impossibile aprire questo documento al momento. Riprova, oppure verifica che Home Assistant sia raggiungibile.",
   },
 };
 
@@ -996,8 +1016,7 @@ const THEMES_META = [
   { id: "horlogerie", name: "Manufacture horlogère", icon: "⏱️", swatches: ["#0F1B2E", "#8A94A6", "#A6192E", "#C9CDD3"] },
   { id: "carbone", name: "Carbone et titane", icon: "⚡", swatches: ["#0B0C0E", "#4A5560", "#35D0E0", "#9AA3AC"] },
   { id: "vintage", name: "Atelier vintage", icon: "🧭", swatches: ["#EDE6D6", "#5B3A29", "#14532D", "#B08D57"] },
-  { id: "ha_light", name: "Home Assistant clair", icon: "☀️", swatches: ["#FAFAFA", "#03A9F4", "#212121", "#E0E0E0"] },
-  { id: "ha_dark", name: "Home Assistant nuit", icon: "🌙", swatches: ["#1C1C1C", "#58A6FF", "#E1E1E1", "#383838"] },
+  { id: "ha_native", name: "Home Assistant (thème courant)", icon: "🏠", swatches: ["#FAFAFA", "#03A9F4", "#212121", "#E0E0E0"] },
 ];
 const VALID_THEME_IDS = THEMES_META.map((t) => t.id);
 // Garde-fou côté client, cohérent avec MAX_INVOICE_SIZE_BYTES côté backend
@@ -1054,6 +1073,7 @@ class CarnetEntretienCard extends HTMLElement {
     this._expandedItemIds = new Set();
     this._multiSelectMode = false; // "entretiens multiples" : coche plusieurs échéances pour les enregistrer en une fois
     this._selectedBatchItemIds = new Set();
+    this._linkingEntryId = null; // id de l'entrée d'historique dont le sélecteur "lier une facture" est ouvert
   }
 
   setConfig(config) {
@@ -1442,8 +1462,45 @@ class CarnetEntretienCard extends HTMLElement {
     await this._fetchVehicles();
   }
 
+  // La vue HTTP /api/carnet_entretien/invoice/{id} exige une session HA
+  // authentifiée (voir __init__.py::InvoiceView) : un simple <a href> ouvre
+  // un onglet sans les en-têtes d'authentification et se solde par une 401.
+  // this._hass.fetchWithAuth (méthode standard exposée aux cartes Lovelace)
+  // récupère le fichier avec les bons en-têtes, puis on l'ouvre depuis un
+  // onglet pré-ouvert par le clic (pour ne pas se faire bloquer comme
+  // pop-up par le navigateur une fois l'attente terminée) — la plupart des
+  // navigateurs affichent alors nativement le PDF/l'image ; si l'onglet n'a
+  // pas pu être ouvert (bloqueur de pop-up), on bascule sur un
+  // téléchargement classique.
+  async _openInvoice(invoiceId, filename) {
+    const win = window.open("", "_blank");
+    try {
+      const resp = await this._hass.fetchWithAuth(`/api/carnet_entretien/invoice/${invoiceId}`);
+      if (!resp.ok) throw new Error(String(resp.status));
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      if (win) {
+        win.location.href = url;
+      } else {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename || "facture";
+        a.click();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      if (win) win.close();
+      alert(this._t("alert_invoice_open_failed"));
+    }
+  }
+
   async _setLogEntryInvoices(vehicleId, entryId, invoiceIds) {
     await this._ws({ type: "set_log_entry_invoices", data: { vehicle_id: vehicleId, entry_id: entryId, invoice_ids: invoiceIds } });
+    await this._fetchVehicles();
+  }
+
+  async _removeLogEntry(vehicleId, entryId) {
+    await this._ws({ type: "remove_log_entry", data: { vehicle_id: vehicleId, entry_id: entryId } });
     await this._fetchVehicles();
   }
 
@@ -2106,10 +2163,16 @@ class CarnetEntretienCard extends HTMLElement {
           ? `<div class="log-list">${log
               .map((l) => {
                 const linkedInvoices = (l.invoice_ids || []).map((id) => invoicesById[id]).filter(Boolean);
+                const isLinking = this._linkingEntryId === l.id;
                 return `
             <div class="log-item">
-              <div><b>${esc(l.item_name) || this._t("history_default_item_name")}</b> — ${fmtKm(l.km)}</div>
-              <div class="muted small">${new Date(l.date * 1000).toLocaleDateString("fr-FR")}${l.garage ? " · " + esc(l.garage) : ""}${l.cost ? " · " + l.cost + " €" : ""}</div>
+              <div class="log-item-head">
+                <div>
+                  <div><b>${esc(l.item_name) || this._t("history_default_item_name")}</b> — ${fmtKm(l.km)}</div>
+                  <div class="muted small">${new Date(l.date * 1000).toLocaleDateString("fr-FR")}${l.garage ? " · " + esc(l.garage) : ""}${l.cost ? " · " + l.cost + " €" : ""}</div>
+                </div>
+                <button class="log-item-delete-btn" data-entry-id="${l.id}" data-item-name="${esc(l.item_name || "")}" title="${this._t("history_delete_btn")}">🗑️</button>
+              </div>
               ${l.notes ? `<div class="small">${esc(l.notes)}</div>` : ""}
               ${
                 linkedInvoices.length
@@ -2118,13 +2181,24 @@ class CarnetEntretienCard extends HTMLElement {
                         .map(
                           (inv) => `
                         <span class="invoice-chip">
-                          <a href="/api/carnet_entretien/invoice/${inv.id}" target="_blank" rel="noopener">${inv.mime === "application/pdf" ? "📄" : "🖼️"} ${esc(inv.label || inv.original_filename)}</a>
+                          <button class="invoice-chip-open" data-invoice-id="${inv.id}" data-invoice-filename="${esc(inv.original_filename || "")}">${inv.mime === "application/pdf" ? "📄" : "🖼️"} ${esc(inv.label || inv.original_filename)}</button>
                           <button class="invoice-chip-unlink" data-entry-id="${l.id}" data-invoice-id="${inv.id}" title="${this._t("invoice_unlink_btn")}">✕</button>
                         </span>`
                         )
                         .join("")}
                     </div>`
                   : ""
+              }
+              ${
+                isLinking
+                  ? `<div class="log-item-link-form">
+                      ${this._renderInvoicePicker(v, `hist-${l.id}`, l.invoice_ids || [])}
+                      <div class="row-2">
+                        <button class="btn small ghost log-link-cancel-btn" data-entry-id="${l.id}">${this._t("cancel_btn")}</button>
+                        <button class="btn small primary log-link-save-btn" data-entry-id="${l.id}">${this._t("log_link_save_btn")}</button>
+                      </div>
+                    </div>`
+                  : `<button class="link-btn log-link-toggle-btn" data-entry-id="${l.id}">${this._t("link_invoice_btn")}</button>`
               }
             </div>`;
               })
@@ -2137,7 +2211,11 @@ class CarnetEntretienCard extends HTMLElement {
   _renderTabFactures(v) {
     const invoices = (v.invoices || []).slice().sort((a, b) => (b.uploaded_at || 0) - (a.uploaded_at || 0));
     return `
-      <div class="toolbar"><button class="btn small primary" id="invoice-add-btn">${this._t("invoice_add_btn")}</button></div>
+      <div class="toolbar">
+        <button class="btn small primary" id="invoice-camera-btn">${this._t("invoice_camera_btn")}</button>
+        <button class="btn small ghost" id="invoice-add-btn">${this._t("invoice_add_btn")}</button>
+      </div>
+      <input type="file" id="invoice-camera-input" accept="image/*" capture="environment" style="display:none;" />
       <input type="file" id="invoice-input" accept="application/pdf,image/*" style="display:none;" />
       <div class="muted small" style="margin:2px 0 12px;">${this._t("invoice_naming_hint")}</div>
       ${
@@ -2152,13 +2230,13 @@ class CarnetEntretienCard extends HTMLElement {
     const icon = inv.mime === "application/pdf" ? "📄" : "🖼️";
     return `
       <div class="invoice-row">
-        <a class="invoice-link" href="/api/carnet_entretien/invoice/${inv.id}" target="_blank" rel="noopener">
+        <button class="invoice-link invoice-open-btn" data-invoice-id="${inv.id}" data-invoice-filename="${esc(inv.original_filename || "")}">
           <span class="invoice-icon">${icon}</span>
           <span class="invoice-info">
             <span class="invoice-name">${esc(inv.label || inv.original_filename)}</span>
             <span class="muted small">${fmtDate(inv.uploaded_at)} · ${fmtBytes(inv.size)}</span>
           </span>
-        </a>
+        </button>
         <button class="link-btn invoice-remove-btn" data-invoice-id="${inv.id}">${this._t("invoice_remove_btn")}</button>
       </div>`;
   }
@@ -2501,10 +2579,7 @@ class CarnetEntretienCard extends HTMLElement {
     });
 
     // ---- Onglet Factures ----
-    root.getElementById("invoice-add-btn")?.addEventListener("click", () => {
-      root.getElementById("invoice-input")?.click();
-    });
-    root.getElementById("invoice-input")?.addEventListener("change", async (e) => {
+    const onInvoiceFileSelected = async (e) => {
       const file = e.target.files[0];
       e.target.value = ""; // permet de re-sélectionner le même fichier ensuite
       if (!file) return;
@@ -2515,15 +2590,53 @@ class CarnetEntretienCard extends HTMLElement {
       } catch (err) {
         alert(this._t("alert_invoice_upload_failed", { msg: err.message || err.code || err }));
       }
+    };
+    root.getElementById("invoice-camera-btn")?.addEventListener("click", () => {
+      root.getElementById("invoice-camera-input")?.click();
     });
+    root.getElementById("invoice-camera-input")?.addEventListener("change", onInvoiceFileSelected);
+    root.getElementById("invoice-add-btn")?.addEventListener("click", () => {
+      root.getElementById("invoice-input")?.click();
+    });
+    root.getElementById("invoice-input")?.addEventListener("change", onInvoiceFileSelected);
     root.querySelectorAll(".invoice-remove-btn").forEach((btn) =>
       btn.addEventListener("click", () => this._removeInvoice(this._selectedId, btn.dataset.invoiceId))
+    );
+    root.querySelectorAll(".invoice-open-btn, .invoice-chip-open").forEach((btn) =>
+      btn.addEventListener("click", () => this._openInvoice(btn.dataset.invoiceId, btn.dataset.invoiceFilename))
     );
     root.querySelectorAll(".invoice-chip-unlink").forEach((btn) =>
       btn.addEventListener("click", () => {
         const entry = (this._selectedVehicle.maintenance_log || []).find((l) => l.id === btn.dataset.entryId);
         const remaining = (entry?.invoice_ids || []).filter((id) => id !== btn.dataset.invoiceId);
         this._setLogEntryInvoices(this._selectedId, btn.dataset.entryId, remaining);
+      })
+    );
+    root.querySelectorAll(".log-link-toggle-btn").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        this._linkingEntryId = btn.dataset.entryId;
+        this._render();
+      })
+    );
+    root.querySelectorAll(".log-link-cancel-btn").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        this._linkingEntryId = null;
+        this._render();
+      })
+    );
+    root.querySelectorAll(".log-link-save-btn").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const entryId = btn.dataset.entryId;
+        const invoiceIds = Array.from(root.querySelectorAll(`.log-invoice-cb[data-item-id="hist-${entryId}"]:checked`)).map((cb) => cb.dataset.invoiceId);
+        this._linkingEntryId = null;
+        this._setLogEntryInvoices(this._selectedId, entryId, invoiceIds);
+      })
+    );
+    root.querySelectorAll(".log-item-delete-btn").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const name = btn.dataset.itemName || this._t("history_default_item_name");
+        if (!confirm(this._t("confirm_delete_log_entry", { name }))) return;
+        this._removeLogEntry(this._selectedId, btn.dataset.entryId);
       })
     );
 
@@ -2789,7 +2902,10 @@ const STYLE = `
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     background: var(--ce-surface); border:1px solid var(--ce-border); border-radius:10px; padding:8px 10px;
   }
-  .invoice-link { display:flex; align-items:center; gap:10px; text-decoration:none; color: var(--ce-text); min-width:0; flex:1; }
+  .invoice-link {
+    display:flex; align-items:center; gap:10px; text-decoration:none; color: var(--ce-text); min-width:0; flex:1;
+    background:none; border:none; padding:0; margin:0; font-family:inherit; text-align:left; cursor:pointer;
+  }
   .invoice-icon { font-size:1.3em; flex-shrink:0; }
   .invoice-info { display:flex; flex-direction:column; gap:2px; min-width:0; }
   .invoice-name { font-size:0.9em; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -2807,7 +2923,10 @@ const STYLE = `
     display:inline-flex; align-items:center; gap:4px; background: var(--ce-surface-2);
     border:1px solid var(--ce-border); border-radius:999px; padding:3px 8px; font-size:0.78em;
   }
-  .invoice-chip a { color: var(--ce-accent); text-decoration:none; }
+  .invoice-chip-open {
+    background:none; border:none; padding:0; margin:0; font-family:inherit; cursor:pointer;
+    color: var(--ce-accent); text-decoration:none; font-size:1em;
+  }
   .invoice-chip-unlink {
     background:none; border:none; padding:0; margin:0; color: var(--ce-text-dim); cursor:pointer;
     font-size:1em; line-height:1; font-family:inherit;
@@ -2820,6 +2939,13 @@ const STYLE = `
 
   .issue-list, .log-list { display:flex; flex-direction:column; gap:8px; }
   .issue-item, .log-item { border-top-width:1px; border-top-style:var(--ce-divider-style); border-top-color:var(--ce-border); padding: 8px 2px; }
+  .log-item-head { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+  .log-item-delete-btn {
+    background:none; border:none; padding:2px; margin:0; cursor:pointer; font-size:0.95em;
+    opacity:0.55; flex-shrink:0; line-height:1;
+  }
+  .log-item-delete-btn:hover { opacity:1; }
+  .log-item-link-form { margin-top:8px; padding-top:8px; border-top:1px dashed var(--ce-border); }
   .issue-head { display:flex; align-items:center; justify-content:space-between; font-weight:600; font-size:0.9em; margin-bottom:3px; }
   .status-chip { color: var(--ce-chip-text); font-size:0.72em; font-weight:600; padding: 2px 8px; border-radius: 999px; white-space:nowrap; }
 
@@ -2876,15 +3002,16 @@ const STYLE = `
     --ce-severity-mineur:#14532D; --ce-severity-majeur:#B08D57; --ce-severity-securite:#8C2F2F;
   }
 
-  /* Thèmes "natifs" : ne fixent pas de couleurs en dur, ils reprennent les
-     variables CSS exposées par le thème Home Assistant actif du tableau de
-     bord (--primary-color, --card-background-color...), avec un repli sur
-     la palette Material par défaut de HA si une variable n'est pas définie
-     (dashboard sans thème personnalisé). "clair" et "nuit" utilisent les
-     mêmes variables : c'est le thème HA choisi par l'utilisateur (ou le
-     mode clair/sombre du navigateur en mode auto) qui détermine le rendu
-     réel, exactement comme le reste du tableau de bord. */
-  ha-card[data-theme="ha_light"], ha-card[data-theme="ha_dark"] {
+  /* Thème "natif" : ne fixe aucune couleur en dur, il reprend les variables
+     CSS exposées par le thème Home Assistant actif du tableau de bord
+     (--primary-color, --card-background-color...), avec un repli sur la
+     palette Material par défaut de HA si une variable n'est pas définie
+     (dashboard sans thème personnalisé). Il n'y a volontairement qu'une
+     seule variante "clair/nuit" : c'est le thème HA choisi par l'utilisateur
+     (ou le mode clair/sombre du navigateur en mode auto) qui détermine le
+     rendu réel, exactement comme le reste du tableau de bord — un second
+     thème figé sur "clair" ou "nuit" n'aurait aucun sens ici. */
+  ha-card[data-theme="ha_native"] {
     --ce-bg: var(--ha-card-background, var(--card-background-color, #FAFAFA));
     --ce-surface: var(--ha-card-background, var(--card-background-color, #FFFFFF));
     --ce-surface-2: var(--secondary-background-color, #F0F0F0);
