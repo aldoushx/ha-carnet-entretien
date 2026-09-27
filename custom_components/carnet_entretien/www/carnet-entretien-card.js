@@ -6,6 +6,12 @@
 // toucher au JS : voir le bloc THEMES en bas de fichier.
 
 const DOMAIN = "carnet_entretien";
+// Tenue à jour manuellement en parallèle de "version" dans manifest.json —
+// affichée en bas des réglages pour vérifier facilement, notamment depuis
+// l'app Companion Android (où le cache de la WebView est moins évident à
+// vider que dans un navigateur classique), que la carte chargée est bien
+// la dernière version installée et non une version mise en cache.
+const CARD_VERSION = "1.8.0";
 const CARNET_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
   <rect x="3" y="3" width="90" height="90" rx="20" fill="#392318"/>
   <rect x="9" y="9" width="78" height="78" rx="15" fill="none" stroke="#C59C35" stroke-width="2.4" stroke-dasharray="5,3"/>
@@ -50,6 +56,7 @@ const I18N = {
     setting_mileage_reminder_every: "tous les",
     setting_mileage_reminder_days_unit: "jours",
     settings_font_size_section: "Taille du texte",
+    settings_card_version: "Version de la carte : {version}",
     settings_language_section: "Langue",
     form_vehicle_type_label: "Type de véhicule",
     form_vehicle_type_auto: "🚗 Auto",
@@ -157,6 +164,8 @@ const I18N = {
     diy_retry_btn: "🔄 Réessayer",
     diy_generate_btn: "🔧 Comment le faire soi-même ?",
     history_add_btn: "+ Ajouter une intervention",
+    history_pdf_btn: "📄 Générer un PDF",
+    alert_pdf_generation_failed: "Échec de la génération du PDF. Réessayez, ou vérifiez que Home Assistant est bien accessible.",
     history_delete_btn: "Supprimer cette intervention",
     confirm_delete_log_entry: "Supprimer définitivement « {name} » de l'historique ? La prochaine échéance de cet entretien sera recalculée en conséquence.",
     log_link_save_btn: "Enregistrer les liens",
@@ -247,6 +256,7 @@ const I18N = {
     setting_mileage_reminder_every: "every",
     setting_mileage_reminder_days_unit: "days",
     settings_font_size_section: "Text size",
+    settings_card_version: "Card version: {version}",
     settings_language_section: "Language",
     form_vehicle_type_label: "Vehicle type",
     form_vehicle_type_auto: "🚗 Car",
@@ -354,6 +364,8 @@ const I18N = {
     diy_retry_btn: "🔄 Retry",
     diy_generate_btn: "🔧 How do I do it myself?",
     history_add_btn: "+ Add a service",
+    history_pdf_btn: "📄 Generate a PDF",
+    alert_pdf_generation_failed: "PDF generation failed. Please try again, or check that Home Assistant is reachable.",
     history_delete_btn: "Delete this service",
     confirm_delete_log_entry: "Permanently delete “{name}” from the history? The next due date for this item will be recalculated accordingly.",
     log_link_save_btn: "Save links",
@@ -444,6 +456,7 @@ const I18N = {
     setting_mileage_reminder_every: "alle",
     setting_mileage_reminder_days_unit: "Tage",
     settings_font_size_section: "Textgröße",
+    settings_card_version: "Kartenversion: {version}",
     settings_language_section: "Sprache",
     form_vehicle_type_label: "Fahrzeugtyp",
     form_vehicle_type_auto: "🚗 Auto",
@@ -551,6 +564,8 @@ const I18N = {
     diy_retry_btn: "🔄 Erneut versuchen",
     diy_generate_btn: "🔧 Wie mache ich das selbst?",
     history_add_btn: "+ Durchführung hinzufügen",
+    history_pdf_btn: "📄 PDF erstellen",
+    alert_pdf_generation_failed: "PDF-Erstellung fehlgeschlagen. Bitte erneut versuchen oder prüfen, ob Home Assistant erreichbar ist.",
     history_delete_btn: "Diese Durchführung löschen",
     confirm_delete_log_entry: "„{name}“ endgültig aus dem Verlauf löschen? Die nächste Fälligkeit für diesen Punkt wird entsprechend neu berechnet.",
     log_link_save_btn: "Verknüpfungen speichern",
@@ -641,6 +656,7 @@ const I18N = {
     setting_mileage_reminder_every: "cada",
     setting_mileage_reminder_days_unit: "días",
     settings_font_size_section: "Tamaño del texto",
+    settings_card_version: "Versión de la tarjeta: {version}",
     settings_language_section: "Idioma",
     form_vehicle_type_label: "Tipo de vehículo",
     form_vehicle_type_auto: "🚗 Coche",
@@ -748,6 +764,8 @@ const I18N = {
     diy_retry_btn: "🔄 Reintentar",
     diy_generate_btn: "🔧 ¿Cómo hacerlo uno mismo?",
     history_add_btn: "+ Añadir una intervención",
+    history_pdf_btn: "📄 Generar un PDF",
+    alert_pdf_generation_failed: "Error al generar el PDF. Inténtalo de nuevo o comprueba que Home Assistant esté accesible.",
     history_delete_btn: "Eliminar esta intervención",
     confirm_delete_log_entry: "¿Eliminar definitivamente «{name}» del historial? El próximo vencimiento de esta intervención se recalculará en consecuencia.",
     log_link_save_btn: "Guardar vínculos",
@@ -838,6 +856,7 @@ const I18N = {
     setting_mileage_reminder_every: "ogni",
     setting_mileage_reminder_days_unit: "giorni",
     settings_font_size_section: "Dimensione del testo",
+    settings_card_version: "Versione della scheda: {version}",
     settings_language_section: "Lingua",
     form_vehicle_type_label: "Tipo di veicolo",
     form_vehicle_type_auto: "🚗 Auto",
@@ -945,6 +964,8 @@ const I18N = {
     diy_retry_btn: "🔄 Riprova",
     diy_generate_btn: "🔧 Come farlo da soli?",
     history_add_btn: "+ Aggiungi un intervento",
+    history_pdf_btn: "📄 Genera un PDF",
+    alert_pdf_generation_failed: "Generazione del PDF non riuscita. Riprova, oppure verifica che Home Assistant sia raggiungibile.",
     history_delete_btn: "Elimina questo intervento",
     confirm_delete_log_entry: "Eliminare definitivamente «{name}» dalla cronologia? La prossima scadenza di questo intervento verrà ricalcolata di conseguenza.",
     log_link_save_btn: "Salva collegamenti",
@@ -1583,6 +1604,31 @@ class CarnetEntretienCard extends HTMLElement {
     await this._fetchVehicles();
   }
 
+  // Même logique que _openInvoice (voir plus haut) : requête authentifiée
+  // via fetchWithAuth, ouverture dans un onglet pré-ouvert par le clic, ou
+  // repli sur un téléchargement classique si le navigateur bloque l'onglet.
+  async _downloadHistoryPdf(vehicleId) {
+    const win = window.open("", "_blank");
+    try {
+      const resp = await this._hass.fetchWithAuth(`/api/carnet_entretien/history_pdf/${vehicleId}`);
+      if (!resp.ok) throw new Error(String(resp.status));
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      if (win) {
+        win.location.href = url;
+      } else {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "carnet-entretien.pdf";
+        a.click();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      if (win) win.close();
+      alert(this._t("alert_pdf_generation_failed"));
+    }
+  }
+
   async _selectTheme(themeId) {
     if (themeId === this._theme) return;
     this._theme = themeId;
@@ -1757,6 +1803,7 @@ class CarnetEntretienCard extends HTMLElement {
         <span class="mono small">${Math.round((this._settings.font_scale || 1) * 100)}%</span>
         <button class="btn small ghost" id="font-increase-btn" ${this._settings.font_scale >= 1.4 ? "disabled" : ""}>A+</button>
       </div>
+      <div class="card-version-footer muted small">${this._t("settings_card_version", { version: CARD_VERSION })}</div>
     `;
   }
 
@@ -2253,10 +2300,17 @@ class CarnetEntretienCard extends HTMLElement {
   }
 
   _renderTabHistorique(v) {
-    const log = (v.maintenance_log || []).slice().reverse();
+    // Tri explicite par date décroissante (le plus récent en premier) — et
+    // non plus par ordre d'insertion inversé, qui pouvait diverger de
+    // l'ordre chronologique réel dès qu'une intervention était saisie a
+    // posteriori avec une date antérieure.
+    const log = (v.maintenance_log || []).slice().sort((a, b) => (b.date || 0) - (a.date || 0));
     const invoicesById = Object.fromEntries((v.invoices || []).map((inv) => [inv.id, inv]));
     return `
-      <div class="toolbar"><button class="btn small ghost" id="add-log-btn">${this._t("history_add_btn")}</button></div>
+      <div class="toolbar">
+        <button class="btn small ghost" id="add-log-btn">${this._t("history_add_btn")}</button>
+        <button class="btn small ghost" id="history-pdf-btn">${this._t("history_pdf_btn")}</button>
+      </div>
       ${
         log.length
           ? `<div class="log-list">${log
@@ -2676,6 +2730,7 @@ class CarnetEntretienCard extends HTMLElement {
       const notes = notesRaw && notesRaw.trim() ? notesRaw.trim() : undefined;
       this._logMaintenance(this._selectedId, { item_name, km: parseInt(km, 10), notes });
     });
+    root.getElementById("history-pdf-btn")?.addEventListener("click", () => this._downloadHistoryPdf(this._selectedId));
 
     // ---- Onglet Factures ----
     const onInvoiceFileSelected = async (e) => {
@@ -2929,6 +2984,7 @@ const STYLE = `
   .swatches { display:flex; gap:6px; }
   .swatches span { width:16px; height:16px; border-radius:4px; display:inline-block; }
   .font-size-row { display:flex; align-items:center; gap:12px; }
+  .card-version-footer { text-align:center; margin-top:22px; padding-top:12px; border-top:1px solid var(--ce-border); opacity:0.6; }
   .font-size-row .btn:disabled { opacity:0.4; cursor:default; }
   .vehicle-type-toggle { display:flex; gap:8px; margin-bottom:4px; }
   .vehicle-type-toggle .btn { flex:1; }
