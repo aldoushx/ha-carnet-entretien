@@ -990,6 +990,19 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
 
     @websocket_api.websocket_command(
         {
+            vol.Required("type"): f"{DOMAIN}/remove_log_entry",
+            vol.Required("vehicle_id"): str,
+            vol.Required("entry_id"): str,
+        }
+    )
+    @websocket_api.async_response
+    async def ws_remove_log_entry(hass, connection, msg):
+        removed = await store.async_remove_log_entry(msg["vehicle_id"], msg["entry_id"])
+        async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        connection.send_result(msg["id"], {"ok": removed is not None})
+
+    @websocket_api.websocket_command(
+        {
             vol.Required("type"): f"{DOMAIN}/set_item_applicable",
             vol.Required("vehicle_id"): str,
             vol.Required("item_id"): str,
@@ -1122,7 +1135,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
     @websocket_api.websocket_command(
         {
             vol.Required("type"): f"{DOMAIN}/set_settings",
-            vol.Optional("theme"): vol.In(["gt_cuir", "horlogerie", "carbone", "vintage", "ha_light", "ha_dark"]),
+            vol.Optional("theme"): vol.In(["gt_cuir", "horlogerie", "carbone", "vintage", "ha_native"]),
             # BUG CORRIGÉ (v1.3.2) : seule la clé "theme" était déclarée ici.
             # Le schéma voluptuous d'une commande websocket_api est strict par
             # défaut (extra keys not allowed) — tout réglage envoyé par la
@@ -1284,7 +1297,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         ws_refresh_recalls,
         ws_set_item_applicable, ws_set_item_override, ws_add_plan_item, ws_remove_plan_item,
         ws_generate_diy_explanation,
-        ws_value_snapshot, ws_log_maintenance, ws_ai_usage, ws_get_settings, ws_set_settings,
+        ws_value_snapshot, ws_log_maintenance, ws_remove_log_entry, ws_ai_usage, ws_get_settings, ws_set_settings,
         ws_set_photo, ws_add_invoice, ws_remove_invoice, ws_set_log_entry_invoices,
     ):
         websocket_api.async_register_command(hass, handler)
