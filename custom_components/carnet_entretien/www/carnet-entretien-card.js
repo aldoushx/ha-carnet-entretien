@@ -210,6 +210,7 @@ const I18N = {
     confirm_remove_invoice: "Supprimer définitivement cette facture ?",
     alert_invoice_too_large: "Fichier trop volumineux (10 Mo max).",
     alert_invoice_bad_type: "Type de fichier non supporté (PDF ou photo/image uniquement).",
+    alert_camera_unavailable: "Accès direct à l'appareil photo impossible (autorisation refusée, ou connexion à Home Assistant non sécurisée en HTTPS) — utilisation du sélecteur habituel à la place.",
     alert_invoice_upload_failed: "Échec de l'envoi de la facture : {msg}",
     alert_invoice_open_failed: "Impossible d'ouvrir ce document pour le moment. Réessayez, ou vérifiez que Home Assistant est bien accessible.",
   },
@@ -406,6 +407,7 @@ const I18N = {
     confirm_remove_invoice: "Permanently delete this invoice?",
     alert_invoice_too_large: "File too large (10 MB max).",
     alert_invoice_bad_type: "Unsupported file type (PDF or photo/image only).",
+    alert_camera_unavailable: "Couldn't access the camera directly (permission denied, or your Home Assistant connection isn't secured over HTTPS) — falling back to the regular picker.",
     alert_invoice_upload_failed: "Failed to upload the invoice: {msg}",
     alert_invoice_open_failed: "Could not open this document right now. Please try again, or check that Home Assistant is reachable.",
   },
@@ -602,6 +604,7 @@ const I18N = {
     confirm_remove_invoice: "Diese Rechnung endgültig löschen?",
     alert_invoice_too_large: "Datei zu groß (max. 10 MB).",
     alert_invoice_bad_type: "Dateityp nicht unterstützt (nur PDF oder Foto/Bild).",
+    alert_camera_unavailable: "Direkter Kamerazugriff nicht möglich (Berechtigung verweigert, oder die Home-Assistant-Verbindung ist nicht über HTTPS abgesichert) — es wird stattdessen die gewohnte Dateiauswahl verwendet.",
     alert_invoice_upload_failed: "Hochladen der Rechnung fehlgeschlagen: {msg}",
     alert_invoice_open_failed: "Dieses Dokument konnte gerade nicht geöffnet werden. Bitte erneut versuchen oder prüfen, ob Home Assistant erreichbar ist.",
   },
@@ -798,6 +801,7 @@ const I18N = {
     confirm_remove_invoice: "¿Eliminar definitivamente esta factura?",
     alert_invoice_too_large: "Archivo demasiado grande (10 MB máx.).",
     alert_invoice_bad_type: "Tipo de archivo no compatible (solo PDF o foto/imagen).",
+    alert_camera_unavailable: "No se pudo acceder directamente a la cámara (permiso denegado, o tu conexión a Home Assistant no está protegida con HTTPS) — se usará el selector habitual en su lugar.",
     alert_invoice_upload_failed: "Error al subir la factura: {msg}",
     alert_invoice_open_failed: "No se pudo abrir este documento por ahora. Inténtalo de nuevo o comprueba que Home Assistant esté accesible.",
   },
@@ -994,6 +998,7 @@ const I18N = {
     confirm_remove_invoice: "Eliminare definitivamente questa fattura?",
     alert_invoice_too_large: "File troppo grande (10 MB max).",
     alert_invoice_bad_type: "Tipo di file non supportato (solo PDF o foto/immagine).",
+    alert_camera_unavailable: "Impossibile accedere direttamente alla fotocamera (permesso negato, oppure la connessione a Home Assistant non è protetta con HTTPS) — verrà usato il selettore abituale.",
     alert_invoice_upload_failed: "Caricamento della fattura non riuscito: {msg}",
     alert_invoice_open_failed: "Impossibile aprire questo documento al momento. Riprova, oppure verifica che Home Assistant sia raggiungibile.",
   },
@@ -1074,10 +1079,22 @@ class CarnetEntretienCard extends HTMLElement {
     this._multiSelectMode = false; // "entretiens multiples" : coche plusieurs échéances pour les enregistrer en une fois
     this._selectedBatchItemIds = new Set();
     this._linkingEntryId = null; // id de l'entrée d'historique dont le sélecteur "lier une facture" est ouvert
+    this._cameraOpen = false; // capture caméra en direct pour l'ajout de facture (voir _openCamera)
+    this._cameraStream = null;
   }
 
   setConfig(config) {
     this._config = config || {};
+  }
+
+  disconnectedCallback() {
+    // Libère la caméra si la carte disparaît (changement de vue, édition du
+    // tableau de bord...) sans que l'utilisateur ait cliqué "Annuler" — pour
+    // ne jamais laisser le voyant caméra allumé en arrière-plan.
+    if (this._cameraStream) {
+      this._cameraStream.getTracks().forEach((t) => t.stop());
+      this._cameraStream = null;
+    }
   }
 
   set hass(hass) {
@@ -1434,6 +1451,68 @@ class CarnetEntretienCard extends HTMLElement {
     await this._fetchVehicles();
   }
 
+  // Capture directe via la caméra (voir _renderCameraOverlay et le
+  // commentaire CSS associé pour le contexte : contourne le sélecteur de
+  // fichier natif de l'app HA Android, peu fiable avec l'attribut capture).
+  async _openCamera() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      // API absente (contexte non sécurisé : HA servi en http:// sur le
+      // réseau local plutôt qu'en https, par ex.) — repli silencieux sur le
+      // sélecteur de fichier classique, pas la peine d'alarmer l'utilisateur
+      // pour un cas qui n'est pas vraiment une erreur.
+      this.shadowRoot.getElementById("invoice-camera-input")?.click();
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      this._cameraStream = stream;
+      this._cameraOpen = true;
+      this._render();
+    } catch (err) {
+      alert(this._t("alert_camera_unavailable"));
+      this.shadowRoot.getElementById("invoice-camera-input")?.click();
+    }
+  }
+
+  _closeCamera() {
+    if (this._cameraStream) {
+      this._cameraStream.getTracks().forEach((t) => t.stop());
+      this._cameraStream = null;
+    }
+    this._cameraOpen = false;
+    this._render();
+  }
+
+  async _captureCameraPhoto() {
+    const root = this.shadowRoot;
+    const video = root.getElementById("camera-video");
+    const canvas = root.getElementById("camera-canvas");
+    if (!video || !canvas || !video.videoWidth) {
+      this._closeCamera();
+      return;
+    }
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+    this._closeCamera();
+    if (!blob) {
+      alert(this._t("alert_invoice_bad_type"));
+      return;
+    }
+    const file = new File([blob], `photo-${Date.now()}.jpg`, { type: "image/jpeg" });
+    const labelRaw = prompt(this._t("prompt_invoice_label"), "");
+    if (labelRaw === null) return; // annulé
+    try {
+      await this._addInvoice(this._selectedId, file, labelRaw.trim() ? labelRaw.trim() : undefined);
+    } catch (err) {
+      alert(this._t("alert_invoice_upload_failed", { msg: err.message || err.code || err }));
+    }
+  }
+
   async _addInvoice(vehicleId, file, label) {
     if (file.size > MAX_INVOICE_CLIENT_BYTES) {
       alert(this._t("alert_invoice_too_large"));
@@ -1576,11 +1655,31 @@ class CarnetEntretienCard extends HTMLElement {
         </div>
         ${this._loading ? `<div class="loading"><div class="spinner"></div>${this._loadingMsg}</div>` : ""}
         <div class="body">${content}</div>
+        ${this._cameraOpen ? this._renderCameraOverlay() : ""}
       </ha-card>
     `;
     this._bindEvents();
+    if (this._cameraOpen && this._cameraStream) {
+      // srcObject (un MediaStream) ne peut pas être sérialisé dans le HTML
+      // ci-dessus : on le rattache à l'élément <video> juste après coup.
+      const videoEl = this.shadowRoot.getElementById("camera-video");
+      if (videoEl) videoEl.srcObject = this._cameraStream;
+    }
     const nextBody = this.shadowRoot.querySelector(".body");
     if (nextBody && prevScrollTop) nextBody.scrollTop = prevScrollTop;
+  }
+
+  _renderCameraOverlay() {
+    return `
+      <div class="camera-overlay">
+        <video id="camera-video" autoplay playsinline muted></video>
+        <canvas id="camera-canvas" style="display:none;"></canvas>
+        <div class="camera-controls">
+          <button class="camera-cancel-btn" id="camera-cancel-btn" title="${this._t("cancel_btn")}">✕</button>
+          <button class="camera-shutter-btn" id="camera-shutter-btn" title="${this._t("invoice_camera_btn")}"></button>
+          <span class="camera-spacer"></span>
+        </div>
+      </div>`;
   }
 
   _renderList() {
@@ -2591,10 +2690,10 @@ class CarnetEntretienCard extends HTMLElement {
         alert(this._t("alert_invoice_upload_failed", { msg: err.message || err.code || err }));
       }
     };
-    root.getElementById("invoice-camera-btn")?.addEventListener("click", () => {
-      root.getElementById("invoice-camera-input")?.click();
-    });
+    root.getElementById("invoice-camera-btn")?.addEventListener("click", () => this._openCamera());
     root.getElementById("invoice-camera-input")?.addEventListener("change", onInvoiceFileSelected);
+    root.getElementById("camera-shutter-btn")?.addEventListener("click", () => this._captureCameraPhoto());
+    root.getElementById("camera-cancel-btn")?.addEventListener("click", () => this._closeCamera());
     root.getElementById("invoice-add-btn")?.addEventListener("click", () => {
       root.getElementById("invoice-input")?.click();
     });
@@ -2932,6 +3031,34 @@ const STYLE = `
     font-size:1em; line-height:1; font-family:inherit;
   }
   .invoice-chip-unlink:hover { color: var(--ce-danger-text); }
+
+  /* ---------------- Capture caméra en direct (factures) ----------------
+     En position fixed (plein écran, au-dessus de tout), indépendamment de
+     l'onglet affiché sous l'overlay — contourne le sélecteur de fichier
+     natif de l'app HA sur Android, qui n'ouvre pas toujours l'appareil
+     photo malgré l'attribut capture (voir invoice-camera-input, conservé
+     comme repli si getUserMedia est indisponible). */
+  .camera-overlay {
+    position: fixed; inset: 0; z-index: 9999; background:#000;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .camera-overlay video { width:100%; height:100%; object-fit:cover; background:#000; display:block; }
+  .camera-controls {
+    position:absolute; left:0; right:0; bottom:0;
+    padding: 20px 24px calc(20px + env(safe-area-inset-bottom, 0px));
+    display:flex; align-items:center; justify-content:space-between;
+    background: linear-gradient(to top, rgba(0,0,0,0.65), transparent);
+  }
+  .camera-shutter-btn {
+    width:66px; height:66px; border-radius:50%; background:#FFFFFF;
+    border:4px solid rgba(255,255,255,0.35); cursor:pointer; padding:0;
+  }
+  .camera-shutter-btn:active { background:#DDDDDD; }
+  .camera-cancel-btn {
+    width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.15);
+    color:#FFFFFF; border:none; font-size:1.2em; cursor:pointer; padding:0; line-height:1;
+  }
+  .camera-spacer { width:44px; }
   .edit-divider { display:flex; align-items:center; gap:8px; margin:12px 0; font-size:0.7em; color: var(--ce-text-dim); }
   .edit-divider::before, .edit-divider::after { content:""; flex:1; height:1px; background: var(--ce-border); }
   .bar { height:5px; border-radius:3px; background: var(--ce-border); overflow:hidden; }
