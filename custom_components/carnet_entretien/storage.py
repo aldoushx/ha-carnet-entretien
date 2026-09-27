@@ -66,6 +66,11 @@ class CarnetStore:
             # sinon un stockage antérieur à v0.10 (sans hide_not_applicable /
             # notifications_enabled) perdrait ces nouveaux réglages par défaut.
             merged["settings"] = {**DEFAULT_SETTINGS, **(stored.get("settings") or {})}
+            # Migration v1.6.0 -> v1.7.0 : les thèmes "ha_light" et "ha_dark"
+            # étaient un doublon exact (même rendu, car tous deux suivaient déjà
+            # le thème HA courant) — fusionnés en un seul "ha_native".
+            if merged["settings"].get("theme") in ("ha_light", "ha_dark"):
+                merged["settings"]["theme"] = "ha_native"
             self.data = merged
         else:
             self.data = {
@@ -295,16 +300,51 @@ class CarnetStore:
             return None
         entry = {"id": new_id(), "date": now_ts(), **entry}
         vehicle.setdefault("maintenance_log", []).append(entry)
-        # Met à jour l'échéance correspondante du plan, si liée par item_id
         item_id = entry.get("item_id")
         if item_id:
-            for item in vehicle.get("maintenance_plan", []):
-                if item.get("id") == item_id:
-                    item["last_done_km"] = entry.get("km")
-                    item["last_done_date"] = entry.get("date")
-                    break
+            self._recompute_last_done(vehicle, item_id)
         await self.async_save()
         return entry
+
+    async def async_remove_log_entry(self, vehicle_id: str, entry_id: str) -> dict[str, Any] | None:
+        """Supprime une intervention de l'historique (erreur de saisie...) et
+        redérive l'échéance du plan correspondante à partir de ce qu'il reste
+        dans l'historique — sans quoi une échéance supprimée par erreur
+        continuerait à afficher "fait le ..." comme si de rien n'était.
+        """
+        vehicle = self.vehicles.get(vehicle_id)
+        if not vehicle:
+            return None
+        log = vehicle.get("maintenance_log", [])
+        removed = next((e for e in log if e.get("id") == entry_id), None)
+        if removed is None:
+            return None
+        vehicle["maintenance_log"] = [e for e in log if e.get("id") != entry_id]
+        item_id = removed.get("item_id")
+        if item_id:
+            self._recompute_last_done(vehicle, item_id)
+        await self.async_save()
+        return removed
+
+    def _recompute_last_done(self, vehicle: dict[str, Any], item_id: str) -> None:
+        """Redérive last_done_km/last_done_date d'une échéance du plan à
+        partir de l'entrée la plus récente de l'historique qui lui est
+        rattachée — plutôt que de se contenter d'écraser avec "la dernière
+        entrée saisie", ce qui serait incorrect après une suppression, ou
+        après la saisie a posteriori d'une date antérieure à celle déjà
+        enregistrée.
+        """
+        item = next((i for i in vehicle.get("maintenance_plan", []) if i.get("id") == item_id), None)
+        if item is None:
+            return
+        matching = [e for e in vehicle.get("maintenance_log", []) if e.get("item_id") == item_id]
+        if not matching:
+            item["last_done_km"] = None
+            item["last_done_date"] = None
+            return
+        best = max(matching, key=lambda e: (e.get("date") or 0, e.get("km") or 0))
+        item["last_done_km"] = best.get("km")
+        item["last_done_date"] = best.get("date")
 
     # ---------- Cache modèle (points de vigilance mutualisés) ----------
 
