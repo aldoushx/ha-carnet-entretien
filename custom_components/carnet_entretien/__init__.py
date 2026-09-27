@@ -43,6 +43,7 @@ from .const import (
     STORAGE_VERSION,
 )
 from .gemini_client import GeminiClient, GeminiError
+from .history_pdf import build_history_pdf
 from .invoices import ALLOWED_MIME_EXTENSIONS, MAX_INVOICE_SIZE_BYTES, build_stored_filename, vehicle_invoice_dir
 from .maintenance_catalog import get_catalog
 from .storage import CarnetStore
@@ -126,6 +127,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _async_register_services(hass, entry)
     await _async_register_static_path(hass)
     _async_register_invoice_view(hass)
+    _async_register_history_pdf_view(hass)
 
     for vehicle_id in list(store.vehicles.keys()):
         _async_sync_mileage_listener(hass, entry, vehicle_id)
@@ -378,6 +380,50 @@ def _async_register_invoice_view(hass: HomeAssistant) -> None:
         return
     hass.http.register_view(InvoiceView(hass))
     hass.data[DOMAIN]["_invoice_view_registered"] = True
+
+
+class HistoryPdfView(HomeAssistantView):
+    """Génère à la volée (voir history_pdf.py) et sert le PDF d'export
+    complet d'un véhicule : historique + factures en annexe. Même choix
+    qu'InvoiceView ci-dessus (HomeAssistantView plutôt que chemin statique)
+    et pour la même raison : ce document contient des données personnelles.
+    """
+
+    url = "/api/carnet_entretien/history_pdf/{vehicle_id}"
+    name = "api:carnet_entretien:history_pdf"
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        self._hass = hass
+
+    def _find_store(self) -> CarnetStore | None:
+        for entry_data in self._hass.data.get(DOMAIN, {}).values():
+            if isinstance(entry_data, dict) and entry_data.get("store"):
+                return entry_data["store"]
+        return None
+
+    async def get(self, request: web.Request, vehicle_id: str) -> web.Response:
+        store = self._find_store()
+        vehicle = store.get_vehicle(vehicle_id) if store else None
+        if not vehicle:
+            return web.Response(status=404)
+        try:
+            pdf_bytes = await self._hass.async_add_executor_job(build_history_pdf, self._hass, vehicle, vehicle_id)
+        except Exception:
+            _LOGGER.exception("Échec de la génération du PDF d'historique (véhicule %s)", vehicle_id)
+            return web.Response(status=500)
+        safe_name = "".join(c if c.isalnum() else "-" for c in f"{vehicle.get('brand', '')}-{vehicle.get('model', '')}").strip("-") or "vehicule"
+        return web.Response(
+            body=pdf_bytes,
+            content_type="application/pdf",
+            headers={"Content-Disposition": f'inline; filename="carnet-{safe_name}.pdf"'},
+        )
+
+
+def _async_register_history_pdf_view(hass: HomeAssistant) -> None:
+    if hass.data[DOMAIN].get("_history_pdf_view_registered"):
+        return
+    hass.http.register_view(HistoryPdfView(hass))
+    hass.data[DOMAIN]["_history_pdf_view_registered"] = True
 
 
 async def _async_register_static_path(hass: HomeAssistant) -> None:
