@@ -11,7 +11,7 @@ const DOMAIN = "carnet_entretien";
 // l'app Companion Android (où le cache de la WebView est moins évident à
 // vider que dans un navigateur classique), que la carte chargée est bien
 // la dernière version installée et non une version mise en cache.
-const CARD_VERSION = "1.8.0";
+const CARD_VERSION = "1.10.0";
 const CARNET_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
   <rect x="3" y="3" width="90" height="90" rx="20" fill="#392318"/>
   <rect x="9" y="9" width="78" height="78" rx="15" fill="none" stroke="#C59C35" stroke-width="2.4" stroke-dasharray="5,3"/>
@@ -57,6 +57,7 @@ const I18N = {
     setting_mileage_reminder_days_unit: "jours",
     settings_font_size_section: "Taille du texte",
     settings_card_version: "Version de la carte : {version}",
+    setting_seasonal_reminders_desc: "Rappels saisonniers : une notification par véhicule à chaque changement de saison (pneus, batterie, liquides…)",
     settings_language_section: "Langue",
     form_vehicle_type_label: "Type de véhicule",
     form_vehicle_type_auto: "🚗 Auto",
@@ -165,6 +166,40 @@ const I18N = {
     diy_generate_btn: "🔧 Comment le faire soi-même ?",
     history_add_btn: "+ Ajouter une intervention",
     history_pdf_btn: "📄 Générer un PDF",
+    tab_references: "🛢️ Références",
+    references_hint: "Notez ici les références exactes de vos consommables (huile, pneus, filtres…) pour les avoir sous la main chez le garagiste ou en magasin. Elles figurent aussi dans le PDF d'export.",
+    references_label_placeholder: "Consommable",
+    references_value_placeholder: "ex : 5W-30 ACEA C3, 4,3 L",
+    references_empty: "Aucune référence enregistrée.",
+    references_suggestions: "Suggestions",
+    references_add_btn: "+ Ajouter une ligne",
+    references_save_btn: "Enregistrer",
+    cons_engine_oil: "Huile moteur",
+    cons_oil_filter: "Filtre à huile",
+    cons_air_filter: "Filtre à air",
+    cons_cabin_filter: "Filtre d'habitacle",
+    cons_fuel_filter: "Filtre à carburant",
+    cons_spark_plugs: "Bougies",
+    cons_tires: "Pneus",
+    cons_tires_front: "Pneu avant",
+    cons_tires_rear: "Pneu arrière",
+    cons_brake_pads: "Plaquettes de frein",
+    cons_brake_fluid: "Liquide de frein",
+    cons_coolant: "Liquide de refroidissement",
+    cons_wiper_blades: "Balais d'essuie-glace",
+    cons_battery12: "Batterie",
+    cons_bulbs: "Ampoules",
+    cons_washer_fluid: "Lave-glace",
+    cons_gear_oil: "Huile de transmission",
+    cons_chain_kit: "Kit chaîne",
+    cons_fork_oil: "Huile de fourche",
+    cons_drive_belt: "Courroie de transmission",
+    cons_variator_rollers: "Galets de variateur",
+    cons_inner_tube: "Chambre à air",
+    cons_chain: "Chaîne",
+    cons_cables: "Câbles / gaines",
+    cons_battery_ebike: "Batterie du vélo",
+    cons_lubricant: "Lubrifiant de chaîne",
     alert_pdf_generation_failed: "Échec de la génération du PDF. Réessayez, ou vérifiez que Home Assistant est bien accessible.",
     history_delete_btn: "Supprimer cette intervention",
     confirm_delete_log_entry: "Supprimer définitivement « {name} » de l'historique ? La prochaine échéance de cet entretien sera recalculée en conséquence.",
@@ -257,6 +292,7 @@ const I18N = {
     setting_mileage_reminder_days_unit: "days",
     settings_font_size_section: "Text size",
     settings_card_version: "Card version: {version}",
+    setting_seasonal_reminders_desc: "Seasonal reminders: one notification per vehicle at each change of season (tyres, battery, fluids…)",
     settings_language_section: "Language",
     form_vehicle_type_label: "Vehicle type",
     form_vehicle_type_auto: "🚗 Car",
@@ -365,6 +401,40 @@ const I18N = {
     diy_generate_btn: "🔧 How do I do it myself?",
     history_add_btn: "+ Add a service",
     history_pdf_btn: "📄 Generate a PDF",
+    tab_references: "🛢️ References",
+    references_hint: "Keep the exact references of your consumables here (oil, tyres, filters…) so you have them at hand at the garage or the shop. They are also included in the PDF export.",
+    references_label_placeholder: "Consumable",
+    references_value_placeholder: "e.g. 5W-30 ACEA C3, 4.3 L",
+    references_empty: "No references saved yet.",
+    references_suggestions: "Suggestions",
+    references_add_btn: "+ Add a row",
+    references_save_btn: "Save",
+    cons_engine_oil: "Engine oil",
+    cons_oil_filter: "Oil filter",
+    cons_air_filter: "Air filter",
+    cons_cabin_filter: "Cabin filter",
+    cons_fuel_filter: "Fuel filter",
+    cons_spark_plugs: "Spark plugs",
+    cons_tires: "Tyres",
+    cons_tires_front: "Front tyre",
+    cons_tires_rear: "Rear tyre",
+    cons_brake_pads: "Brake pads",
+    cons_brake_fluid: "Brake fluid",
+    cons_coolant: "Coolant",
+    cons_wiper_blades: "Wiper blades",
+    cons_battery12: "Battery",
+    cons_bulbs: "Bulbs",
+    cons_washer_fluid: "Washer fluid",
+    cons_gear_oil: "Transmission oil",
+    cons_chain_kit: "Chain kit",
+    cons_fork_oil: "Fork oil",
+    cons_drive_belt: "Drive belt",
+    cons_variator_rollers: "Variator rollers",
+    cons_inner_tube: "Inner tube",
+    cons_chain: "Chain",
+    cons_cables: "Cables / housings",
+    cons_battery_ebike: "Bike battery",
+    cons_lubricant: "Chain lubricant",
     alert_pdf_generation_failed: "PDF generation failed. Please try again, or check that Home Assistant is reachable.",
     history_delete_btn: "Delete this service",
     confirm_delete_log_entry: "Permanently delete “{name}” from the history? The next due date for this item will be recalculated accordingly.",
@@ -457,6 +527,7 @@ const I18N = {
     setting_mileage_reminder_days_unit: "Tage",
     settings_font_size_section: "Textgröße",
     settings_card_version: "Kartenversion: {version}",
+    setting_seasonal_reminders_desc: "Saisonale Erinnerungen: eine Benachrichtigung pro Fahrzeug bei jedem Jahreszeitenwechsel (Reifen, Batterie, Flüssigkeiten …)",
     settings_language_section: "Sprache",
     form_vehicle_type_label: "Fahrzeugtyp",
     form_vehicle_type_auto: "🚗 Auto",
@@ -565,6 +636,40 @@ const I18N = {
     diy_generate_btn: "🔧 Wie mache ich das selbst?",
     history_add_btn: "+ Durchführung hinzufügen",
     history_pdf_btn: "📄 PDF erstellen",
+    tab_references: "🛢️ Referenzen",
+    references_hint: "Notieren Sie hier die genauen Referenzen Ihrer Verbrauchsmaterialien (Öl, Reifen, Filter …), damit Sie sie in der Werkstatt oder im Laden zur Hand haben. Sie erscheinen auch im PDF-Export.",
+    references_label_placeholder: "Verbrauchsmaterial",
+    references_value_placeholder: "z. B. 5W-30 ACEA C3, 4,3 L",
+    references_empty: "Noch keine Referenzen gespeichert.",
+    references_suggestions: "Vorschläge",
+    references_add_btn: "+ Zeile hinzufügen",
+    references_save_btn: "Speichern",
+    cons_engine_oil: "Motoröl",
+    cons_oil_filter: "Ölfilter",
+    cons_air_filter: "Luftfilter",
+    cons_cabin_filter: "Innenraumfilter",
+    cons_fuel_filter: "Kraftstofffilter",
+    cons_spark_plugs: "Zündkerzen",
+    cons_tires: "Reifen",
+    cons_tires_front: "Vorderreifen",
+    cons_tires_rear: "Hinterreifen",
+    cons_brake_pads: "Bremsbeläge",
+    cons_brake_fluid: "Bremsflüssigkeit",
+    cons_coolant: "Kühlflüssigkeit",
+    cons_wiper_blades: "Scheibenwischer",
+    cons_battery12: "Batterie",
+    cons_bulbs: "Glühlampen",
+    cons_washer_fluid: "Scheibenwaschflüssigkeit",
+    cons_gear_oil: "Getriebeöl",
+    cons_chain_kit: "Kettensatz",
+    cons_fork_oil: "Gabelöl",
+    cons_drive_belt: "Antriebsriemen",
+    cons_variator_rollers: "Variatorrollen",
+    cons_inner_tube: "Schlauch",
+    cons_chain: "Kette",
+    cons_cables: "Züge / Hüllen",
+    cons_battery_ebike: "Fahrradakku",
+    cons_lubricant: "Kettenschmiermittel",
     alert_pdf_generation_failed: "PDF-Erstellung fehlgeschlagen. Bitte erneut versuchen oder prüfen, ob Home Assistant erreichbar ist.",
     history_delete_btn: "Diese Durchführung löschen",
     confirm_delete_log_entry: "„{name}“ endgültig aus dem Verlauf löschen? Die nächste Fälligkeit für diesen Punkt wird entsprechend neu berechnet.",
@@ -657,6 +762,7 @@ const I18N = {
     setting_mileage_reminder_days_unit: "días",
     settings_font_size_section: "Tamaño del texto",
     settings_card_version: "Versión de la tarjeta: {version}",
+    setting_seasonal_reminders_desc: "Recordatorios estacionales: una notificación por vehículo en cada cambio de estación (neumáticos, batería, líquidos…)",
     settings_language_section: "Idioma",
     form_vehicle_type_label: "Tipo de vehículo",
     form_vehicle_type_auto: "🚗 Coche",
@@ -765,6 +871,40 @@ const I18N = {
     diy_generate_btn: "🔧 ¿Cómo hacerlo uno mismo?",
     history_add_btn: "+ Añadir una intervención",
     history_pdf_btn: "📄 Generar un PDF",
+    tab_references: "🛢️ Referencias",
+    references_hint: "Anota aquí las referencias exactas de tus consumibles (aceite, neumáticos, filtros…) para tenerlas a mano en el taller o en la tienda. También aparecen en el PDF exportado.",
+    references_label_placeholder: "Consumible",
+    references_value_placeholder: "p. ej. 5W-30 ACEA C3, 4,3 L",
+    references_empty: "Aún no hay referencias guardadas.",
+    references_suggestions: "Sugerencias",
+    references_add_btn: "+ Añadir una fila",
+    references_save_btn: "Guardar",
+    cons_engine_oil: "Aceite de motor",
+    cons_oil_filter: "Filtro de aceite",
+    cons_air_filter: "Filtro de aire",
+    cons_cabin_filter: "Filtro de habitáculo",
+    cons_fuel_filter: "Filtro de combustible",
+    cons_spark_plugs: "Bujías",
+    cons_tires: "Neumáticos",
+    cons_tires_front: "Neumático delantero",
+    cons_tires_rear: "Neumático trasero",
+    cons_brake_pads: "Pastillas de freno",
+    cons_brake_fluid: "Líquido de frenos",
+    cons_coolant: "Líquido refrigerante",
+    cons_wiper_blades: "Escobillas limpiaparabrisas",
+    cons_battery12: "Batería",
+    cons_bulbs: "Bombillas",
+    cons_washer_fluid: "Líquido limpiaparabrisas",
+    cons_gear_oil: "Aceite de transmisión",
+    cons_chain_kit: "Kit de cadena",
+    cons_fork_oil: "Aceite de horquilla",
+    cons_drive_belt: "Correa de transmisión",
+    cons_variator_rollers: "Rodillos del variador",
+    cons_inner_tube: "Cámara de aire",
+    cons_chain: "Cadena",
+    cons_cables: "Cables / fundas",
+    cons_battery_ebike: "Batería de la bici",
+    cons_lubricant: "Lubricante de cadena",
     alert_pdf_generation_failed: "Error al generar el PDF. Inténtalo de nuevo o comprueba que Home Assistant esté accesible.",
     history_delete_btn: "Eliminar esta intervención",
     confirm_delete_log_entry: "¿Eliminar definitivamente «{name}» del historial? El próximo vencimiento de esta intervención se recalculará en consecuencia.",
@@ -857,6 +997,7 @@ const I18N = {
     setting_mileage_reminder_days_unit: "giorni",
     settings_font_size_section: "Dimensione del testo",
     settings_card_version: "Versione della scheda: {version}",
+    setting_seasonal_reminders_desc: "Promemoria stagionali: una notifica per veicolo a ogni cambio di stagione (pneumatici, batteria, liquidi…)",
     settings_language_section: "Lingua",
     form_vehicle_type_label: "Tipo di veicolo",
     form_vehicle_type_auto: "🚗 Auto",
@@ -965,6 +1106,40 @@ const I18N = {
     diy_generate_btn: "🔧 Come farlo da soli?",
     history_add_btn: "+ Aggiungi un intervento",
     history_pdf_btn: "📄 Genera un PDF",
+    tab_references: "🛢️ Riferimenti",
+    references_hint: "Annota qui i riferimenti esatti dei tuoi materiali di consumo (olio, pneumatici, filtri…) per averli a portata di mano in officina o in negozio. Compaiono anche nel PDF esportato.",
+    references_label_placeholder: "Materiale di consumo",
+    references_value_placeholder: "es. 5W-30 ACEA C3, 4,3 L",
+    references_empty: "Nessun riferimento salvato.",
+    references_suggestions: "Suggerimenti",
+    references_add_btn: "+ Aggiungi una riga",
+    references_save_btn: "Salva",
+    cons_engine_oil: "Olio motore",
+    cons_oil_filter: "Filtro olio",
+    cons_air_filter: "Filtro aria",
+    cons_cabin_filter: "Filtro abitacolo",
+    cons_fuel_filter: "Filtro carburante",
+    cons_spark_plugs: "Candele",
+    cons_tires: "Pneumatici",
+    cons_tires_front: "Pneumatico anteriore",
+    cons_tires_rear: "Pneumatico posteriore",
+    cons_brake_pads: "Pastiglie freno",
+    cons_brake_fluid: "Liquido freni",
+    cons_coolant: "Liquido di raffreddamento",
+    cons_wiper_blades: "Spazzole tergicristallo",
+    cons_battery12: "Batteria",
+    cons_bulbs: "Lampadine",
+    cons_washer_fluid: "Liquido lavavetri",
+    cons_gear_oil: "Olio trasmissione",
+    cons_chain_kit: "Kit catena",
+    cons_fork_oil: "Olio forcella",
+    cons_drive_belt: "Cinghia di trasmissione",
+    cons_variator_rollers: "Rulli del variatore",
+    cons_inner_tube: "Camera d'aria",
+    cons_chain: "Catena",
+    cons_cables: "Cavi / guaine",
+    cons_battery_ebike: "Batteria della bici",
+    cons_lubricant: "Lubrificante catena",
     alert_pdf_generation_failed: "Generazione del PDF non riuscita. Riprova, oppure verifica che Home Assistant sia raggiungibile.",
     history_delete_btn: "Elimina questo intervento",
     confirm_delete_log_entry: "Eliminare definitivamente «{name}» dalla cronologia? La prossima scadenza di questo intervento verrà ricalcolata di conseguenza.",
@@ -1049,6 +1224,17 @@ const VALID_THEME_IDS = THEMES_META.map((t) => t.id);
 // (invoices.py) — évite d'attendre l'aller-retour réseau pour un fichier
 // de toute façon rejeté par le serveur.
 const MAX_INVOICE_CLIENT_BYTES = 10 * 1024 * 1024;
+
+// Suggestions de libellés de consommables selon le type de véhicule (clés
+// i18n "cons_<clé>"). Saisie libre ensuite : le libellé est stocké tel quel,
+// dans la langue active au moment de l'ajout.
+const SUGGESTED_CONSUMABLES = {
+  auto_thermal: ["engine_oil", "oil_filter", "air_filter", "cabin_filter", "fuel_filter", "spark_plugs", "tires", "brake_pads", "brake_fluid", "coolant", "wiper_blades", "battery12", "bulbs", "washer_fluid"],
+  auto_electric: ["tires", "brake_pads", "brake_fluid", "coolant", "cabin_filter", "wiper_blades", "battery12", "gear_oil", "bulbs", "washer_fluid"],
+  moto: ["engine_oil", "oil_filter", "air_filter", "spark_plugs", "tires_front", "tires_rear", "brake_pads", "brake_fluid", "coolant", "chain_kit", "fork_oil", "battery12", "bulbs"],
+  scooter: ["engine_oil", "gear_oil", "oil_filter", "air_filter", "spark_plugs", "tires_front", "tires_rear", "brake_pads", "brake_fluid", "drive_belt", "variator_rollers", "battery12", "bulbs"],
+  velo_electrique: ["tires_front", "tires_rear", "inner_tube", "chain", "brake_pads", "brake_fluid", "cables", "battery_ebike", "lubricant"],
+};
 const LANGUAGES_META = [
   { id: "fr", name: "Français", flag: "🇫🇷" },
   { id: "en", name: "English", flag: "🇬🇧" },
@@ -1082,7 +1268,7 @@ class CarnetEntretienCard extends HTMLElement {
     this._mileageSourceEditing = false;
     this._pendingSensorEntity = "";
     this._theme = "gt_cuir";
-    this._settings = { hide_not_applicable: true, notifications_enabled: true, font_scale: 1, mileage_reminder_enabled: true, mileage_reminder_days: 30, language: "fr" };
+    this._settings = { hide_not_applicable: true, notifications_enabled: true, font_scale: 1, mileage_reminder_enabled: true, mileage_reminder_days: 30, seasonal_reminders_enabled: true, language: "fr" };
     this._motorisationKey = null;
     this._motorisationFullList = null;
     this._diyLoading = {}; // { [itemId]: bool } — état de chargement de l'explication DIY
@@ -1102,6 +1288,8 @@ class CarnetEntretienCard extends HTMLElement {
     this._linkingEntryId = null; // id de l'entrée d'historique dont le sélecteur "lier une facture" est ouvert
     this._cameraOpen = false; // capture caméra en direct pour l'ajout de facture (voir _openCamera)
     this._cameraStream = null;
+    this._consumablesDraft = null; // brouillon des références consommables (non enregistré)
+    this._consumablesDraftVehicleId = null;
   }
 
   setConfig(config) {
@@ -1599,6 +1787,14 @@ class CarnetEntretienCard extends HTMLElement {
     await this._fetchVehicles();
   }
 
+  async _setConsumables(vehicleId, rows) {
+    const consumables = rows.map((r) => ({ ...(r.id ? { id: r.id } : {}), label: r.label || "", value: r.value || "" }));
+    await this._ws({ type: "set_consumables", data: { vehicle_id: vehicleId, consumables } });
+    this._consumablesDraft = null;
+    this._consumablesDraftVehicleId = null;
+    await this._fetchVehicles();
+  }
+
   async _removeLogEntry(vehicleId, entryId) {
     await this._ws({ type: "remove_log_entry", data: { vehicle_id: vehicleId, entry_id: entryId } });
     await this._fetchVehicles();
@@ -1797,6 +1993,10 @@ class CarnetEntretienCard extends HTMLElement {
         <input type="number" id="setting-mileage-reminder-days" value="${this._settings.mileage_reminder_days ?? 30}" min="1" max="365" />
         <span class="muted small">${this._t("setting_mileage_reminder_days_unit")}</span>
       </div>
+      <label class="checkbox-row" style="margin-top:10px;">
+        <input type="checkbox" id="setting-seasonal-reminders" ${this._settings.seasonal_reminders_enabled !== false ? "checked" : ""} />
+        ${this._t("setting_seasonal_reminders_desc")}
+      </label>
       <p class="section-label">${this._t("settings_font_size_section")}</p>
       <div class="font-size-row">
         <button class="btn small ghost" id="font-decrease-btn" ${this._settings.font_scale <= 0.8 ? "disabled" : ""}>A−</button>
@@ -1882,6 +2082,7 @@ class CarnetEntretienCard extends HTMLElement {
       ["entretien", this._t("tab_maintenance")],
       ["historique", this._t("tab_history")],
       ["factures", this._t("tab_invoices")],
+      ["references", this._t("tab_references")],
     ];
     return `
       <div class="detail-header">
@@ -1923,7 +2124,7 @@ class CarnetEntretienCard extends HTMLElement {
         ${tabs.map(([id, label]) => `<div class="tab ${this._tab === id ? "active" : ""}" data-tab="${id}">${label}</div>`).join("")}
       </div>
       <div class="tab-content">
-        ${this._tab === "entretien" ? this._renderTabEntretien(v) : this._tab === "historique" ? this._renderTabHistorique(v) : this._renderTabFactures(v)}
+        ${this._tab === "entretien" ? this._renderTabEntretien(v) : this._tab === "historique" ? this._renderTabHistorique(v) : this._tab === "factures" ? this._renderTabFactures(v) : this._renderTabReferences(v)}
       </div>
     `;
   }
@@ -2361,6 +2562,58 @@ class CarnetEntretienCard extends HTMLElement {
     `;
   }
 
+  _consumableKind(v) {
+    if (v.vehicle_type === "deux_roues") return v.two_wheeler_type || "moto";
+    return v.fuel_type === "Électrique" ? "auto_electric" : "auto_thermal";
+  }
+
+  _consumableRows(v) {
+    if (this._consumablesDraft && this._consumablesDraftVehicleId === v.id) return this._consumablesDraft;
+    return (v.consumables || []).map((c) => ({ ...c }));
+  }
+
+  _ensureConsumablesDraft() {
+    const v = this._selectedVehicle;
+    this._consumablesDraft = this._consumableRows(v);
+    this._consumablesDraftVehicleId = v.id;
+    return this._consumablesDraft;
+  }
+
+  _renderTabReferences(v) {
+    const rows = this._consumableRows(v);
+    const have = new Set(rows.map((r) => (r.label || "").trim().toLowerCase()));
+    const suggestions = (SUGGESTED_CONSUMABLES[this._consumableKind(v)] || [])
+      .map((k) => this._t(`cons_${k}`))
+      .filter((label) => !have.has(label.toLowerCase()));
+    return `
+      <div class="muted small" style="margin:2px 0 10px;">${this._t("references_hint")}</div>
+      ${
+        rows.length
+          ? `<div class="cons-list">${rows
+              .map(
+                (r, i) => `
+            <div class="cons-row">
+              <input class="cons-label-input" data-idx="${i}" value="${esc(r.label)}" placeholder="${this._t("references_label_placeholder")}" />
+              <input class="cons-value-input" data-idx="${i}" value="${esc(r.value)}" placeholder="${this._t("references_value_placeholder")}" />
+              <button class="link-btn cons-remove-btn" data-idx="${i}" title="${this._t("invoice_remove_btn")}">✕</button>
+            </div>`
+              )
+              .join("")}</div>`
+          : `<div class="empty">${this._t("references_empty")}</div>`
+      }
+      ${
+        suggestions.length
+          ? `<div class="section-label">${this._t("references_suggestions")}</div>
+             <div class="cons-suggestions">${suggestions.map((l) => `<button class="cons-chip" data-label="${esc(l)}">+ ${esc(l)}</button>`).join("")}</div>`
+          : ""
+      }
+      <div class="toolbar" style="margin-top:12px;">
+        <button class="btn small ghost" id="cons-add-btn">${this._t("references_add_btn")}</button>
+        <button class="btn small primary" id="cons-save-btn">${this._t("references_save_btn")}</button>
+      </div>
+    `;
+  }
+
   _renderTabFactures(v) {
     const invoices = (v.invoices || []).slice().sort((a, b) => (b.uploaded_at || 0) - (a.uploaded_at || 0));
     return `
@@ -2427,6 +2680,7 @@ class CarnetEntretienCard extends HTMLElement {
     // seule ici avec une note expliquant où le changer.
     root.getElementById("setting-notifications")?.addEventListener("change", (e) => this._updateSetting("notifications_enabled", e.target.checked));
     root.getElementById("setting-hide-na")?.addEventListener("change", (e) => this._updateSetting("hide_not_applicable", e.target.checked));
+    root.getElementById("setting-seasonal-reminders")?.addEventListener("change", (e) => this._updateSetting("seasonal_reminders_enabled", e.target.checked));
     root.getElementById("setting-mileage-reminder")?.addEventListener("change", (e) => this._updateSetting("mileage_reminder_enabled", e.target.checked));
     root.getElementById("setting-mileage-reminder-days")?.addEventListener("change", (e) => {
       const days = Math.max(1, Math.min(365, parseInt(e.target.value, 10) || 30));
@@ -2730,6 +2984,31 @@ class CarnetEntretienCard extends HTMLElement {
       const notes = notesRaw && notesRaw.trim() ? notesRaw.trim() : undefined;
       this._logMaintenance(this._selectedId, { item_name, km: parseInt(km, 10), notes });
     });
+    // ---- Onglet Références (consommables) ----
+    root.querySelectorAll(".cons-label-input, .cons-value-input").forEach((inp) =>
+      inp.addEventListener("input", (e) => {
+        const draft = this._ensureConsumablesDraft();
+        const row = draft[parseInt(e.target.dataset.idx, 10)];
+        if (row) row[e.target.classList.contains("cons-label-input") ? "label" : "value"] = e.target.value;
+      })
+    );
+    root.querySelectorAll(".cons-chip").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        this._ensureConsumablesDraft().push({ label: btn.dataset.label, value: "" });
+        this._render();
+      })
+    );
+    root.querySelectorAll(".cons-remove-btn").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        this._ensureConsumablesDraft().splice(parseInt(btn.dataset.idx, 10), 1);
+        this._render();
+      })
+    );
+    root.getElementById("cons-add-btn")?.addEventListener("click", () => {
+      this._ensureConsumablesDraft().push({ label: "", value: "" });
+      this._render();
+    });
+    root.getElementById("cons-save-btn")?.addEventListener("click", () => this._setConsumables(this._selectedId, this._ensureConsumablesDraft()));
     root.getElementById("history-pdf-btn")?.addEventListener("click", () => this._downloadHistoryPdf(this._selectedId));
 
     // ---- Onglet Factures ----
@@ -3115,6 +3394,21 @@ const STYLE = `
     color:#FFFFFF; border:none; font-size:1.2em; cursor:pointer; padding:0; line-height:1;
   }
   .camera-spacer { width:44px; }
+
+  /* ---------------- Références des consommables ---------------- */
+  .cons-list { display:flex; flex-direction:column; gap:6px; }
+  .cons-row { display:flex; align-items:center; gap:6px; }
+  .cons-row input {
+    padding:7px 9px; border-radius:8px; border:1px solid var(--ce-border); background: var(--ce-surface-2);
+    color: var(--ce-text); font-size:0.88em; font-family:inherit; box-sizing:border-box; min-width:0;
+  }
+  .cons-label-input { flex:0 0 36%; font-weight:600; }
+  .cons-value-input { flex:1; }
+  .cons-suggestions { display:flex; flex-wrap:wrap; gap:6px; }
+  .cons-chip {
+    background: var(--ce-surface); border:1px dashed var(--ce-border); color: var(--ce-accent);
+    border-radius:999px; padding:4px 10px; font-size:0.78em; cursor:pointer; font-family:inherit;
+  }
   .edit-divider { display:flex; align-items:center; gap:8px; margin:12px 0; font-size:0.7em; color: var(--ce-text-dim); }
   .edit-divider::before, .edit-divider::after { content:""; flex:1; height:1px; background: var(--ce-border); }
   .bar { height:5px; border-radius:3px; background: var(--ce-border); overflow:hidden; }
