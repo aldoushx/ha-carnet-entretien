@@ -46,6 +46,7 @@ from .gemini_client import GeminiClient, GeminiError
 from .history_pdf import build_history_pdf
 from .invoices import ALLOWED_MIME_EXTENSIONS, MAX_INVOICE_SIZE_BYTES, build_stored_filename, vehicle_invoice_dir
 from .maintenance_catalog import get_catalog
+from .seasonal_reminders import build_seasonal_message, current_season, vehicle_kind
 from .storage import CarnetStore
 from .utils import compute_plan_status, estimate_annual_km
 
@@ -134,6 +135,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await _async_check_overdue_notifications(hass, entry)
     await _async_check_mileage_reminders(hass, entry)
+    await _async_check_seasonal_reminders(hass, entry)
     entry.async_on_unload(
         async_track_time_interval(hass, lambda now: _schedule_overdue_check(hass, entry), timedelta(hours=24))
     )
@@ -199,6 +201,7 @@ def _schedule_overdue_check(hass: HomeAssistant, entry: ConfigEntry) -> None:
     changement de capteur lié, changement de réglages)."""
     hass.async_create_task(_async_check_overdue_notifications(hass, entry))
     hass.async_create_task(_async_check_mileage_reminders(hass, entry))
+    hass.async_create_task(_async_check_seasonal_reminders(hass, entry))
 
 
 async def _async_check_overdue_notifications(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -271,6 +274,35 @@ async def _async_check_mileage_reminders(hass: HomeAssistant, entry: ConfigEntry
             title=strings["mileage_title"],
             notification_id=notif_id,
         )
+
+
+async def _async_check_seasonal_reminders(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Une notification persistante par véhicule à chaque changement de
+    saison (voir seasonal_reminders.py pour le contenu par type de véhicule).
+    Créée une seule fois par saison : si l'utilisateur la ferme, elle ne
+    revient pas avant la saison suivante. Réglage activé par défaut ; le
+    désactiver retire les notifications en cours et oublie la saison
+    notifiée, pour qu'une réactivation en cours de saison la ramène.
+    """
+    store: CarnetStore = hass.data[DOMAIN][entry.entry_id]["store"]
+    settings = store.get_settings()
+    enabled = settings.get("seasonal_reminders_enabled", True)
+    lang = settings.get("language", "fr")
+    strings = NOTIF_STRINGS.get(lang, NOTIF_STRINGS["fr"])
+    season, key = current_season(date.today(), hass.config.latitude)
+
+    for vehicle_id, vehicle in list(store.vehicles.items()):
+        notif_id = f"{DOMAIN}_{vehicle_id}_seasonal"
+        if not enabled:
+            persistent_notification.async_dismiss(hass, notif_id)
+            await store.async_set_seasonal_notified(vehicle_id, None)
+            continue
+        if vehicle.get("seasonal_notified") == key:
+            continue
+        label = f"{vehicle.get('brand', '')} {vehicle.get('model', '')}".strip() or strings["vehicle_fallback"]
+        title, body = build_seasonal_message(vehicle_kind(vehicle), season, lang, label)
+        persistent_notification.async_create(hass, body, title=title, notification_id=notif_id)
+        await store.async_set_seasonal_notified(vehicle_id, key)
 
 
 # ---------------------------------------------------------------------------
@@ -1202,6 +1234,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
             vol.Optional("font_scale"): vol.Coerce(float),
             vol.Optional("mileage_reminder_enabled"): bool,
             vol.Optional("mileage_reminder_days"): vol.All(vol.Coerce(int), vol.Range(min=1)),
+            vol.Optional("seasonal_reminders_enabled"): bool,
             # PAS de "language" ici (v1.4.1) : ce n'est plus un réglage que
             # la carte peut changer elle-même — c'est choisi à l'installation
             # de l'intégration (ou modifié via ses Options), voir
@@ -1229,6 +1262,25 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
     @websocket_api.async_response
     async def ws_set_photo(hass, connection, msg):
         vehicle = await store.async_set_photo(msg["vehicle_id"], msg.get("photo"))
+        async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
+        connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(vehicle, store.get_settings().get("language", "fr")) if vehicle else None})
+
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): f"{DOMAIN}/set_consumables",
+            vol.Required("vehicle_id"): str,
+            vol.Required("consumables"): [
+                {
+                    vol.Optional("id"): str,
+                    vol.Optional("label", default=""): str,
+                    vol.Optional("value", default=""): str,
+                }
+            ],
+        }
+    )
+    @websocket_api.async_response
+    async def ws_set_consumables(hass, connection, msg):
+        vehicle = await store.async_set_consumables(msg["vehicle_id"], msg["consumables"])
         async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
         connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(vehicle, store.get_settings().get("language", "fr")) if vehicle else None})
 
@@ -1344,6 +1396,6 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         ws_set_item_applicable, ws_set_item_override, ws_add_plan_item, ws_remove_plan_item,
         ws_generate_diy_explanation,
         ws_value_snapshot, ws_log_maintenance, ws_remove_log_entry, ws_ai_usage, ws_get_settings, ws_set_settings,
-        ws_set_photo, ws_add_invoice, ws_remove_invoice, ws_set_log_entry_invoices,
+        ws_set_photo, ws_set_consumables, ws_add_invoice, ws_remove_invoice, ws_set_log_entry_invoices,
     ):
         websocket_api.async_register_command(hass, handler)

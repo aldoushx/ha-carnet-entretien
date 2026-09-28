@@ -31,6 +31,9 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "font_scale": 1.0,
     "mileage_reminder_enabled": True,
     "mileage_reminder_days": 30,
+    # Rappels saisonniers (une notification persistante par véhicule à chaque
+    # changement de saison, voir seasonal_reminders.py) — activés par défaut.
+    "seasonal_reminders_enabled": True,
     # Langue de l'ensemble de l'intégration (carte, catalogue d'entretien,
     # contenu généré par Gemini, notifications persistantes) — un seul
     # réglage pour toute l'installation, pas par utilisateur HA : le
@@ -115,6 +118,7 @@ class CarnetStore:
             "vehicle_type": "auto",
             "two_wheeler_type": "",
             "invoices": [],  # [{id, stored_filename, original_filename, mime, size, uploaded_at, label}]
+            "consumables": [],  # [{id, label, value}] références des consommables (huile, pneus...)
             **vehicle,
         }
         vehicle["id"] = vehicle_id  # au cas où **vehicle contenait déjà "id"
@@ -163,6 +167,34 @@ class CarnetStore:
         if not vehicle:
             return None
         vehicle["photo"] = photo
+        await self.async_save()
+        return vehicle
+
+    async def async_set_seasonal_notified(self, vehicle_id: str, key: str | None) -> None:
+        """Mémorise la saison (ex. "2026-autumn") pour laquelle la notification
+        saisonnière a déjà été émise, afin de n'en créer qu'une par saison ;
+        None l'efface (rappels désactivés : ils reviendront à la réactivation)."""
+        vehicle = self.vehicles.get(vehicle_id)
+        if not vehicle or vehicle.get("seasonal_notified") == key:
+            return
+        vehicle["seasonal_notified"] = key
+        await self.async_save()
+
+    async def async_set_consumables(self, vehicle_id: str, consumables: list[dict[str, Any]]) -> dict[str, Any] | None:
+        """Remplace la liste des références de consommables du véhicule
+        (huile, pneus, filtres...) : saisie libre libellé/valeur, le client
+        envoie toujours la liste complète."""
+        vehicle = self.vehicles.get(vehicle_id)
+        if not vehicle:
+            return None
+        cleaned = []
+        for c in consumables:
+            label = (c.get("label") or "").strip()
+            value = (c.get("value") or "").strip()
+            if not label and not value:
+                continue  # ligne vide : ignorée
+            cleaned.append({"id": c.get("id") or new_id(), "label": label[:80], "value": value[:300]})
+        vehicle["consumables"] = cleaned
         await self.async_save()
         return vehicle
 
