@@ -34,6 +34,10 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     # Rappels saisonniers (une notification persistante par véhicule à chaque
     # changement de saison, voir seasonal_reminders.py) — activés par défaut.
     "seasonal_reminders_enabled": True,
+    # Dossier de stockage des factures : "" = emplacement par défaut
+    # (config/carnet_entretien_files), sinon chemin absolu personnalisé
+    # (doit être dans allowlist_external_dirs, voir invoices.py).
+    "invoices_base_dir": "",
     # Langue de l'ensemble de l'intégration (carte, catalogue d'entretien,
     # contenu généré par Gemini, notifications persistantes) — un seul
     # réglage pour toute l'installation, pas par utilisateur HA : le
@@ -46,6 +50,7 @@ DEFAULT_DATA: dict[str, Any] = {
     "vehicles": {},      # id -> vehicle dict
     "model_cache": {},   # "marque|modele|motorisation|annee" -> {known_issues, cached_at}
     "motorisation_cache": {},  # "marque|modele|annee" -> {"list": [...], "cached_at": ...}
+    "consumables_cache": {},  # même type de clé (+motorisation) -> {"list": [...], "cached_at": ...}
     "ai_usage": {"date": "", "tokens": 0},
     "settings": dict(DEFAULT_SETTINGS),
 }
@@ -80,6 +85,7 @@ class CarnetStore:
                 "vehicles": {},
                 "model_cache": {},
                 "motorisation_cache": {},
+                "consumables_cache": {},
                 "ai_usage": {"date": "", "tokens": 0},
                 "settings": dict(DEFAULT_SETTINGS),
             }
@@ -437,6 +443,25 @@ class CarnetStore:
 
     async def async_set_motorisation_cache(self, key: str, motorisations: list[str]) -> None:
         self.data["motorisation_cache"][key] = {"list": motorisations, "cached_at": now_ts()}
+        await self.async_save()
+
+    # ---------- Cache des suggestions de consommables (onglet Références) ----------
+
+    def consumables_cache_key(
+        self, brand: str, model: str, year: int, motorisation: str = "", fuel_type: str = "",
+        vehicle_type: str = "auto", two_wheeler_type: str = "",
+    ) -> str:
+        return (
+            f"{brand.strip().lower()}|{model.strip().lower()}|{year}|{motorisation.strip().lower()}"
+            f"|{fuel_type.strip().lower()}|{vehicle_type}|{two_wheeler_type}"
+        )
+
+    def get_consumables_cache(self, key: str) -> list[dict[str, str]] | None:
+        entry = self.data["consumables_cache"].get(key)
+        return entry["list"] if entry else None
+
+    async def async_set_consumables_cache(self, key: str, items: list[dict[str, str]]) -> None:
+        self.data["consumables_cache"][key] = {"list": items, "cached_at": now_ts()}
         await self.async_save()
 
     # ---------- Réglages (thème visuel, etc.) ----------

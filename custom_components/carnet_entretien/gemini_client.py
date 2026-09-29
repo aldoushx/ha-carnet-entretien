@@ -435,6 +435,79 @@ Réponds uniquement avec le JSON demandé (tableau de chaînes), sans texte
 autour."""
         return await self._call(prompt, schema, max_output_tokens=1024)
 
+    async def suggest_consumables(
+        self, brand: str, model: str, motorisation: str, year: int, fuel_type: str = "",
+        vehicle_type: str = "auto", two_wheeler_type: str = "", language: str = "fr",
+    ) -> GeminiResult:
+        """Références des principaux consommables (huile, pneus, liquides...)
+        pour ce véhicule précis — même logique que list_motorisations
+        ci-dessus : un exemple de forme de réponse adapté au type de
+        véhicule pour guider le modèle, plutôt qu'une liste figée de
+        catégories qu'il faudrait ensuite traduire nous-mêmes."""
+        schema = {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "label": {"type": "STRING"},
+                    "value": {"type": "STRING"},
+                },
+                "required": ["label", "value"],
+            },
+        }
+        is_electric = fuel_type and any(w in fuel_type.lower() for w in ("lectri", "elettr", "electric"))
+        if vehicle_type == "deux_roues" and two_wheeler_type == "velo_electrique":
+            examples = (
+                '{"label": "Pneu avant", "value": "700x40c"}, '
+                '{"label": "Batterie", "value": "Bosch PowerTube 625 Wh"}, '
+                '{"label": "Lubrifiant de chaîne", "value": "lubrifiant humide"}'
+            )
+            extra = "Ce véhicule est un vélo à assistance électrique : pas d'huile moteur ni de bougies."
+        elif vehicle_type == "deux_roues":
+            examples = (
+                '{"label": "Huile moteur", "value": "10W-40 semi-synthèse, 2,5 L"}, '
+                '{"label": "Pneu arrière", "value": "160/60 ZR17"}, '
+                '{"label": "Bougies", "value": "NGK CR9E"}'
+            )
+            extra = ""
+        elif is_electric:
+            examples = (
+                '{"label": "Pneus", "value": "205/55 R16"}, '
+                '{"label": "Liquide de refroidissement", "value": "type G13, circuit batterie"}, '
+                '{"label": "Batterie 12V", "value": "AGM L2 60 Ah"}'
+            )
+            extra = "Ce véhicule est 100% électrique : pas d'huile moteur, de filtre à huile ni de bougies."
+        else:
+            examples = (
+                '{"label": "Huile moteur", "value": "5W-30 ACEA C3, 4,3 L"}, '
+                '{"label": "Pneus", "value": "205/55 R16 91V"}, '
+                '{"label": "Liquide de refroidissement", "value": "type G12+, protection -25°C"}'
+            )
+            extra = ""
+
+        prompt = f"""Tu es un expert technique automobile/moto. Donne les références
+exactes des principaux consommables et pièces d'entretien courantes pour ce
+véhicule précis, d'après la documentation constructeur :
+
+Marque : {brand}
+Modèle : {model}
+Motorisation : {motorisation or "non précisée"}
+Année : {year}
+Type de carburant/énergie : {fuel_type or "non précisé — déduis-le de la motorisation si possible"}
+
+{extra}
+
+Pour chaque consommable pertinent pour CE véhicule (n'invente rien, ignore ce
+qui ne s'applique pas à son type d'énergie ou d'équipement), donne un couple
+libellé court / valeur précise, par exemple : {examples}.
+Limite-toi aux consommables réellement pertinents (entre 5 et 12 entrées). Si
+tu n'es pas certain d'une valeur exacte (ex : capacité précise en litres),
+donne quand même le type ou la norme si tu la connais plutôt que d'omettre
+l'entrée, mais n'invente pas un chiffre précis non fiable. Réponds uniquement
+avec le JSON demandé (tableau d'objets {{"label": ..., "value": ...}}), sans
+texte autour.""" + _language_instruction(language)
+        return await self._call(prompt, schema, max_output_tokens=2048)
+
     async def check_recalls(
         self, brand: str, model: str, motorisation: str, year: int, language: str = "fr"
     ) -> GeminiResult:

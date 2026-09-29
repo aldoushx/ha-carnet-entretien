@@ -70,5 +70,29 @@ def build_stored_filename(original_filename: str, mime: str) -> str:
     return f"{day}_{slug}_{short_id}.{ext}"
 
 
-def vehicle_invoice_dir(hass: HomeAssistant, vehicle_id: str) -> Path:
+def vehicle_invoice_dir(hass: HomeAssistant, vehicle_id: str, base_dir: str | None = None) -> Path:
+    """Dossier des factures d'un véhicule.
+
+    base_dir : dossier personnalisé choisi dans les réglages
+    ("invoices_base_dir"), ou None/"" pour l'emplacement par défaut
+    (config/carnet_entretien_files). Toujours un sous-dossier par véhicule,
+    y compris en dossier personnalisé, pour ne pas mélanger les factures de
+    plusieurs véhicules dans le même dossier partagé.
+    """
+    if base_dir:
+        return Path(base_dir) / vehicle_id
     return Path(hass.config.path(INVOICES_DIR_NAME, vehicle_id))
+
+
+def is_invoices_dir_allowed(hass: HomeAssistant, base_dir: str) -> bool:
+    """Bloquant (I/O) : à appeler via hass.async_add_executor_job.
+
+    Un dossier personnalisé doit être dans allowlist_external_dirs, la
+    liste des chemins que Home Assistant s'autorise à lire/écrire en
+    dehors de sa propre gestion (voir configuration.yaml ->
+    allowlist_external_dirs, ou tout point de montage sous config/media,
+    config/share). Sans ça, l'écriture échouerait silencieusement pour de
+    bonnes raisons de sécurité — mieux vaut le signaler clairement à la
+    saisie plutôt que de laisser échouer un envoi de facture plus tard.
+    """
+    return hass.config.is_allowed_path(base_dir)

@@ -44,7 +44,13 @@ from .const import (
 )
 from .gemini_client import GeminiClient, GeminiError
 from .history_pdf import build_history_pdf
-from .invoices import ALLOWED_MIME_EXTENSIONS, MAX_INVOICE_SIZE_BYTES, build_stored_filename, vehicle_invoice_dir
+from .invoices import (
+    ALLOWED_MIME_EXTENSIONS,
+    MAX_INVOICE_SIZE_BYTES,
+    build_stored_filename,
+    is_invoices_dir_allowed,
+    vehicle_invoice_dir,
+)
 from .maintenance_catalog import get_catalog
 from .seasonal_reminders import build_seasonal_message, current_season, vehicle_kind
 from .storage import CarnetStore
@@ -374,7 +380,7 @@ class InvoiceView(HomeAssistantView):
     def __init__(self, hass: HomeAssistant) -> None:
         self._hass = hass
 
-    def _find(self, invoice_id: str) -> tuple[str, dict[str, Any]] | None:
+    def _find(self, invoice_id: str) -> tuple[CarnetStore, str, dict[str, Any]] | None:
         for entry_data in self._hass.data.get(DOMAIN, {}).values():
             if not isinstance(entry_data, dict):
                 continue  # ignore les flags simples (_static_registered...)
@@ -384,16 +390,17 @@ class InvoiceView(HomeAssistantView):
             for vehicle_id, vehicle in store.vehicles.items():
                 for invoice in vehicle.get("invoices", []):
                     if invoice.get("id") == invoice_id:
-                        return vehicle_id, invoice
+                        return store, vehicle_id, invoice
         return None
 
     async def get(self, request: web.Request, invoice_id: str) -> web.Response:
         found = self._find(invoice_id)
         if not found:
             return web.Response(status=404)
-        vehicle_id, invoice = found
+        store, vehicle_id, invoice = found
         stored_filename = invoice.get("stored_filename", "")
-        path = vehicle_invoice_dir(self._hass, vehicle_id) / stored_filename
+        base_dir = store.get_settings().get("invoices_base_dir") or None
+        path = vehicle_invoice_dir(self._hass, vehicle_id, base_dir) / stored_filename
         exists = await self._hass.async_add_executor_job(path.is_file)
         if not exists:
             return web.Response(status=404)
@@ -439,7 +446,8 @@ class HistoryPdfView(HomeAssistantView):
         if not vehicle:
             return web.Response(status=404)
         try:
-            pdf_bytes = await self._hass.async_add_executor_job(build_history_pdf, self._hass, vehicle, vehicle_id)
+            base_dir = store.get_settings().get("invoices_base_dir") or None
+            pdf_bytes = await self._hass.async_add_executor_job(build_history_pdf, self._hass, vehicle, vehicle_id, base_dir)
         except Exception:
             _LOGGER.exception("Échec de la génération du PDF d'historique (véhicule %s)", vehicle_id)
             return web.Response(status=500)
@@ -793,7 +801,7 @@ async def _remove_vehicle(hass: HomeAssistant, entry: ConfigEntry, store: Carnet
     # sa suppression doit donc être gérée explicitement ici, sinon les
     # fichiers survivraient indéfiniment sur disque à la suppression du
     # véhicule.
-    directory = vehicle_invoice_dir(hass, vehicle_id)
+    directory = vehicle_invoice_dir(hass, vehicle_id, store.get_settings().get("invoices_base_dir") or None)
 
     def _rmtree() -> None:
         if directory.is_dir():
@@ -1235,6 +1243,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
             vol.Optional("mileage_reminder_enabled"): bool,
             vol.Optional("mileage_reminder_days"): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional("seasonal_reminders_enabled"): bool,
+            vol.Optional("invoices_base_dir"): str,
             # PAS de "language" ici (v1.4.1) : ce n'est plus un réglage que
             # la carte peut changer elle-même — c'est choisi à l'installation
             # de l'intégration (ou modifié via ses Options), voir
@@ -1247,6 +1256,20 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
     @websocket_api.async_response
     async def ws_set_settings(hass, connection, msg):
         patch = {k: v for k, v in msg.items() if k not in ("id", "type")}
+        new_dir = patch.get("invoices_base_dir", "").strip() if "invoices_base_dir" in patch else None
+        if new_dir:
+            # Validation bloquante (I/O) : hors event loop.
+            allowed = await hass.async_add_executor_job(is_invoices_dir_allowed, hass, new_dir)
+            if not allowed:
+                connection.send_error(
+                    msg["id"],
+                    "path_not_allowed",
+                    "Ce dossier n'est pas autorisé par Home Assistant (allowlist_external_dirs). "
+                    "Choisissez un dossier sous config/media ou config/share, ou déclarez-le "
+                    "explicitement dans configuration.yaml.",
+                )
+                return
+            patch["invoices_base_dir"] = new_dir
         settings = await store.async_set_settings(patch)
         async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
         _schedule_overdue_check(hass, entry)
@@ -1283,6 +1306,44 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         vehicle = await store.async_set_consumables(msg["vehicle_id"], msg["consumables"])
         async_dispatcher_send(hass, SIGNAL_VEHICLES_UPDATED)
         connection.send_result(msg["id"], {"vehicle": _serialize_vehicle(vehicle, store.get_settings().get("language", "fr")) if vehicle else None})
+
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): f"{DOMAIN}/suggest_consumables",
+            vol.Required("vehicle_id"): str,
+        }
+    )
+    @websocket_api.async_response
+    async def ws_suggest_consumables(hass, connection, msg):
+        vehicle = store.get_vehicle(msg["vehicle_id"])
+        if not vehicle:
+            connection.send_error(msg["id"], "not_found", "Véhicule inconnu")
+            return
+        lang = store.get_settings().get("language", "fr")
+        key = store.consumables_cache_key(
+            vehicle.get("brand", ""), vehicle.get("model", ""), vehicle.get("year", 0),
+            vehicle.get("motorisation", ""), vehicle.get("fuel_type", ""),
+            vehicle.get("vehicle_type", "auto"), vehicle.get("two_wheeler_type", ""),
+        )
+        items = store.get_consumables_cache(key)
+        if items is None:
+            try:
+                result = await gemini.suggest_consumables(
+                    vehicle.get("brand", ""), vehicle.get("model", ""), vehicle.get("motorisation", ""),
+                    vehicle.get("year", 0), vehicle.get("fuel_type", ""),
+                    vehicle.get("vehicle_type", "auto"), vehicle.get("two_wheeler_type", ""), lang,
+                )
+                items = [
+                    {"label": str(it.get("label", "")).strip(), "value": str(it.get("value", "")).strip()}
+                    for it in result.data
+                    if isinstance(it, dict) and (it.get("label") or it.get("value"))
+                ]
+                await store.async_set_consumables_cache(key, items)
+                await store.async_add_token_usage(result.tokens)
+            except GeminiError as err:
+                connection.send_error(msg["id"], err.code, str(err))
+                return
+        connection.send_result(msg["id"], {"items": items})
 
     @websocket_api.websocket_command(
         {
@@ -1324,7 +1385,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         except ValueError:
             connection.send_error(msg["id"], "invalid_format", "Type de fichier non supporté")
             return
-        directory = vehicle_invoice_dir(hass, msg["vehicle_id"])
+        directory = vehicle_invoice_dir(hass, msg["vehicle_id"], store.get_settings().get("invoices_base_dir") or None)
 
         def _write() -> None:
             directory.mkdir(parents=True, exist_ok=True)
@@ -1366,7 +1427,8 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
     async def ws_remove_invoice(hass, connection, msg):
         removed = await store.async_remove_invoice(msg["vehicle_id"], msg["invoice_id"])
         if removed:
-            path = vehicle_invoice_dir(hass, msg["vehicle_id"]) / removed.get("stored_filename", "")
+            base_dir = store.get_settings().get("invoices_base_dir") or None
+            path = vehicle_invoice_dir(hass, msg["vehicle_id"], base_dir) / removed.get("stored_filename", "")
 
             def _delete() -> None:
                 path.unlink(missing_ok=True)
@@ -1396,6 +1458,6 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         ws_set_item_applicable, ws_set_item_override, ws_add_plan_item, ws_remove_plan_item,
         ws_generate_diy_explanation,
         ws_value_snapshot, ws_log_maintenance, ws_remove_log_entry, ws_ai_usage, ws_get_settings, ws_set_settings,
-        ws_set_photo, ws_set_consumables, ws_add_invoice, ws_remove_invoice, ws_set_log_entry_invoices,
+        ws_set_photo, ws_set_consumables, ws_suggest_consumables, ws_add_invoice, ws_remove_invoice, ws_set_log_entry_invoices,
     ):
         websocket_api.async_register_command(hass, handler)

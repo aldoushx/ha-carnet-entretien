@@ -23,6 +23,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from xml.sax.saxutils import escape
 
 from homeassistant.core import HomeAssistant
 from PIL import Image
@@ -74,28 +75,49 @@ def _build_body_pdf(vehicle: dict[str, Any]) -> bytes:
     cell_style = ParagraphStyle("CarnetCell", parent=styles["Normal"], fontSize=8, leading=10)
 
     vname = f"{vehicle.get('brand', '')} {vehicle.get('model', '')}".strip() or "Véhicule"
-    elements = [Paragraph(f"Carnet d'entretien — {vname}", title_style)]
+    elements = [Paragraph(f"Carnet d'entretien — {escape(vname)}", title_style)]
     meta_bits = [str(b) for b in (vehicle.get("year"), _fmt_km(vehicle.get("mileage")), vehicle.get("license_plate")) if b]
     elements.append(Paragraph(" · ".join(meta_bits), subtitle_style))
+
+    consumables = [c for c in vehicle.get("consumables", []) if c.get("label") or c.get("value")]
+    if consumables:
+        elements.append(Paragraph("Références des consommables", styles["Heading3"]))
+        ref_data = [[Paragraph(f"<b>{escape(c.get('label', ''))}</b>", cell_style), Paragraph(escape(c.get("value", "")), cell_style)] for c in consumables]
+        ref_table = Table(ref_data, colWidths=[5 * cm, 13 * cm])
+        ref_table.setStyle(
+            TableStyle(
+                [
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CCCCCC")),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#F5F5F5")),
+                ]
+            )
+        )
+        elements.append(ref_table)
+        elements.append(Paragraph("Historique des interventions", styles["Heading3"]))
 
     log = sorted(vehicle.get("maintenance_log", []), key=lambda e: e.get("date") or 0)
     if not log:
         elements.append(Paragraph("Aucune intervention enregistrée.", styles["Normal"]))
     else:
-        header = ["Date", "Km", "Intervention", "Garage", "Coût", "Notes"]
+        # Uniquement les champs que la carte permet réellement de
+        # renseigner (date, km, nom, commentaire) : "garage" et "cost"
+        # existent côté service HA (log_maintenance, pour les
+        # automatisations) mais n'ont aucun formulaire dans la carte, donc
+        # aucun moyen normal de les remplir — les afficher ici laisserait
+        # deux colonnes presque toujours vides.
+        header = ["Date", "Km", "Intervention", "Commentaire"]
         data: list[list[Any]] = [header]
         for e in log:
             data.append(
                 [
                     _fmt_date(e.get("date")),
                     _fmt_km(e.get("km")),
-                    Paragraph(e.get("item_name", "") or "", cell_style),
-                    Paragraph(e.get("garage", "") or "", cell_style),
-                    f"{e['cost']} €" if e.get("cost") else "",
-                    Paragraph(e.get("notes", "") or "", cell_style),
+                    Paragraph(escape(e.get("item_name", "") or ""), cell_style),
+                    Paragraph(escape(e.get("notes", "") or ""), cell_style),
                 ]
             )
-        table = Table(data, colWidths=[2.1 * cm, 1.9 * cm, 4.2 * cm, 3 * cm, 1.8 * cm, 5.5 * cm], repeatRows=1)
+        table = Table(data, colWidths=[2.3 * cm, 2.1 * cm, 5.5 * cm, 7 * cm], repeatRows=1)
         table.setStyle(
             TableStyle(
                 [
@@ -133,12 +155,15 @@ def _invoice_to_pdf_bytes(path: Path, mime: str) -> bytes | None:
         return None
 
 
-def build_history_pdf(hass: HomeAssistant, vehicle: dict[str, Any], vehicle_id: str) -> bytes:
+def build_history_pdf(hass: HomeAssistant, vehicle: dict[str, Any], vehicle_id: str, base_dir: str | None = None) -> bytes:
     """Construit le PDF complet : corps (page de garde + tableau
     d'historique), puis, si des factures sont liées à au moins une
     intervention, une page de séparation suivie de chaque facture (dans
     l'ordre chronologique des interventions auxquelles elle est liée),
     convertie en page PDF si besoin.
+
+    base_dir : dossier de factures personnalisé (réglage
+    "invoices_base_dir"), voir invoices.py::vehicle_invoice_dir.
     """
     writer = PdfWriter()
     writer.append(PdfReader(io.BytesIO(_build_body_pdf(vehicle))))
@@ -154,7 +179,7 @@ def build_history_pdf(hass: HomeAssistant, vehicle: dict[str, Any], vehicle_id: 
                 ordered_invoice_ids.append(inv_id)
 
     if ordered_invoice_ids:
-        directory = vehicle_invoice_dir(hass, vehicle_id)
+        directory = vehicle_invoice_dir(hass, vehicle_id, base_dir)
         annex_lines = [f"{len(ordered_invoice_ids)} document(s), dans l'ordre chronologique des interventions."]
         writer.append(PdfReader(io.BytesIO(_simple_pdf_page("Annexe — Factures", annex_lines))))
         for inv_id in ordered_invoice_ids:
