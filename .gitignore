@@ -1,0 +1,20 @@
+# Bytecode Python (jamais utile à versionner, et diverge du code source
+# selon la version de Python de chaque machine)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environnements virtuels
+.venv/
+venv/
+env/
+
+# Éditeurs / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Données locales éventuelles générées en développement (ne pas embarquer
+# de vraies factures/historique de test dans le dépôt public)
+*.storage/
