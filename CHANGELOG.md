@@ -6,6 +6,31 @@ dans la description d'une release GitHub (voir `docs/RELEASING.md`).
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## [1.11.0] — Dossier configurable et suggestions IA des consommables
+
+### Ajouté
+- **Dossier de stockage des factures configurable**, dans les réglages :
+  un chemin absolu personnalisé (ex. un partage réseau monté dans Home
+  Assistant), validé contre `allowlist_external_dirs` avant d'être
+  enregistré. Vide = dossier par défaut (`config/carnet_entretien_files`).
+  Les factures déjà envoyées ne sont pas déplacées automatiquement lors
+  d'un changement de dossier.
+- **Suggestion des références de consommables par IA** (bouton
+  « ✨ Suggérer via IA » dans l'onglet Références) : propose des références
+  adaptées à la marque, au modèle, à la motorisation et à l'énergie du
+  véhicule (huile, pneus, liquides, bougies...), sur le même principe que
+  la recherche de motorisation à la création d'un véhicule. Résultat mis
+  en cache par véhicule/motorisation pour ne pas re-consommer de quota à
+  chaque clic. Les suggestions s'ajoutent au brouillon sans écraser les
+  lignes déjà saisies ni créer de doublon.
+
+### Modifié
+- PDF d'export : les colonnes **Garage** et **Coût** du tableau
+  d'historique sont retirées, remplacées par une colonne **Commentaire**.
+  Ces deux champs sont utilisables via le service Home Assistant
+  `log_maintenance` (automatisations) mais n'ont aucun formulaire dans la
+  carte : elles restaient donc presque toujours vides.
+
 ## [1.10.0] — Rappels saisonniers
 
 ### Ajouté
@@ -38,6 +63,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
   thermique ou électrique, moto, scooter, vélo électrique), traduites dans
   les 5 langues.
 - Les références figurent sur la première page du PDF d'export.
+
+### Corrigé
+- PDF d'export : le texte saisi (intervention, garage, notes, références)
+  est désormais échappé, un `&` ou un `<` pouvait faire échouer la
+  génération.
 
 ## [1.8.0] — Export PDF
 
