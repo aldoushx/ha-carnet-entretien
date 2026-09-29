@@ -11,7 +11,7 @@ const DOMAIN = "carnet_entretien";
 // l'app Companion Android (où le cache de la WebView est moins évident à
 // vider que dans un navigateur classique), que la carte chargée est bien
 // la dernière version installée et non une version mise en cache.
-const CARD_VERSION = "1.10.0";
+const CARD_VERSION = "1.11.0";
 const CARNET_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
   <rect x="3" y="3" width="90" height="90" rx="20" fill="#392318"/>
   <rect x="9" y="9" width="78" height="78" rx="15" fill="none" stroke="#C59C35" stroke-width="2.4" stroke-dasharray="5,3"/>
@@ -58,6 +58,10 @@ const I18N = {
     settings_font_size_section: "Taille du texte",
     settings_card_version: "Version de la carte : {version}",
     setting_seasonal_reminders_desc: "Rappels saisonniers : une notification par véhicule à chaque changement de saison (pneus, batterie, liquides…)",
+    settings_invoices_dir_section: "Dossier de stockage des factures",
+    settings_invoices_dir_hint: "Par défaut, les factures sont stockées dans un dossier propre à Home Assistant. Vous pouvez indiquer un autre chemin absolu (ex : un partage réseau monté dans Home Assistant) — il doit être autorisé par Home Assistant (allowlist_external_dirs). Les factures déjà envoyées ne sont pas déplacées automatiquement lors d'un changement.",
+    settings_invoices_dir_placeholder: "Vide = dossier par défaut",
+    settings_invoices_dir_reset_btn: "Revenir au dossier par défaut",
     settings_language_section: "Langue",
     form_vehicle_type_label: "Type de véhicule",
     form_vehicle_type_auto: "🚗 Auto",
@@ -174,6 +178,8 @@ const I18N = {
     references_suggestions: "Suggestions",
     references_add_btn: "+ Ajouter une ligne",
     references_save_btn: "Enregistrer",
+    references_suggest_ai_btn: "✨ Suggérer via IA",
+    loading_suggest_consumables: "Recherche des références auprès de l'IA…",
     cons_engine_oil: "Huile moteur",
     cons_oil_filter: "Filtre à huile",
     cons_air_filter: "Filtre à air",
@@ -293,6 +299,10 @@ const I18N = {
     settings_font_size_section: "Text size",
     settings_card_version: "Card version: {version}",
     setting_seasonal_reminders_desc: "Seasonal reminders: one notification per vehicle at each change of season (tyres, battery, fluids…)",
+    settings_invoices_dir_section: "Invoice storage folder",
+    settings_invoices_dir_hint: "By default, invoices are stored in a folder dedicated to Home Assistant. You can point to another absolute path instead (e.g. a network share mounted in Home Assistant) — it must be allowed by Home Assistant (allowlist_external_dirs). Invoices already uploaded are not moved automatically when you change this.",
+    settings_invoices_dir_placeholder: "Empty = default folder",
+    settings_invoices_dir_reset_btn: "Reset to default folder",
     settings_language_section: "Language",
     form_vehicle_type_label: "Vehicle type",
     form_vehicle_type_auto: "🚗 Car",
@@ -409,6 +419,8 @@ const I18N = {
     references_suggestions: "Suggestions",
     references_add_btn: "+ Add a row",
     references_save_btn: "Save",
+    references_suggest_ai_btn: "✨ Suggest via AI",
+    loading_suggest_consumables: "Looking up references with AI…",
     cons_engine_oil: "Engine oil",
     cons_oil_filter: "Oil filter",
     cons_air_filter: "Air filter",
@@ -528,6 +540,10 @@ const I18N = {
     settings_font_size_section: "Textgröße",
     settings_card_version: "Kartenversion: {version}",
     setting_seasonal_reminders_desc: "Saisonale Erinnerungen: eine Benachrichtigung pro Fahrzeug bei jedem Jahreszeitenwechsel (Reifen, Batterie, Flüssigkeiten …)",
+    settings_invoices_dir_section: "Speicherort für Rechnungen",
+    settings_invoices_dir_hint: "Standardmäßig werden Rechnungen in einem eigenen Home-Assistant-Ordner gespeichert. Sie können stattdessen einen anderen absoluten Pfad angeben (z. B. eine in Home Assistant eingebundene Netzwerkfreigabe) — er muss von Home Assistant erlaubt sein (allowlist_external_dirs). Bereits hochgeladene Rechnungen werden bei einer Änderung nicht automatisch verschoben.",
+    settings_invoices_dir_placeholder: "Leer = Standardordner",
+    settings_invoices_dir_reset_btn: "Auf Standardordner zurücksetzen",
     settings_language_section: "Sprache",
     form_vehicle_type_label: "Fahrzeugtyp",
     form_vehicle_type_auto: "🚗 Auto",
@@ -644,6 +660,8 @@ const I18N = {
     references_suggestions: "Vorschläge",
     references_add_btn: "+ Zeile hinzufügen",
     references_save_btn: "Speichern",
+    references_suggest_ai_btn: "✨ Per KI vorschlagen",
+    loading_suggest_consumables: "Referenzen werden per KI gesucht…",
     cons_engine_oil: "Motoröl",
     cons_oil_filter: "Ölfilter",
     cons_air_filter: "Luftfilter",
@@ -763,6 +781,10 @@ const I18N = {
     settings_font_size_section: "Tamaño del texto",
     settings_card_version: "Versión de la tarjeta: {version}",
     setting_seasonal_reminders_desc: "Recordatorios estacionales: una notificación por vehículo en cada cambio de estación (neumáticos, batería, líquidos…)",
+    settings_invoices_dir_section: "Carpeta de almacenamiento de las facturas",
+    settings_invoices_dir_hint: "Por defecto, las facturas se guardan en una carpeta propia de Home Assistant. Puedes indicar otra ruta absoluta (p. ej. una unidad de red montada en Home Assistant) — debe estar autorizada por Home Assistant (allowlist_external_dirs). Las facturas ya subidas no se mueven automáticamente al cambiarla.",
+    settings_invoices_dir_placeholder: "Vacío = carpeta por defecto",
+    settings_invoices_dir_reset_btn: "Volver a la carpeta por defecto",
     settings_language_section: "Idioma",
     form_vehicle_type_label: "Tipo de vehículo",
     form_vehicle_type_auto: "🚗 Coche",
@@ -879,6 +901,8 @@ const I18N = {
     references_suggestions: "Sugerencias",
     references_add_btn: "+ Añadir una fila",
     references_save_btn: "Guardar",
+    references_suggest_ai_btn: "✨ Sugerir con IA",
+    loading_suggest_consumables: "Buscando referencias con IA…",
     cons_engine_oil: "Aceite de motor",
     cons_oil_filter: "Filtro de aceite",
     cons_air_filter: "Filtro de aire",
@@ -998,6 +1022,10 @@ const I18N = {
     settings_font_size_section: "Dimensione del testo",
     settings_card_version: "Versione della scheda: {version}",
     setting_seasonal_reminders_desc: "Promemoria stagionali: una notifica per veicolo a ogni cambio di stagione (pneumatici, batteria, liquidi…)",
+    settings_invoices_dir_section: "Cartella di archiviazione delle fatture",
+    settings_invoices_dir_hint: "Per impostazione predefinita, le fatture vengono salvate in una cartella dedicata a Home Assistant. Puoi indicare un altro percorso assoluto (es. una condivisione di rete montata in Home Assistant) — deve essere autorizzato da Home Assistant (allowlist_external_dirs). Le fatture già caricate non vengono spostate automaticamente al cambio.",
+    settings_invoices_dir_placeholder: "Vuoto = cartella predefinita",
+    settings_invoices_dir_reset_btn: "Ripristina la cartella predefinita",
     settings_language_section: "Lingua",
     form_vehicle_type_label: "Tipo di veicolo",
     form_vehicle_type_auto: "🚗 Auto",
@@ -1114,6 +1142,8 @@ const I18N = {
     references_suggestions: "Suggerimenti",
     references_add_btn: "+ Aggiungi una riga",
     references_save_btn: "Salva",
+    references_suggest_ai_btn: "✨ Suggerisci con IA",
+    loading_suggest_consumables: "Ricerca dei riferimenti con l'IA…",
     cons_engine_oil: "Olio motore",
     cons_oil_filter: "Filtro olio",
     cons_air_filter: "Filtro aria",
@@ -1795,6 +1825,28 @@ class CarnetEntretienCard extends HTMLElement {
     await this._fetchVehicles();
   }
 
+  async _suggestConsumables(vehicleId) {
+    this._loading = true;
+    this._loadingMsg = this._t("loading_suggest_consumables");
+    this._render();
+    try {
+      const res = await this._ws({ type: "suggest_consumables", data: { vehicle_id: vehicleId } });
+      const draft = this._ensureConsumablesDraft();
+      const have = new Set(draft.map((r) => (r.label || "").trim().toLowerCase()).filter(Boolean));
+      for (const item of res.items || []) {
+        const label = (item.label || "").trim();
+        if (!label || have.has(label.toLowerCase())) continue; // pas de doublon avec une ligne déjà présente
+        have.add(label.toLowerCase());
+        draft.push({ label, value: (item.value || "").trim() });
+      }
+    } catch (err) {
+      alert(this._t("error_generic_prefix", { msg: err.message || err.code || err }));
+    } finally {
+      this._loading = false;
+      this._render();
+    }
+  }
+
   async _removeLogEntry(vehicleId, entryId) {
     await this._ws({ type: "remove_log_entry", data: { vehicle_id: vehicleId, entry_id: entryId } });
     await this._fetchVehicles();
@@ -1997,6 +2049,12 @@ class CarnetEntretienCard extends HTMLElement {
         <input type="checkbox" id="setting-seasonal-reminders" ${this._settings.seasonal_reminders_enabled !== false ? "checked" : ""} />
         ${this._t("setting_seasonal_reminders_desc")}
       </label>
+      <p class="section-label">${this._t("settings_invoices_dir_section")}</p>
+      <div class="muted small" style="margin-bottom:6px;">${this._t("settings_invoices_dir_hint")}</div>
+      <div class="row-2">
+        <input type="text" id="setting-invoices-dir" value="${esc(this._settings.invoices_base_dir || "")}" placeholder="${this._t("settings_invoices_dir_placeholder")}" />
+        <button class="btn small ghost" id="setting-invoices-dir-reset">${this._t("settings_invoices_dir_reset_btn")}</button>
+      </div>
       <p class="section-label">${this._t("settings_font_size_section")}</p>
       <div class="font-size-row">
         <button class="btn small ghost" id="font-decrease-btn" ${this._settings.font_scale <= 0.8 ? "disabled" : ""}>A−</button>
@@ -2609,6 +2667,7 @@ class CarnetEntretienCard extends HTMLElement {
       }
       <div class="toolbar" style="margin-top:12px;">
         <button class="btn small ghost" id="cons-add-btn">${this._t("references_add_btn")}</button>
+        <button class="btn small ghost" id="cons-suggest-btn">${this._t("references_suggest_ai_btn")}</button>
         <button class="btn small primary" id="cons-save-btn">${this._t("references_save_btn")}</button>
       </div>
     `;
@@ -2681,6 +2740,8 @@ class CarnetEntretienCard extends HTMLElement {
     root.getElementById("setting-notifications")?.addEventListener("change", (e) => this._updateSetting("notifications_enabled", e.target.checked));
     root.getElementById("setting-hide-na")?.addEventListener("change", (e) => this._updateSetting("hide_not_applicable", e.target.checked));
     root.getElementById("setting-seasonal-reminders")?.addEventListener("change", (e) => this._updateSetting("seasonal_reminders_enabled", e.target.checked));
+    root.getElementById("setting-invoices-dir")?.addEventListener("change", (e) => this._updateSetting("invoices_base_dir", e.target.value.trim()));
+    root.getElementById("setting-invoices-dir-reset")?.addEventListener("click", () => this._updateSetting("invoices_base_dir", ""));
     root.getElementById("setting-mileage-reminder")?.addEventListener("change", (e) => this._updateSetting("mileage_reminder_enabled", e.target.checked));
     root.getElementById("setting-mileage-reminder-days")?.addEventListener("change", (e) => {
       const days = Math.max(1, Math.min(365, parseInt(e.target.value, 10) || 30));
@@ -3009,6 +3070,7 @@ class CarnetEntretienCard extends HTMLElement {
       this._render();
     });
     root.getElementById("cons-save-btn")?.addEventListener("click", () => this._setConsumables(this._selectedId, this._ensureConsumablesDraft()));
+    root.getElementById("cons-suggest-btn")?.addEventListener("click", () => this._suggestConsumables(this._selectedId));
     root.getElementById("history-pdf-btn")?.addEventListener("click", () => this._downloadHistoryPdf(this._selectedId));
 
     // ---- Onglet Factures ----
