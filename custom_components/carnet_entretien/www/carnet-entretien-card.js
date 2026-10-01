@@ -11,7 +11,7 @@ const DOMAIN = "carnet_entretien";
 // l'app Companion Android (où le cache de la WebView est moins évident à
 // vider que dans un navigateur classique), que la carte chargée est bien
 // la dernière version installée et non une version mise en cache.
-const CARD_VERSION = "1.11.0";
+const CARD_VERSION = "1.11.1";
 const CARNET_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
   <rect x="3" y="3" width="90" height="90" rx="20" fill="#392318"/>
   <rect x="9" y="9" width="78" height="78" rx="15" fill="none" stroke="#C59C35" stroke-width="2.4" stroke-dasharray="5,3"/>
@@ -178,7 +178,10 @@ const I18N = {
     references_suggestions: "Suggestions",
     references_add_btn: "+ Ajouter une ligne",
     references_save_btn: "Enregistrer",
-    references_suggest_ai_btn: "✨ Suggérer via IA",
+    references_suggest_ai_btn: "✨ Rechercher via IA ({n})",
+    references_ai_checkbox_title: "Inclure dans la prochaine recherche IA",
+    references_suggestions_hint: "Cliquer sur une suggestion l'ajoute à la liste et la coche pour la recherche IA.",
+    alert_no_consumable_selected: "Cochez au moins un consommable à rechercher (case à gauche de chaque ligne).",
     loading_suggest_consumables: "Recherche des références auprès de l'IA…",
     cons_engine_oil: "Huile moteur",
     cons_oil_filter: "Filtre à huile",
@@ -419,7 +422,10 @@ const I18N = {
     references_suggestions: "Suggestions",
     references_add_btn: "+ Add a row",
     references_save_btn: "Save",
-    references_suggest_ai_btn: "✨ Suggest via AI",
+    references_suggest_ai_btn: "✨ Look up via AI ({n})",
+    references_ai_checkbox_title: "Include in the next AI lookup",
+    references_suggestions_hint: "Clicking a suggestion adds it to the list and checks it for the AI lookup.",
+    alert_no_consumable_selected: "Check at least one consumable to look up (checkbox to the left of each row).",
     loading_suggest_consumables: "Looking up references with AI…",
     cons_engine_oil: "Engine oil",
     cons_oil_filter: "Oil filter",
@@ -660,7 +666,10 @@ const I18N = {
     references_suggestions: "Vorschläge",
     references_add_btn: "+ Zeile hinzufügen",
     references_save_btn: "Speichern",
-    references_suggest_ai_btn: "✨ Per KI vorschlagen",
+    references_suggest_ai_btn: "✨ Per KI nachschlagen ({n})",
+    references_ai_checkbox_title: "In die nächste KI-Suche einbeziehen",
+    references_suggestions_hint: "Ein Klick auf einen Vorschlag fügt ihn der Liste hinzu und markiert ihn für die KI-Suche.",
+    alert_no_consumable_selected: "Wählen Sie mindestens ein Verbrauchsmaterial aus (Kästchen links neben jeder Zeile).",
     loading_suggest_consumables: "Referenzen werden per KI gesucht…",
     cons_engine_oil: "Motoröl",
     cons_oil_filter: "Ölfilter",
@@ -901,7 +910,10 @@ const I18N = {
     references_suggestions: "Sugerencias",
     references_add_btn: "+ Añadir una fila",
     references_save_btn: "Guardar",
-    references_suggest_ai_btn: "✨ Sugerir con IA",
+    references_suggest_ai_btn: "✨ Buscar con IA ({n})",
+    references_ai_checkbox_title: "Incluir en la próxima búsqueda con IA",
+    references_suggestions_hint: "Al hacer clic en una sugerencia se añade a la lista y se marca para la búsqueda con IA.",
+    alert_no_consumable_selected: "Marca al menos un consumible a buscar (casilla a la izquierda de cada fila).",
     loading_suggest_consumables: "Buscando referencias con IA…",
     cons_engine_oil: "Aceite de motor",
     cons_oil_filter: "Filtro de aceite",
@@ -1142,7 +1154,10 @@ const I18N = {
     references_suggestions: "Suggerimenti",
     references_add_btn: "+ Aggiungi una riga",
     references_save_btn: "Salva",
-    references_suggest_ai_btn: "✨ Suggerisci con IA",
+    references_suggest_ai_btn: "✨ Cerca con IA ({n})",
+    references_ai_checkbox_title: "Includi nella prossima ricerca IA",
+    references_suggestions_hint: "Cliccando su un suggerimento lo aggiungi alla lista e lo selezioni per la ricerca IA.",
+    alert_no_consumable_selected: "Seleziona almeno un materiale di consumo da cercare (casella a sinistra di ogni riga).",
     loading_suggest_consumables: "Ricerca dei riferimenti con l'IA…",
     cons_engine_oil: "Olio motore",
     cons_oil_filter: "Filtro olio",
@@ -1320,6 +1335,7 @@ class CarnetEntretienCard extends HTMLElement {
     this._cameraStream = null;
     this._consumablesDraft = null; // brouillon des références consommables (non enregistré)
     this._consumablesDraftVehicleId = null;
+    this._consumablesAiSelected = new Set(); // libellés (minuscules) cochés pour la recherche IA
   }
 
   setConfig(config) {
@@ -1825,20 +1841,31 @@ class CarnetEntretienCard extends HTMLElement {
     await this._fetchVehicles();
   }
 
+  // Ne recherche QUE les lignes explicitement cochées (this._consumablesAiSelected) :
+  // contrairement à la v1 de cette fonction, l'IA ne choisit plus elle-même
+  // quels consommables documenter (elle en proposait certains non désirés
+  // et en oubliait d'autres) — c'est la personne qui décide via la case à
+  // cocher de chaque ligne, y compris pour un libellé personnalisé.
   async _suggestConsumables(vehicleId) {
+    const draft = this._ensureConsumablesDraft();
+    const labels = draft
+      .filter((r) => this._consumablesAiSelected.has((r.label || "").trim().toLowerCase()))
+      .map((r) => r.label.trim());
+    if (!labels.length) {
+      alert(this._t("alert_no_consumable_selected"));
+      return;
+    }
     this._loading = true;
     this._loadingMsg = this._t("loading_suggest_consumables");
     this._render();
     try {
-      const res = await this._ws({ type: "suggest_consumables", data: { vehicle_id: vehicleId } });
-      const draft = this._ensureConsumablesDraft();
-      const have = new Set(draft.map((r) => (r.label || "").trim().toLowerCase()).filter(Boolean));
-      for (const item of res.items || []) {
-        const label = (item.label || "").trim();
-        if (!label || have.has(label.toLowerCase())) continue; // pas de doublon avec une ligne déjà présente
-        have.add(label.toLowerCase());
-        draft.push({ label, value: (item.value || "").trim() });
+      const res = await this._ws({ type: "suggest_consumables", data: { vehicle_id: vehicleId, labels } });
+      const byLabel = new Map((res.items || []).map((it) => [(it.label || "").trim().toLowerCase(), (it.value || "").trim()]));
+      for (const row of draft) {
+        const key = (row.label || "").trim().toLowerCase();
+        if (byLabel.has(key)) row.value = byLabel.get(key);
       }
+      this._consumablesAiSelected = new Set(); // décoché une fois traité
     } catch (err) {
       alert(this._t("error_generic_prefix", { msg: err.message || err.code || err }));
     } finally {
@@ -2632,6 +2659,7 @@ class CarnetEntretienCard extends HTMLElement {
 
   _ensureConsumablesDraft() {
     const v = this._selectedVehicle;
+    if (this._consumablesDraftVehicleId !== v.id) this._consumablesAiSelected = new Set();
     this._consumablesDraft = this._consumableRows(v);
     this._consumablesDraftVehicleId = v.id;
     return this._consumablesDraft;
@@ -2639,6 +2667,7 @@ class CarnetEntretienCard extends HTMLElement {
 
   _renderTabReferences(v) {
     const rows = this._consumableRows(v);
+    const aiSelected = this._consumablesAiSelected || new Set();
     const have = new Set(rows.map((r) => (r.label || "").trim().toLowerCase()));
     const suggestions = (SUGGESTED_CONSUMABLES[this._consumableKind(v)] || [])
       .map((k) => this._t(`cons_${k}`))
@@ -2648,26 +2677,29 @@ class CarnetEntretienCard extends HTMLElement {
       ${
         rows.length
           ? `<div class="cons-list">${rows
-              .map(
-                (r, i) => `
+              .map((r, i) => {
+                const checked = aiSelected.has((r.label || "").trim().toLowerCase());
+                return `
             <div class="cons-row">
+              <input type="checkbox" class="cons-ai-cb" data-idx="${i}" ${checked ? "checked" : ""} title="${this._t("references_ai_checkbox_title")}" />
               <input class="cons-label-input" data-idx="${i}" value="${esc(r.label)}" placeholder="${this._t("references_label_placeholder")}" />
               <input class="cons-value-input" data-idx="${i}" value="${esc(r.value)}" placeholder="${this._t("references_value_placeholder")}" />
               <button class="link-btn cons-remove-btn" data-idx="${i}" title="${this._t("invoice_remove_btn")}">✕</button>
-            </div>`
-              )
+            </div>`;
+              })
               .join("")}</div>`
           : `<div class="empty">${this._t("references_empty")}</div>`
       }
       ${
         suggestions.length
           ? `<div class="section-label">${this._t("references_suggestions")}</div>
+             <div class="muted small" style="margin-bottom:6px;">${this._t("references_suggestions_hint")}</div>
              <div class="cons-suggestions">${suggestions.map((l) => `<button class="cons-chip" data-label="${esc(l)}">+ ${esc(l)}</button>`).join("")}</div>`
           : ""
       }
       <div class="toolbar" style="margin-top:12px;">
         <button class="btn small ghost" id="cons-add-btn">${this._t("references_add_btn")}</button>
-        <button class="btn small ghost" id="cons-suggest-btn">${this._t("references_suggest_ai_btn")}</button>
+        <button class="btn small ghost" id="cons-suggest-btn">${this._t("references_suggest_ai_btn", { n: aiSelected.size })}</button>
         <button class="btn small primary" id="cons-save-btn">${this._t("references_save_btn")}</button>
       </div>
     `;
@@ -3053,9 +3085,24 @@ class CarnetEntretienCard extends HTMLElement {
         if (row) row[e.target.classList.contains("cons-label-input") ? "label" : "value"] = e.target.value;
       })
     );
+    root.querySelectorAll(".cons-ai-cb").forEach((cb) =>
+      cb.addEventListener("change", (e) => {
+        const draft = this._ensureConsumablesDraft();
+        const row = draft[parseInt(e.target.dataset.idx, 10)];
+        const label = (row?.label || "").trim().toLowerCase();
+        if (!label) {
+          e.target.checked = false;
+          return; // pas de recherche IA sans libellé : rien à chercher
+        }
+        if (e.target.checked) this._consumablesAiSelected.add(label);
+        else this._consumablesAiSelected.delete(label);
+        this._render();
+      })
+    );
     root.querySelectorAll(".cons-chip").forEach((btn) =>
       btn.addEventListener("click", () => {
         this._ensureConsumablesDraft().push({ label: btn.dataset.label, value: "" });
+        this._consumablesAiSelected.add(btn.dataset.label.trim().toLowerCase());
         this._render();
       })
     );
@@ -3460,6 +3507,7 @@ const STYLE = `
   /* ---------------- Références des consommables ---------------- */
   .cons-list { display:flex; flex-direction:column; gap:6px; }
   .cons-row { display:flex; align-items:center; gap:6px; }
+  .cons-ai-cb { width:16px; height:16px; accent-color: var(--ce-accent); flex-shrink:0; }
   .cons-row input {
     padding:7px 9px; border-radius:8px; border:1px solid var(--ce-border); background: var(--ce-surface-2);
     color: var(--ce-text); font-size:0.88em; font-family:inherit; box-sizing:border-box; min-width:0;
