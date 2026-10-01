@@ -449,11 +449,15 @@ class CarnetStore:
 
     def consumables_cache_key(
         self, brand: str, model: str, year: int, motorisation: str = "", fuel_type: str = "",
-        vehicle_type: str = "auto", two_wheeler_type: str = "",
+        vehicle_type: str = "auto", two_wheeler_type: str = "", labels: list[str] | None = None,
     ) -> str:
+        # Le résultat dépend maintenant des libellés explicitement demandés
+        # (voir __init__.py::ws_suggest_consumables) : ils font partie de la
+        # clé, triés pour que l'ordre de sélection ne change pas le cache.
+        labels_part = "|".join(sorted((l or "").strip().lower() for l in (labels or [])))
         return (
             f"{brand.strip().lower()}|{model.strip().lower()}|{year}|{motorisation.strip().lower()}"
-            f"|{fuel_type.strip().lower()}|{vehicle_type}|{two_wheeler_type}"
+            f"|{fuel_type.strip().lower()}|{vehicle_type}|{two_wheeler_type}|{labels_part}"
         )
 
     def get_consumables_cache(self, key: str) -> list[dict[str, str]] | None:

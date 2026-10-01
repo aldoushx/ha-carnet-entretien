@@ -436,14 +436,17 @@ autour."""
         return await self._call(prompt, schema, max_output_tokens=1024)
 
     async def suggest_consumables(
-        self, brand: str, model: str, motorisation: str, year: int, fuel_type: str = "",
-        vehicle_type: str = "auto", two_wheeler_type: str = "", language: str = "fr",
+        self, brand: str, model: str, motorisation: str, year: int, fuel_type: str,
+        vehicle_type: str, two_wheeler_type: str, language: str, requested_labels: list[str],
     ) -> GeminiResult:
-        """Références des principaux consommables (huile, pneus, liquides...)
-        pour ce véhicule précis — même logique que list_motorisations
-        ci-dessus : un exemple de forme de réponse adapté au type de
-        véhicule pour guider le modèle, plutôt qu'une liste figée de
-        catégories qu'il faudrait ensuite traduire nous-mêmes."""
+        """Caractéristiques génériques des consommables EXPLICITEMENT demandés
+        (requested_labels) — pas une liste improvisée par le modèle : c'est
+        la personne qui décide quoi rechercher (voir la case à cocher par
+        ligne dans l'onglet Références), pour éviter que l'IA ajoute des
+        consommables non désirés ou en oublie d'autres. "value" doit rester
+        une caractéristique/norme générique (dimension, viscosité, type...)
+        utilisable pour acheter un équivalent en magasin, jamais une
+        référence catalogue propre à un équipementier."""
         schema = {
             "type": "ARRAY",
             "items": {
@@ -485,9 +488,11 @@ autour."""
             )
             extra = ""
 
-        prompt = f"""Tu es un expert technique automobile/moto. Donne les références
-exactes des principaux consommables et pièces d'entretien courantes pour ce
-véhicule précis, d'après la documentation constructeur :
+        labels_block = "\n".join(f"- {label}" for label in requested_labels)
+
+        prompt = f"""Tu es un expert technique automobile/moto. Donne des
+caractéristiques génériques et des normes pour les consommables suivants,
+pour ce véhicule précis :
 
 Marque : {brand}
 Modèle : {model}
@@ -497,15 +502,29 @@ Type de carburant/énergie : {fuel_type or "non précisé — déduis-le de la m
 
 {extra}
 
-Pour chaque consommable pertinent pour CE véhicule (n'invente rien, ignore ce
-qui ne s'applique pas à son type d'énergie ou d'équipement), donne un couple
-libellé court / valeur précise, par exemple : {examples}.
-Limite-toi aux consommables réellement pertinents (entre 5 et 12 entrées). Si
-tu n'es pas certain d'une valeur exacte (ex : capacité précise en litres),
-donne quand même le type ou la norme si tu la connais plutôt que d'omettre
-l'entrée, mais n'invente pas un chiffre précis non fiable. Réponds uniquement
-avec le JSON demandé (tableau d'objets {{"label": ..., "value": ...}}), sans
-texte autour.""" + _language_instruction(language)
+Consommables à documenter — UNIQUEMENT ceux listés ci-dessous, un objet par
+entrée, en reprenant pour "label" le texte EXACT fourni ici, sans le
+modifier, le traduire ni le reformuler :
+{labels_block}
+
+Pour "value", donne une caractéristique ou une norme GÉNÉRIQUE permettant
+d'acheter un équivalent dans n'importe quel magasin ou chez n'importe quel
+caviste auto — PAS une référence catalogue propre à un équipementier, ni un
+numéro de pièce constructeur. Exemples de ce qui est attendu : {examples}.
+Autres exemples selon le type de consommable : huile moteur -> viscosité et
+norme (ex. "5W-30 ACEA C3, 4,3 L") ; pneus -> dimensions normalisées (ex.
+"205/55 R16 91V") ; liquide de refroidissement -> type/norme et protection
+(ex. "type G12+, base éthylène-glycol, protection -25°C") ; batterie ->
+format, capacité, ampérage de démarrage, tension (ex. "AGM L2, 60 Ah, 640 A,
+12 V") ; bougies -> culot et écartement (ex. "culot 14 mm, écartement 0,8
+mm").
+Réponds pour CHAQUE consommable demandé, même si tu n'es pas certain d'une
+valeur précise : donne alors la caractéristique générique la plus probable
+pour ce type de véhicule plutôt que d'omettre l'entrée — mais n'invente
+jamais un numéro de référence précis auquel tu ne fais pas confiance.
+Réponds uniquement avec le JSON demandé (tableau d'objets {{"label": ...,
+"value": ...}}, un par consommable demandé, dans le même ordre), sans texte
+autour.""" + _language_instruction(language)
         return await self._call(prompt, schema, max_output_tokens=2048)
 
     async def check_recalls(

@@ -1311,6 +1311,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         {
             vol.Required("type"): f"{DOMAIN}/suggest_consumables",
             vol.Required("vehicle_id"): str,
+            vol.Required("labels"): vol.All([str], vol.Length(min=1)),
         }
     )
     @websocket_api.async_response
@@ -1319,11 +1320,15 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
         if not vehicle:
             connection.send_error(msg["id"], "not_found", "Véhicule inconnu")
             return
+        labels = [l.strip() for l in msg["labels"] if l and l.strip()]
+        if not labels:
+            connection.send_error(msg["id"], "no_selection", "Aucun consommable coché.")
+            return
         lang = store.get_settings().get("language", "fr")
         key = store.consumables_cache_key(
             vehicle.get("brand", ""), vehicle.get("model", ""), vehicle.get("year", 0),
             vehicle.get("motorisation", ""), vehicle.get("fuel_type", ""),
-            vehicle.get("vehicle_type", "auto"), vehicle.get("two_wheeler_type", ""),
+            vehicle.get("vehicle_type", "auto"), vehicle.get("two_wheeler_type", ""), labels,
         )
         items = store.get_consumables_cache(key)
         if items is None:
@@ -1331,7 +1336,7 @@ def _async_register_websocket_api(hass: HomeAssistant, entry: ConfigEntry) -> No
                 result = await gemini.suggest_consumables(
                     vehicle.get("brand", ""), vehicle.get("model", ""), vehicle.get("motorisation", ""),
                     vehicle.get("year", 0), vehicle.get("fuel_type", ""),
-                    vehicle.get("vehicle_type", "auto"), vehicle.get("two_wheeler_type", ""), lang,
+                    vehicle.get("vehicle_type", "auto"), vehicle.get("two_wheeler_type", ""), lang, labels,
                 )
                 items = [
                     {"label": str(it.get("label", "")).strip(), "value": str(it.get("value", "")).strip()}
