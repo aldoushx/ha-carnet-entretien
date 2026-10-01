@@ -33,7 +33,7 @@ and it builds a maintenance plan researched for your exact model, flags
 what's coming due, prices out the job both at a garage and DIY, and keeps
 an eye on your vehicle's resale value — all from one dashboard card.
 
-<p align="center"><img src="docs/images/screenshot-overview-en.png" width="100%" alt="Vehicle overview on the CARnet card" /></p>
+<p align="center"><img src="docs/images/screenshot-overview-en.png" width="40%" alt="Vehicle overview on the CARnet card" /></p>
 
 Everything stays local — no cloud account, no telemetry, no subscription.
 Google Gemini powers the research (a generous free tier is enough for
@@ -67,7 +67,7 @@ your exact vehicle, not a generic one.
   with severity and an indicative repair cost, plus active manufacturer
   recalls checked on creation.
 
-<p align="center"><img src="docs/images/screenshot-maintenance-en.png" width="100%" alt="Maintenance items on the CARnet card" /></p>
+<p align="center"><img src="docs/images/screenshot-maintenance-en.png" width="40%" alt="Maintenance items on the CARnet card" /></p>
 
 ### ✨ Everything else it does
 
@@ -100,11 +100,11 @@ your exact vehicle, not a generic one.
 - 🎨 **Five visual themes**, including one that automatically follows
   Home Assistant's own active theme.
 
-<p align="center"><img src="docs/images/screenshot-invoices-en.png" width="100%" alt="The Invoices tab, with a PDF and a photo linked to specific services" /></p>
+<p align="center"><img src="docs/images/screenshot-invoices-en.png" width="40%" alt="The Invoices tab, with a PDF and a photo linked to specific services" /></p>
 
-<p align="center"><img src="docs/images/screenshot-references-en.png" width="100%" alt="The References tab, with consumable specs and AI-restricted suggestions" /></p>
+<p align="center"><img src="docs/images/screenshot-references-en.png" width="40%" alt="The References tab, with consumable specs and AI-restricted suggestions" /></p>
 
-<p align="center"><img src="docs/images/screenshot-settings-en.png" width="100%" alt="The theme, language and notification settings panel — Home Assistant's own theme selected" /></p>
+<p align="center"><img src="docs/images/screenshot-settings-en.png" width="40%" alt="The theme, language and notification settings panel — Home Assistant's own theme selected" /></p>
 
 - 🌍 **Five languages** — English, French, German, Spanish, Italian —
   covering the card, the catalog, everything Gemini generates and every
@@ -283,7 +283,7 @@ d'entretien recherché pour votre modèle exact, signale ce qui approche,
 chiffre chaque intervention en garage comme en DIY, et surveille la
 valeur de revente du véhicule — le tout depuis une seule carte.
 
-<p align="center"><img src="docs/images/screenshot-overview.png" width="100%" alt="Vue d'ensemble des véhicules sur la carte CARnet" /></p>
+<p align="center"><img src="docs/images/screenshot-overview.png" width="40%" alt="Vue d'ensemble des véhicules sur la carte CARnet" /></p>
 
 Tout reste local — aucun compte cloud, aucune télémétrie, aucun
 abonnement. Google Gemini alimente la recherche (le forfait gratuit
@@ -321,7 +321,7 @@ votre véhicule précis, pas un modèle générique.
   propriétaires sur ce modèle précis, avec gravité et coût indicatif, et
   les rappels constructeur actifs vérifiés à la création.
 
-<p align="center"><img src="docs/images/screenshot-maintenance.png" width="100%" alt="Échéances d'entretien sur la carte CARnet" /></p>
+<p align="center"><img src="docs/images/screenshot-maintenance.png" width="40%" alt="Échéances d'entretien sur la carte CARnet" /></p>
 
 ### ✨ Et tout le reste
 
@@ -360,11 +360,11 @@ votre véhicule précis, pas un modèle générique.
 - 🎨 **Cinq thèmes visuels**, dont un qui suit automatiquement le thème
   actif de Home Assistant.
 
-<p align="center"><img src="docs/images/screenshot-invoices.png" width="100%" alt="L'onglet Factures, avec un PDF et une photo liés à des interventions précises" /></p>
+<p align="center"><img src="docs/images/screenshot-invoices.png" width="40%" alt="L'onglet Factures, avec un PDF et une photo liés à des interventions précises" /></p>
 
-<p align="center"><img src="docs/images/screenshot-references.png" width="100%" alt="L'onglet Références, avec des caractéristiques de consommables et des suggestions IA restreintes" /></p>
+<p align="center"><img src="docs/images/screenshot-references.png" width="40%" alt="L'onglet Références, avec des caractéristiques de consommables et des suggestions IA restreintes" /></p>
 
-<p align="center"><img src="docs/images/screenshot-settings.png" width="100%" alt="Le panneau de réglages : thème Home Assistant actif, langue et notifications" /></p>
+<p align="center"><img src="docs/images/screenshot-settings.png" width="40%" alt="Le panneau de réglages : thème Home Assistant actif, langue et notifications" /></p>
 
 - 🌍 **Cinq langues** — français, anglais, allemand, espagnol, italien —
   qui couvrent la carte, le catalogue, tout ce que Gemini génère et
