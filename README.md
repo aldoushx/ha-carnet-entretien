@@ -7,7 +7,7 @@
 <img alt="HACS Custom" src="https://img.shields.io/badge/HACS-Custom-41BDF5?logo=homeassistantcommunitystore&logoColor=white">
 <img alt="Home Assistant" src="https://img.shields.io/badge/Home%20Assistant-2024.1%2B-41BDF5?logo=home-assistant&logoColor=white">
 <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
-<img alt="Version" src="https://img.shields.io/badge/version-1.11.0-orange">
+<img alt="Version" src="https://img.shields.io/badge/version-1.11.1-orange">
 </p>
 
 <p align="center"><a href="#english">English</a> · <a href="#français">Français</a></p>
@@ -81,10 +81,30 @@ your exact vehicle, not a generic one.
   applicable, override a due date or mileage, or add an operation the
   catalog missed.
 - 📆 **A timestamped history** — log a service in one click, or backdate
-  an earlier one; due dates recalculate instantly.
-- 🎨 **Four visual themes** to make the card your own.
+  an earlier one; due dates recalculate instantly. Add a free-text comment
+  to any entry (wipers checked, tyre replaced after a puncture...), and
+  tick several items done in the same garage visit to log them together
+  with one shared date and mileage.
+- 🧾 **An Invoices tab per vehicle** — upload a PDF or a photo, or snap one
+  straight from the camera, link it to a specific service, and open it
+  back securely in one tap. A custom storage folder is supported.
+- 📄 **One-click PDF export** — the full maintenance history with every
+  linked invoice attached as an annex, ready to hand to a garage or a
+  buyer.
+- 🛢️ **A References tab for consumables** (oil, tyres, fluids...), with
+  AI suggestions restricted to what you tick and phrased as generic specs
+  (viscosity, size, capacity) rather than a manufacturer part number.
+- 🍂 **Seasonal reminders** — one persistent notification per vehicle at
+  each change of season, tailored to its type and energy (tyres, battery,
+  fluids...), toggled on or off in settings.
+- 🎨 **Five visual themes**, including one that automatically follows
+  Home Assistant's own active theme.
 
-<p align="center"><img src="docs/images/screenshot-settings-en.png" width="100%" alt="The theme, language and notification settings panel" /></p>
+<p align="center"><img src="docs/images/screenshot-invoices-en.png" width="100%" alt="The Invoices tab, with a PDF and a photo linked to specific services" /></p>
+
+<p align="center"><img src="docs/images/screenshot-references-en.png" width="100%" alt="The References tab, with consumable specs and AI-restricted suggestions" /></p>
+
+<p align="center"><img src="docs/images/screenshot-settings-en.png" width="100%" alt="The theme, language and notification settings panel — Home Assistant's own theme selected" /></p>
 
 - 🌍 **Five languages** — English, French, German, Spanish, Italian —
   covering the card, the catalog, everything Gemini generates and every
@@ -190,7 +210,8 @@ through this in order:
 4. Confirm — three quick generation steps run (manufacturer info →
    maintenance plan → known issues), 15 to 45 seconds depending on load.
 5. You land on the vehicle page with four tabs: **Maintenance** (items
-   sorted by urgency), **Known issues**, **Value** and **History**.
+   sorted by urgency, with known issues and resale value further down the
+   same tab), **History**, **Invoices** and **References**.
 
 ### 6. Automate with services
 
@@ -317,9 +338,33 @@ votre véhicule précis, pas un modèle générique.
   opération oubliée par le catalogue.
 - 📆 **Un historique horodaté** — enregistrez une intervention en un
   clic, ou antidatez-en une ; les échéances se recalculent aussitôt.
-- 🎨 **Quatre thèmes visuels** pour personnaliser la carte.
+  Ajoutez un commentaire libre à chaque entrée (essuie-glaces vérifiés,
+  pneu remplacé après crevaison...), et cochez plusieurs échéances faites
+  au même passage au garage pour les enregistrer ensemble avec une date
+  et un kilométrage communs.
+- 🧾 **Un onglet Factures par véhicule** — importez un PDF ou une photo,
+  ou prenez-la directement depuis la caméra, liez-la à une intervention
+  précise, et rouvrez-la en un clic de façon sécurisée. Un dossier de
+  stockage personnalisé est possible.
+- 📄 **Export PDF en un clic** — l'historique d'entretien complet avec
+  chaque facture liée jointe en annexe, prêt à remettre à un garagiste ou
+  à un acheteur.
+- 🛢️ **Un onglet Références pour les consommables** (huile, pneus,
+  liquides...), avec des suggestions IA limitées à ce que vous cochez et
+  formulées en caractéristiques génériques (viscosité, dimension,
+  capacité) plutôt qu'en référence fabricant.
+- 🍂 **Des rappels saisonniers** — une notification persistante par
+  véhicule à chaque changement de saison, adaptée à son type et à son
+  énergie (pneus, batterie, liquides...), activable ou non dans les
+  réglages.
+- 🎨 **Cinq thèmes visuels**, dont un qui suit automatiquement le thème
+  actif de Home Assistant.
 
-<p align="center"><img src="docs/images/screenshot-settings.png" width="100%" alt="Le panneau de réglages : thème, langue et notifications" /></p>
+<p align="center"><img src="docs/images/screenshot-invoices.png" width="100%" alt="L'onglet Factures, avec un PDF et une photo liés à des interventions précises" /></p>
+
+<p align="center"><img src="docs/images/screenshot-references.png" width="100%" alt="L'onglet Références, avec des caractéristiques de consommables et des suggestions IA restreintes" /></p>
+
+<p align="center"><img src="docs/images/screenshot-settings.png" width="100%" alt="Le panneau de réglages : thème Home Assistant actif, langue et notifications" /></p>
 
 - 🌍 **Cinq langues** — français, anglais, allemand, espagnol, italien —
   qui couvrent la carte, le catalogue, tout ce que Gemini génère et
@@ -433,8 +478,9 @@ orthographiée ou mise en cache. Dans l'ordre :
    → plan d'entretien → points de vigilance), 15 à 45 secondes selon la
    charge.
 5. Vous arrivez sur la fiche véhicule avec quatre onglets :
-   **Entretien** (échéances triées par urgence), **Points de
-   vigilance**, **Valeur** et **Historique**.
+   **Entretien** (échéances triées par urgence, avec les points de
+   vigilance et la valeur de revente plus bas dans ce même onglet),
+   **Historique**, **Factures** et **Références**.
 
 ### 6. Automatiser avec les services
 

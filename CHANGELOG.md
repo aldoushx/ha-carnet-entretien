@@ -6,6 +6,25 @@ dans la description d'une release GitHub (voir `docs/RELEASING.md`).
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## [1.11.1] — Recherche IA des consommables ciblée
+
+### Modifié
+- **Recherche IA restreinte aux consommables cochés** : chaque ligne de
+  l'onglet Références a maintenant une case à cocher « à inclure dans la
+  recherche IA ». Le bouton ne recherche plus que ce qui est explicitement
+  coché (y compris un libellé personnalisé), au lieu de laisser l'IA
+  choisir elle-même sa liste — ce qui pouvait faire remonter des
+  consommables non désirés tout en en oubliant d'autres. Cliquer sur une
+  suggestion l'ajoute à la liste et la coche automatiquement.
+- **Valeurs génériques plutôt que références fabricant** : le prompt
+  demande désormais explicitement des caractéristiques et normes
+  utilisables pour acheter un équivalent générique en magasin (viscosité et
+  norme d'huile, dimensions de pneus, type et protection du liquide de
+  refroidissement, capacité et ampérage de batterie...), plutôt qu'une
+  référence catalogue propre à un équipementier.
+- Le cache des suggestions tient maintenant compte des libellés
+  explicitement demandés, plus seulement du véhicule.
+
 ## [1.11.0] — Dossier configurable et suggestions IA des consommables
 
 ### Ajouté
