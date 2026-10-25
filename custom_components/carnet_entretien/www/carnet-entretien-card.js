@@ -11,7 +11,7 @@ const DOMAIN = "carnet_entretien";
 // l'app Companion Android (où le cache de la WebView est moins évident à
 // vider que dans un navigateur classique), que la carte chargée est bien
 // la dernière version installée et non une version mise en cache.
-const CARD_VERSION = "1.11.1";
+const CARD_VERSION = "1.11.2";
 const CARNET_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
   <rect x="3" y="3" width="90" height="90" rx="20" fill="#392318"/>
   <rect x="9" y="9" width="78" height="78" rx="15" fill="none" stroke="#C59C35" stroke-width="2.4" stroke-dasharray="5,3"/>
