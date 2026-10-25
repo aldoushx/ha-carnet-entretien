@@ -6,6 +6,16 @@ dans la description d'une release GitHub (voir `docs/RELEASING.md`).
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## [1.11.2] — Correctif hassfest et README
+
+### Corrigé
+- **Validation hassfest** : `Pillow` retiré des `requirements` du manifeste
+  (déjà fourni par Home Assistant lui-même, hassfest le refuse pour une
+  intégration personnalisée).
+
+### Modifié
+- Captures d'écran du README réduites (largeur 320 px).
+
 ## [1.11.1] — Recherche IA des consommables ciblée
 
 ### Modifié
